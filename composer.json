@@ -10,6 +10,7 @@
         "fruitcake/laravel-cors": "^3.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "imanghafoori/laravel-video": "^2.1",
+        "intervention/image": "^2.7",
         "jeroennoten/laravel-adminlte": "v3.9.2",
         "kalnoy/nestedset": "^6.0",
         "kartik-v/bootstrap-fileinput": "^5.5",

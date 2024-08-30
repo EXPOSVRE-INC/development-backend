@@ -141,10 +141,10 @@ return [
     /*
      * FFMPEG & FFProbe binaries paths, only used if you try to generate video
      * thumbnails and have installed the php-ffmpeg/php-ffmpeg composer
-     * dependency.
+     * dependency.php
      */
-    // 'ffmpeg_path' => env('FFMPEG_PATH', '/usr/bin/ffmpeg'),
-    // 'ffprobe_path' => env('FFPROBE_PATH', '/usr/bin/ffprobe'),
+    'ffmpeg_path' => env('FFMPEG_PATH', 'C:\Program Files\ffmpeg-7.0.2-essentials_build\bin\ffmpeg.exe'),
+    'ffprobe_path' => env('FFPROBE_PATH', 'C:\Program Files\ffmpeg-7.0.2-essentials_build\bin\ffprobe.exe'),
 
     /*
      * Here you can override the class names of the jobs used by this package. Make sure
