@@ -1,0 +1,23 @@
+2024-07-31T11:34:28: 
+2024-07-31T11:34:28:    PhpMqtt\Client\Exceptions\DataTransferException 
+2024-07-31T11:34:28: 
+2024-07-31T11:34:28:   [65] Transferring data over socket failed: Sending data over the socket failed. Has it been closed?
+2024-07-31T11:34:28: 
+2024-07-31T11:34:28:   at vendor/php-mqtt/client/src/MqttClient.php:1158
+2024-07-31T11:34:28:     1154▕                     'Reading data from the socket failed. Has it been closed?'
+2024-07-31T11:34:28:     1155▕                 );
+2024-07-31T11:34:28:     1156▕             }
+2024-07-31T11:34:28:     1157▕ 
+2024-07-31T11:34:28:   ➜ 1158▕             $this->bytesReceived += strlen($result);
+2024-07-31T11:34:28:     1159▕ 
+2024-07-31T11:34:28:     1160▕             $this->logger->debug('Read data from the socket (without blocking): {data}', ['data' => $result]);
+2024-07-31T11:34:28:     1161▕ 
+2024-07-31T11:34:28:     1162▕             return $result;
+2024-07-31T11:34:28: 
+2024-07-31T11:34:28:       [2m+4 vendor frames [22m
+2024-07-31T11:34:28:   5   app/Console/Commands/CheckMqttMessages.php:56
+2024-07-31T11:34:28:       PhpMqtt\Client\MqttClient::loop()
+2024-07-31T11:34:28: 
+2024-07-31T11:34:28:       [2m+13 vendor frames [22m
+2024-07-31T11:34:28:   19  artisan:37
+2024-07-31T11:34:28:       Illuminate\Foundation\Console\Kernel::handle()

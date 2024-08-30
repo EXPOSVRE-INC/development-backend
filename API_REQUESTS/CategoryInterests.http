@@ -1,0 +1,20 @@
+## Get CategoryInterests
+GET http://{{host}}/api/v.1.0/mobile/posts/interestsCategory/index
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+X-Token: {{XTOKEN}}
+
+### Get User Interests
+GET http://{{host}}/api/v.1.0/mobile/user/interests
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+X-Token: {{XTOKEN}}
+
+### Set User Interests
+POST http://{{host}}/api/v.1.0/mobile/user/interests/24/assign
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+X-Token: {{XTOKEN}}

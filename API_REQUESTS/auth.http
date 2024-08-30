@@ -1,0 +1,22 @@
+## Register
+POST http://{{host}}/api/v.1.0/mobile/auth/register
+Accept: application/json
+Content-Type: application/json
+X-Token: {{XTOKEN}}
+
+{
+    "username" : "{{username}}",
+    "email" : "{{email}}{{$randomInt}}",
+    "password" : "{{password}}",
+    "password_confirmation" : "{{password}}"
+}
+
+> {% client.global.set("auth_token", response.body.data.bearer); %}
+
+### Login
+POST http://{{host}}/api/v.1.0/mobile/auth/login?email={{email}}&password={{password}}
+Accept: application/json
+Content-Type: application/json
+X-Token: {{XTOKEN}}
+
+> {% client.global.set("auth_token", response.body.result.access_token); %}

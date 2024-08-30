@@ -1,0 +1,159 @@
+2024-03-08T12:21:44: 3
+2024-03-08T12:21:44: null
+2024-03-08T12:21:44: 2
+2024-03-08T12:21:44: null
+2024-03-08T12:21:44: 2
+2024-03-08T12:21:44: null
+2024-03-08T12:21:44: 0
+2024-03-08T12:21:44: null
+2024-03-08T12:21:44: 3
+2024-03-08T12:21:44: null
+2024-03-08T12:21:44: 3
+2024-03-08T12:21:44: null
+2024-03-08T12:21:44: 3
+2024-03-08T12:21:44: null
+2024-03-08T12:21:44: 9
+2024-03-08T12:21:44: null
+2024-03-08T12:21:44: 3
+2024-03-08T12:21:44: Orkhanahmadov\LaravelCommentable\Models\Comment {#2307
+2024-03-08T12:21:44:   #connection: "mysql"
+2024-03-08T12:21:44:   #table: "comments"
+2024-03-08T12:21:44:   #primaryKey: "id"
+2024-03-08T12:21:44:   #keyType: "int"
+2024-03-08T12:21:44:   +incrementing: true
+2024-03-08T12:21:44:   #with: []
+2024-03-08T12:21:44:   #withCount: []
+2024-03-08T12:21:44:   +preventsLazyLoading: false
+2024-03-08T12:21:44:   #perPage: 15
+2024-03-08T12:21:44:   +exists: true
+2024-03-08T12:21:44:   +wasRecentlyCreated: false
+2024-03-08T12:21:44:   #escapeWhenCastingToString: false
+2024-03-08T12:21:44:   #attributes: array:9 [
+2024-03-08T12:21:44:     "id" => 59
+2024-03-08T12:21:44:     "commentable_type" => "App\Models\Post"
+2024-03-08T12:21:44:     "commentable_id" => 77
+2024-03-08T12:21:44:     "user_id" => 3
+2024-03-08T12:21:44:     "comment" => "Test"
+2024-03-08T12:21:44:     "ip_address" => "127.0.0.1"
+2024-03-08T12:21:44:     "user_agent" => "Symfony"
+2024-03-08T12:21:44:     "created_at" => "2024-02-23 15:40:31"
+2024-03-08T12:21:44:     "updated_at" => "2024-02-23 15:40:31"
+2024-03-08T12:21:44:   ]
+2024-03-08T12:21:44:   #original: array:9 [
+2024-03-08T12:21:44:     "id" => 59
+2024-03-08T12:21:44:     "commentable_type" => "App\Models\Post"
+2024-03-08T12:21:44:     "commentable_id" => 77
+2024-03-08T12:21:44:     "user_id" => 3
+2024-03-08T12:21:44:     "comment" => "Test"
+2024-03-08T12:21:44:     "ip_address" => "127.0.0.1"
+2024-03-08T12:21:44:     "user_agent" => "Symfony"
+2024-03-08T12:21:44:     "created_at" => "2024-02-23 15:40:31"
+2024-03-08T12:21:44:     "updated_at" => "2024-02-23 15:40:31"
+2024-03-08T12:21:44:   ]
+2024-03-08T12:21:44:   #changes: []
+2024-03-08T12:21:44:   #casts: []
+2024-03-08T12:21:44:   #classCastCache: []
+2024-03-08T12:21:44:   #attributeCastCache: []
+2024-03-08T12:21:44:   #dates: []
+2024-03-08T12:21:44:   #dateFormat: null
+2024-03-08T12:21:44:   #appends: []
+2024-03-08T12:21:44:   #dispatchesEvents: []
+2024-03-08T12:21:44:   #observables: []
+2024-03-08T12:21:44:   #relations: []
+2024-03-08T12:21:44:   #touches: []
+2024-03-08T12:21:44:   +timestamps: true
+2024-03-08T12:21:44:   #hidden: []
+2024-03-08T12:21:44:   #visible: []
+2024-03-08T12:21:44:   #fillable: array:4 [
+2024-03-08T12:21:44:     0 => "user_id"
+2024-03-08T12:21:44:     1 => "comment"
+2024-03-08T12:21:44:     2 => "ip_address"
+2024-03-08T12:21:44:     3 => "user_agent"
+2024-03-08T12:21:44:   ]
+2024-03-08T12:21:44:   #guarded: array:1 [
+2024-03-08T12:21:44:     0 => "*"
+2024-03-08T12:21:44:   ]
+2024-03-08T12:21:44: }
+2024-03-08T12:21:44: 9
+2024-03-08T12:21:44: Orkhanahmadov\LaravelCommentable\Models\Comment {#2316
+2024-03-08T12:21:44:   #connection: "mysql"
+2024-03-08T12:21:44:   #table: "comments"
+2024-03-08T12:21:44:   #primaryKey: "id"
+2024-03-08T12:21:44:   #keyType: "int"
+2024-03-08T12:21:44:   +incrementing: true
+2024-03-08T12:21:44:   #with: []
+2024-03-08T12:21:44:   #withCount: []
+2024-03-08T12:21:44:   +preventsLazyLoading: false
+2024-03-08T12:21:44:   #perPage: 15
+2024-03-08T12:21:44:   +exists: true
+2024-03-08T12:21:44:   +wasRecentlyCreated: false
+2024-03-08T12:21:44:   #escapeWhenCastingToString: false
+2024-03-08T12:21:44:   #attributes: array:9 [
+2024-03-08T12:21:44:     "id" => 25
+2024-03-08T12:21:44:     "commentable_type" => "App\Models\Post"
+2024-03-08T12:21:44:     "commentable_id" => 83
+2024-03-08T12:21:44:     "user_id" => 9
+2024-03-08T12:21:44:     "comment" => "Append my first comment"
+2024-03-08T12:21:44:     "ip_address" => "127.0.0.1"
+2024-03-08T12:21:44:     "user_agent" => "Symfony"
+2024-03-08T12:21:44:     "created_at" => "2024-01-07 13:30:58"
+2024-03-08T12:21:44:     "updated_at" => "2024-01-07 13:30:58"
+2024-03-08T12:21:44:   ]
+2024-03-08T12:21:44:   #original: array:9 [
+2024-03-08T12:21:44:     "id" => 25
+2024-03-08T12:21:44:     "commentable_type" => "App\Models\Post"
+2024-03-08T12:21:44:     "commentable_id" => 83
+2024-03-08T12:21:44:     "user_id" => 9
+2024-03-08T12:21:44:     "comment" => "Append my first comment"
+2024-03-08T12:21:44:     "ip_address" => "127.0.0.1"
+2024-03-08T12:21:44:     "user_agent" => "Symfony"
+2024-03-08T12:21:44:     "created_at" => "2024-01-07 13:30:58"
+2024-03-08T12:21:44:     "updated_at" => "2024-01-07 13:30:58"
+2024-03-08T12:21:44:   ]
+2024-03-08T12:21:44:   #changes: []
+2024-03-08T12:21:44:   #casts: []
+2024-03-08T12:21:44:   #classCastCache: []
+2024-03-08T12:21:44:   #attributeCastCache: []
+2024-03-08T12:21:44:   #dates: []
+2024-03-08T12:21:44:   #dateFormat: null
+2024-03-08T12:21:44:   #appends: []
+2024-03-08T12:21:44:   #dispatchesEvents: []
+2024-03-08T12:21:44:   #observables: []
+2024-03-08T12:21:44:   #relations: []
+2024-03-08T12:21:44:   #touches: []
+2024-03-08T12:21:44:   +timestamps: true
+2024-03-08T12:21:44:   #hidden: []
+2024-03-08T12:21:44:   #visible: []
+2024-03-08T12:21:44:   #fillable: array:4 [
+2024-03-08T12:21:44:     0 => "user_id"
+2024-03-08T12:21:44:     1 => "comment"
+2024-03-08T12:21:44:     2 => "ip_address"
+2024-03-08T12:21:44:     3 => "user_agent"
+2024-03-08T12:21:44:   ]
+2024-03-08T12:21:44:   #guarded: array:1 [
+2024-03-08T12:21:44:     0 => "*"
+2024-03-08T12:21:44:   ]
+2024-03-08T12:21:44: }
+2024-08-07T08:00:57: 
+2024-08-07T08:00:57:    PhpMqtt\Client\Exceptions\DataTransferException 
+2024-08-07T08:00:57: 
+2024-08-07T08:00:57:   [65] Transferring data over socket failed: Sending data over the socket failed. Has it been closed?
+2024-08-07T08:00:57: 
+2024-08-07T08:00:57:   at vendor/php-mqtt/client/src/MqttClient.php:1158
+2024-08-07T08:00:57:     1154▕                     'Reading data from the socket failed. Has it been closed?'
+2024-08-07T08:00:57:     1155▕                 );
+2024-08-07T08:00:57:     1156▕             }
+2024-08-07T08:00:57:     1157▕ 
+2024-08-07T08:00:57:   ➜ 1158▕             $this->bytesReceived += strlen($result);
+2024-08-07T08:00:57:     1159▕ 
+2024-08-07T08:00:57:     1160▕             $this->logger->debug('Read data from the socket (without blocking): {data}', ['data' => $result]);
+2024-08-07T08:00:57:     1161▕ 
+2024-08-07T08:00:57:     1162▕             return $result;
+2024-08-07T08:00:57: 
+2024-08-07T08:00:57:       [2m+4 vendor frames [22m
+2024-08-07T08:00:57:   5   app/Console/Commands/CheckMqttReports.php:101
+2024-08-07T08:00:57:       PhpMqtt\Client\MqttClient::loop()
+2024-08-07T08:00:57: 
+2024-08-07T08:00:57:       [2m+13 vendor frames [22m
+2024-08-07T08:00:57:   19  artisan:37
+2024-08-07T08:00:57:       Illuminate\Foundation\Console\Kernel::handle()
