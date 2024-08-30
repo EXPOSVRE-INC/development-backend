@@ -160,79 +160,79 @@ class AuthController extends Controller
         return response()->json(['data' => new UserResource($user)]);
     }
 
-    public function verifyPhone(Request $request) {
-        $accountSid = 'AC6abb1faddf2753a7345eeaff127b9d56';
-//        $authToken = config('app.twilio')['TWILIO_AUTH_TOKEN'];
-        $authToken = '754bc1806c83a753bc5ea00a5e0b9563';
-//        $appSid = config('app.twilio')['TWILIO_APP_SID'];
-        $appSid = 'VA77f4eb8c03bd909f7bdc494869f57572';
-        $twilio = new Client($accountSid, $authToken);
+//     public function verifyPhone(Request $request) {
+//         $accountSid = 'AC6abb1faddf2753a7345eeaff127b9d56';
+// //        $authToken = config('app.twilio')['TWILIO_AUTH_TOKEN'];
+//         $authToken = '754bc1806c83a753bc5ea00a5e0b9563';
+// //        $appSid = config('app.twilio')['TWILIO_APP_SID'];
+//         $appSid = 'VA77f4eb8c03bd909f7bdc494869f57572';
+//         $twilio = new Client($accountSid, $authToken);
 
-//        $request->validate(['phone' => 'unique:user_profile']);
-        $result = $twilio->verify->v2->services($appSid)
-            ->verifications
-            ->create('+' . $request->get('phone'), 'sms');
+// //        $request->validate(['phone' => 'unique:user_profile']);
+//         $result = $twilio->verify->v2->services($appSid)
+//             ->verifications
+//             ->create('+' . $request->get('phone'), 'sms');
 
-        $user = auth('api')->user();
+//         $user = auth('api')->user();
 
-        if ($user->profile == null) {
-            $newProfile = new UserProfile();
-//            $newProfile->id = 0;
-            $newProfile->user_id = $user->id;
-            $newProfile->firstName = "";
-            $newProfile->lastName = "";
-            $newProfile->phone = $request->get('phone');
-            $newProfile->jobTitle = "";
-            $newProfile->jobDescription = "";
-            $user->profile = $newProfile;
-            $newProfile->save();
-            $profile = $newProfile;
-        } else {
-            $profile = auth('api')->user()->profile;
-        }
-        $profile->phone = $request->get('phone');
-        $profile->save();
+//         if ($user->profile == null) {
+//             $newProfile = new UserProfile();
+// //            $newProfile->id = 0;
+//             $newProfile->user_id = $user->id;
+//             $newProfile->firstName = "";
+//             $newProfile->lastName = "";
+//             $newProfile->phone = $request->get('phone');
+//             $newProfile->jobTitle = "";
+//             $newProfile->jobDescription = "";
+//             $user->profile = $newProfile;
+//             $newProfile->save();
+//             $profile = $newProfile;
+//         } else {
+//             $profile = auth('api')->user()->profile;
+//         }
+//         $profile->phone = $request->get('phone');
+//         $profile->save();
 
-        return response()->json(['data' => true]);
-    }
+//         return response()->json(['data' => true]);
+//     }
 
-    public function verifyPhoneCode(Request $request) {
-        $accountSid = 'AC6abb1faddf2753a7345eeaff127b9d56';
-//        $authToken = config('app.twilio')['TWILIO_AUTH_TOKEN'];
-        $authToken = '754bc1806c83a753bc5ea00a5e0b9563';
-//        $appSid = config('app.twilio')['TWILIO_APP_SID'];
-        $appSid = 'VA77f4eb8c03bd909f7bdc494869f57572';
-        $twilio = new Client($accountSid, $authToken);
+//     public function verifyPhoneCode(Request $request) {
+//         $accountSid = 'AC6abb1faddf2753a7345eeaff127b9d56';
+// //        $authToken = config('app.twilio')['TWILIO_AUTH_TOKEN'];
+//         $authToken = '754bc1806c83a753bc5ea00a5e0b9563';
+// //        $appSid = config('app.twilio')['TWILIO_APP_SID'];
+//         $appSid = 'VA77f4eb8c03bd909f7bdc494869f57572';
+//         $twilio = new Client($accountSid, $authToken);
 
-        $phoneNumber = auth('api')->user()->profile->phone;
-        if ($phoneNumber == null || $phoneNumber == "") {
-            $phoneNumber = $request->get('phone');
-            $userProfile = auth('api')->user()->profile;
-            $userProfile->phone = $phoneNumber;
-            $userProfile->save();
-        }
+//         $phoneNumber = auth('api')->user()->profile->phone;
+//         if ($phoneNumber == null || $phoneNumber == "") {
+//             $phoneNumber = $request->get('phone');
+//             $userProfile = auth('api')->user()->profile;
+//             $userProfile->phone = $phoneNumber;
+//             $userProfile->save();
+//         }
 
 
-        $verification = $twilio->verify->v2->services($appSid)
-            ->verificationChecks
-            ->create([
-                'to' => '+' . $phoneNumber,
-                'code' => $request->get('code')
-            ]);
+//         $verification = $twilio->verify->v2->services($appSid)
+//             ->verificationChecks
+//             ->create([
+//                 'to' => '+' . $phoneNumber,
+//                 'code' => $request->get('code')
+//             ]);
 
-        $userProfile = auth('api')->user()->profile;
-        $userProfile->phone = $phoneNumber;
-        $userProfile->save();
+//         $userProfile = auth('api')->user()->profile;
+//         $userProfile->phone = $phoneNumber;
+//         $userProfile->save();
 
-        if ($verification->valid) {
-            $user = auth('api')->user();
-            $user->phoneIsActivated = true;
-            $user->save();
-            return response()->json(['data' => true]);
-        } else {
-            return response()->json(['data' => false]);
-        }
-    }
+//         if ($verification->valid) {
+//             $user = auth('api')->user();
+//             $user->phoneIsActivated = true;
+//             $user->save();
+//             return response()->json(['data' => true]);
+//         } else {
+//             return response()->json(['data' => false]);
+//         }
+//     }
 
     public function verifyEmail(Request $request) {
 
