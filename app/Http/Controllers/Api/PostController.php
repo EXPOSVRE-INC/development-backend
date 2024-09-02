@@ -22,6 +22,7 @@ use App\Notifications\LikeNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -52,6 +53,20 @@ class PostController extends Controller
 
     public function fileUploader(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'file' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Validation errors occurred.',
+                    'errors' => $validator->errors(),
+                ],
+                422
+            );
+        }
 
         $user = auth('api')->user();
 
@@ -118,13 +133,15 @@ class PostController extends Controller
         $profanityToken = env('WEBPURIFY_PROFANITY_TOKEN');
         $profanityMethod = 'webpurify.live.return';
 
-        $response = Http::get($profanityRoute . '?format=json&api_key=' . $profanityToken . '&method=' . $profanityMethod . '&text=' . $text);
-        $jsonBodyResp = json_decode($response);
+        // Construct the full API URL with query parameters
+        $apiUrl = "http://api1.webpurify.com/services/rest/?format=json&method=webpurify.live.check&api_key={$profanityToken}&text=" . urlencode($text);
 
+    $response = Http::get($apiUrl);
+    $jsonBodyResp = json_decode($response->getBody());
         if ($jsonBodyResp->rsp->found > 0) {
-            return false;
+            return false; // Profanity found
         } else {
-            return true;
+            return true; // No profanity found
         }
     }
 
@@ -173,6 +190,13 @@ class PostController extends Controller
         Log::info($request->get('id'));
 //        dd($request->all());
 
+            if (!$request->has('files') || empty($request->get('files'))) {
+                return response()->json([
+                    'error' => "Can't create post",
+                    'message' => "Post not created! At least one file attachment is required.",
+                    'status' => 422
+                ], 422);
+            }
         if ($request->get('id') == 0) {
 
             $user = auth('api')->user();
@@ -449,6 +473,14 @@ class PostController extends Controller
         $user = auth('api')->user();
         $post = Post::where(['id' => $id])->first();
 
+        $postHasFiles = $post->hasMedia('files');
+        if (!$postHasFiles && (!$request->has('files') || empty($request->get('files')))) {
+            return response()->json([
+                'error' => "Can't update post",
+                'message' => "Post not updated! At least one file attachment is required.",
+                'status' => 422
+            ], 422);
+        }
 //        if (count($user->getMedia('temp')) > 0 ) {
 //            $post->clearMediaCollection('files');
 //        }
@@ -538,6 +570,16 @@ class PostController extends Controller
         $posts = Post::whereHas('interests', function ($query) use ($tag) {
             return $query->where('slug', 'LIKE', $tag);
         })->limit(100)->get();
+
+        if ($posts->isEmpty()) {
+            return response()->json(
+                [
+                    'message' => 'No posts found!',
+                    'code' => 404,
+                ],
+                404
+            );
+        }
 
         return PostResource::collection($posts);
     }
@@ -704,13 +746,22 @@ class PostController extends Controller
     {
         $user = auth('api')->user();
         $now = Carbon::now();
-        $posts = Post::has('likers')->withCount(['likers', 'likersByLastDay'])->orderBy('likers_by_last_day_count', 'DESC')->limit(50)->get();
-//        $posts = Post::withCount([
-//            'likers' => function ($query) {
-//                $query->whereDate('likes.created_at', '>=', Carbon::today()->subDays(1));
-//            }
-//        ])->orderBy('likers_count', 'DESC')->limit(50)->get();
-//        dd($postsLikers);
+        // $posts = Post::has('likers')->withCount(['likers', 'likersByLastDay'])->orderBy('likers_by_last_day_count', 'DESC')->limit(50)->get();
+
+        $posts = Post::has('likers')
+            ->withCount([
+                'likers' => function ($query) {
+                    $query->where(
+                        'likes.created_at',
+                        '>=',
+                        Carbon::now()->subDays(7)
+                    );
+                },
+            ])
+            ->orderBy('likers_count', 'DESC')
+            ->limit(50)
+            ->get();
+
         $posts = $posts->filter(function ($post) {
             return $post->reports->count() == 0;
         })->filter(function ($post) use ($now, $user) {
@@ -732,7 +783,13 @@ class PostController extends Controller
     {
         $user = auth('api')->user();
         $now = Carbon::now();
-        $posts = Post::where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')->limit(50)->get();
+
+       $sevenDaysAgo = $now->subDays(7);
+
+        $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
+            ->limit(50)
+            ->get();
+            
         $posts = $posts->filter(function ($post) {
             return $post->reports->count() == 0;
         })->filter(function ($post) use ($now, $user) {
