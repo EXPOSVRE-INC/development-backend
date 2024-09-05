@@ -53,6 +53,7 @@ class PostController extends Controller
 
     public function fileUploader(Request $request)
     {
+        //add file validation
         $validator = Validator::make($request->all(), [
             'file' => 'required',
         ]);
@@ -789,7 +790,7 @@ class PostController extends Controller
         $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
             ->limit(50)
             ->get();
-            
+
         $posts = $posts->filter(function ($post) {
             return $post->reports->count() == 0;
         })->filter(function ($post) use ($now, $user) {
@@ -809,7 +810,7 @@ class PostController extends Controller
     public function viewPost($id) {
 
         $post = Post::where(['id' => $id])->first();
-        
+
         $post->views_count = $post->views_count + 1;
         $post->views_by_last_day = $post->views_by_last_day + 1;
         $post->save();
