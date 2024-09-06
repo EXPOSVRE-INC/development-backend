@@ -24,6 +24,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\UploadedFile;
+use Imagick;
 use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use function GuzzleHttp\Promise\all;
@@ -53,9 +55,8 @@ class PostController extends Controller
 
     public function fileUploader(Request $request)
     {
-        //add file validation
         $validator = Validator::make($request->all(), [
-            'file' => 'required',
+            'file' => 'required|file',
         ]);
 
         if ($validator->fails()) {
@@ -69,13 +70,77 @@ class PostController extends Controller
             );
         }
 
+        $file = $request->file('file');
+        $uploadedExtension = strtolower($file->getClientOriginalExtension());
+        $uploadedMimeType = $file->getMimeType();
+        $originalFileName = $file->getClientOriginalName();
+
+        $allowedImageExtensions = ['jpeg', 'jpg', 'png', 'gif'];
+        $allowedVideoExtensions = ['webm', 'mov', 'mp4'];
+
         $user = auth('api')->user();
 
-        $user->addMediaFromRequest('file')->toMediaCollection('temp');
+        if (str_contains($uploadedMimeType, 'image')) {
+            if (!in_array($uploadedExtension, $allowedImageExtensions)) {
+                $imagick = new Imagick($file->getPathname());
+
+                $imagick->setImageFormat('jpeg');
+
+                $convertedFileName =
+                    pathinfo($originalFileName, PATHINFO_FILENAME) . '.jpeg';
+                $tempFilePath = storage_path($convertedFileName);
+                $imagick->writeImage($tempFilePath);
+
+                $file = new UploadedFile(
+                    $tempFilePath,
+                    $convertedFileName,
+                    'image/jpeg',
+                    null,
+                    true
+                );
+
+                $user
+                    ->addMedia($file->getPathname())
+                    ->usingFileName($file->getClientOriginalName())
+                    ->toMediaCollection('temp');
+
+                $media = $user->getMedia('temp');
+            } else {
+                $user->addMediaFromRequest('file')->toMediaCollection('temp');
+            }
+        } elseif (str_contains($uploadedMimeType, 'video')) {
+            if (!in_array($uploadedExtension, $allowedVideoExtensions)) {
+                $imagick = new Imagick($file->getPathname());
+
+                $imagick->setImageFormat('mp4');
+
+                $convertedFileName =
+                    pathinfo($originalFileName, PATHINFO_FILENAME) . '.mp4';
+                $tempFilePath = storage_path($convertedFileName);
+                $imagick->writeImage($tempFilePath);
+
+                $file = new UploadedFile(
+                    $tempFilePath,
+                    $convertedFileName,
+                    'video/mp4',
+                    null,
+                    true
+                );
+
+                $user
+                    ->addMedia($file->getPathname())
+                    ->usingFileName($file->getClientOriginalName())
+                    ->toMediaCollection('temp');
+            } else {
+                $user->addMediaFromRequest('file')->toMediaCollection('temp');
+            }
+        }
 
         $media = $user->getMedia('temp');
 
-        return response()->json(['data' => PostImagePreviewResource::collection($media)]);
+        return response()->json([
+            'data' => PostImagePreviewResource::collection($media),
+        ]);
     }
 
     public function dropFileByUuid(Request $request) {
