@@ -157,13 +157,92 @@ class PostController extends Controller
 
     public function fileUploaderForCollection(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|file',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Validation errors occurred.',
+                    'errors' => $validator->errors(),
+                ],
+                422
+            );
+        }
+
+        $file = $request->file('file');
+        $uploadedExtension = strtolower($file->getClientOriginalExtension());
+        $uploadedMimeType = $file->getMimeType();
+        $originalFileName = $file->getClientOriginalName();
+
+        $allowedImageExtensions = ['jpeg', 'jpg', 'png', 'gif'];
+        $allowedVideoExtensions = ['webm', 'mov', 'mp4'];
+
         $user = auth('api')->user();
 
-        $user->addMediaFromRequest('file')->toMediaCollection('tempCollection');
+        if (str_contains($uploadedMimeType, 'image')) {
+            if (!in_array($uploadedExtension, $allowedImageExtensions)) {
+                $imagick = new Imagick($file->getPathname());
+
+                $imagick->setImageFormat('jpeg');
+
+                $convertedFileName =
+                    pathinfo($originalFileName, PATHINFO_FILENAME) . '.jpeg';
+                $tempFilePath = storage_path($convertedFileName);
+                $imagick->writeImage($tempFilePath);
+
+                $file = new UploadedFile(
+                    $tempFilePath,
+                    $convertedFileName,
+                    'image/jpeg',
+                    null,
+                    true
+                );
+
+                $user
+                    ->addMedia($file->getPathname())
+                    ->usingFileName($file->getClientOriginalName())
+                    ->toMediaCollection('tempCollection');
+
+                $media = $user->getMedia('tempCollection');
+            } else {
+                $user->addMediaFromRequest('file')->toMediaCollection('tempCollection');
+            }
+        } elseif (str_contains($uploadedMimeType, 'video')) {
+            if (!in_array($uploadedExtension, $allowedVideoExtensions)) {
+                $imagick = new Imagick($file->getPathname());
+
+                $imagick->setImageFormat('mp4');
+
+                $convertedFileName =
+                    pathinfo($originalFileName, PATHINFO_FILENAME) . '.mp4';
+                $tempFilePath = storage_path($convertedFileName);
+                $imagick->writeImage($tempFilePath);
+
+                $file = new UploadedFile(
+                    $tempFilePath,
+                    $convertedFileName,
+                    'video/mp4',
+                    null,
+                    true
+                );
+
+                $user
+                    ->addMedia($file->getPathname())
+                    ->usingFileName($file->getClientOriginalName())
+                    ->toMediaCollection('tempCollection');
+            } else {
+                $user->addMediaFromRequest('file')->toMediaCollection('tempCollection');
+            }
+        }
 
         $media = $user->getMedia('tempCollection');
 
-        return response()->json(['data' => PostImagePreviewResource::collection($media)]);
+        return response()->json([
+            'data' => PostImagePreviewResource::collection($media),
+        ]);
     }
 
     public function dropFiles()
@@ -256,6 +335,12 @@ class PostController extends Controller
         Log::info($request->get('id'));
 //        dd($request->all());
 
+            $title = trim($request->get('title'));
+            $desc = trim($request->get('description'));
+
+            if (empty($title) || empty($desc)) {
+                return response()->json(['error' => 'Title and Description cannot be empty or whitespace.'], 400);
+            }
             if (!$request->has('files') || empty($request->get('files'))) {
                 return response()->json([
                     'error' => "Can't create post",
@@ -302,6 +387,31 @@ class PostController extends Controller
 
                 $request->merge(['time_sale_from_date' => $fromDatePost]);
                 $request->merge(['time_sale_to_date' => $toDatePost]);
+            }
+
+            $isFree = $request->get('isFree', null);
+
+            if ($isFree === true) {
+                $request->merge(['fixed_price' => 0, 'post_for_sale' => 0]);
+            } elseif ($isFree === false) {
+                if ($request->get('fixed_price') <= 0) {
+                    return response()->json(
+                        [
+                            'error' => "Can't create post",
+                            'message' => 'Post not created! When isFree is false, fixed_price must be greater than 0.',
+                            'status' => 422,
+                        ],
+                        422
+                    );
+                } else {
+                    $request->merge([
+                        'fixed_price' => $request->get('fixed_price') * 100,
+                        'post_for_sale' => 1,
+                    ]);
+                }
+            } else {
+                // Handle cases where 'isFree' is null or missing from the request
+                $request->merge(['post_for_sale' => 0]);
             }
 
             if ($request->has('fixed_price') && $request->get('fixed_price') > 0) {
@@ -376,28 +486,62 @@ class PostController extends Controller
 
             if ($user->hasMedia('temp')) {
                 foreach ($media as $file) {
-                    $file->copy($post, 'files');
-                    $imgUrl = $file->getUrl();
-                    if (!$user->verify) {
-                        if (str_contains($file->mime_type, 'video')) {
-//                        TODO Change to check video profanity
-                            $result = true;
-                        } else {
-                            $result = $this->checkImage($imgUrl);
+                    try {
+                        // Check if the file exists before proceeding
+                        if (!$file->exists()) {
+                            throw new \Illuminate\Contracts\Filesystem\FileNotFoundException(
+                                "File not found: {$file->getPath()}"
+                            );
                         }
-//                    dd($result);
-                        $post->save();
-                        if ($result['res']) {
 
-                        } else {
-                            $report = new Report();
-                            $report->reason = 'Reported by webpurify image. Post ID ' . $post->id . ' | ' . $result['message'];
-                            $report->status = 'flagged';
-                            $report->reporter_id = 1;
-                            $report->model = 'post';
-                            $report->model_id = $post->id;
-                            $report->save();
+                        $file->copy($post, 'files');
+                        $imgUrl = $file->getUrl();
+
+                        if (!$user->verify) {
+                            if (str_contains($file->mime_type, 'video')) {
+                                // TODO: Change to check video profanity
+                                $result = true;
+                            } else {
+                                $result = $this->checkImage($imgUrl);
+                            }
+                            $post->save();
+
+                            if (is_array($result) && isset($result['res'])) {
+                                if ($result['res']) {
+                                    continue;
+                                } else {
+                                    $report = new Report();
+                                    $report->reason =
+                                        'Reported by webpurify image. Post ID ' .
+                                        $post->id .
+                                        ' | ' .
+                                        $result['message'];
+                                    $report->status = 'flagged';
+                                    $report->reporter_id = 1;
+                                    $report->model = 'post';
+                                    $report->model_id = $post->id;
+                                    $report->save();
+                                }
+                            } else {
+                                // Log an unexpected result format
+                                Log::error(
+                                    'Unexpected result format from checkImage',
+                                    ['result' => $result]
+                                );
+                            }
                         }
+                    } catch (\Illuminate\Contracts\Filesystem\FileNotFoundException $e) {
+                        Log::error('File not found', [
+                            'error' => $e->getMessage(),
+                        ]);
+                        continue;
+                    } catch (\Exception $e) {
+                        Log::error(
+                            'An error occurred while processing the file',
+                            ['error' => $e->getMessage()]
+                        );
+                        // Handle other exceptions
+                        continue;
                     }
                 }
             }

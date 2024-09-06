@@ -54,6 +54,13 @@ class AuthController extends Controller
             return response()->json(['error' => 'Unauthorized', 'message' => 'Wrong email or password'], 401);
         }
 
+        if ($user->status == 'deleted') {
+            return response()->json([
+                'error' => 'Account Deactivated',
+                'message' => 'Your account has been deleted. Please contact support for assistance.'
+            ], 403);
+        }
+
         if ($user->profile != null && $user->profile->phone != null && $user->phoneIsActivated == 1) {
             return $this->respondWithToken($token);
         } else {
