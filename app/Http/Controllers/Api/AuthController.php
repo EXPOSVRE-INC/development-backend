@@ -168,11 +168,9 @@ class AuthController extends Controller
     }
 
     public function verifyPhone(Request $request) {
-        $accountSid = 'AC6abb1faddf2753a7345eeaff127b9d56';
-//        $authToken = config('app.twilio')['TWILIO_AUTH_TOKEN'];
-        $authToken = '754bc1806c83a753bc5ea00a5e0b9563';
-//        $appSid = config('app.twilio')['TWILIO_APP_SID'];
-        $appSid = 'VA77f4eb8c03bd909f7bdc494869f57572';
+        $accountSid = env('TWILIOACCOUNTID');
+        $authToken = env('TWILIOTOKENID');
+        $appSid = env('TWILIOAPPSID');
         $twilio = new Client($accountSid, $authToken);
 
 //        $request->validate(['phone' => 'unique:user_profile']);
@@ -204,11 +202,9 @@ class AuthController extends Controller
     }
 
     public function verifyPhoneCode(Request $request) {
-        $accountSid = 'AC6abb1faddf2753a7345eeaff127b9d56';
-//        $authToken = config('app.twilio')['TWILIO_AUTH_TOKEN'];
-        $authToken = '754bc1806c83a753bc5ea00a5e0b9563';
-//        $appSid = config('app.twilio')['TWILIO_APP_SID'];
-        $appSid = 'VA77f4eb8c03bd909f7bdc494869f57572';
+        $accountSid = env('TWILIOACCOUNTID');
+        $authToken = env('TWILIOTOKENID');
+        $appSid = env('TWILIOAPPSID');
         $twilio = new Client($accountSid, $authToken);
 
         $phoneNumber = auth('api')->user()->profile->phone;
