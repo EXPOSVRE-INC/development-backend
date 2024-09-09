@@ -19,6 +19,7 @@ use App\Models\PostCollection;
 use App\Models\Report;
 use App\Models\User;
 use App\Notifications\LikeNotification;
+use App\Notifications\NewCommentForPost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -819,6 +820,21 @@ class PostController extends Controller
     {
         try {
             $user = auth('api')->user();
+
+            $comment = $request->get('comment');
+            $deepLink = 'EXPOSVRE://postcomment/'. $post->id;
+
+            $notification = new \App\Models\Notification();
+            $notification->title = 'commented on your post';
+            $notification->description = 'commented on your post';
+            $notification->type = 'postcomment';
+            $notification->user_id = $post->owner_id;
+            $notification->sender_id = $post->id;
+            $notification->post_id = $post->id;
+            $notification->deep_link = $deepLink;
+            $notification->save();
+            $post->owner->notify(new NewCommentForPost($user, $comment , $post));
+
             $post->commentAs($user, $request->get('comment'));
             return response()->json(['data' => $post->comments]);
 

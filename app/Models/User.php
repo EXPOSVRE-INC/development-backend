@@ -320,4 +320,15 @@ class User extends Authenticatable implements JWTSubject, HasMedia
     {
         return $this->hasMany(Report::class, 'model_id', 'id')->where(['model' => 'user']);
     }
+
+    public function blocks()
+    {
+        return $this->hasMany(Block::class, 'user_id', 'id');
+    }
+
+    // Users that have blocked this user
+    public function blockedBy()
+    {
+        return $this->hasMany(Block::class, 'blocking_id' , 'id');
+    }
 }

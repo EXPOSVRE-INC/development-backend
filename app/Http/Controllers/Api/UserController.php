@@ -18,6 +18,7 @@ use App\Models\Notification;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
+use App\Models\Block;
 use App\Models\UserSettings;
 use App\Models\UserShippingAddress;
 use App\Notifications\NewSubscription;
@@ -117,6 +118,19 @@ class UserController extends Controller
 
     public function userInfoByUsername($username) {
         $user = User::where(['username' => $username])->first();
+        $currentUserId = auth('api')->user()->id;
+
+        $isBlocked = Block::where(function($query) use ($currentUserId, $user) {
+            $query->where('user_id', $user->id)
+                  ->where('blocking_id', $currentUserId);
+        })->orWhere(function($query) use ($currentUserId, $user) {
+            $query->where('user_id', $currentUserId)
+                  ->where('blocking_id', $user->id);
+        })->exists();
+
+        if ($isBlocked) {
+            return response()->json(['error' => 'Access denied. User profile is blocked.'], 403);
+        }
         if ($user) {
             return response()->json(['data' => new UserInfoResource($user)]);
         } else {
@@ -382,13 +396,17 @@ class UserController extends Controller
     public function subscriptions()
     {
         $user = auth('api')->user();
-        return response()->json(['data' => UserSubscriptionResource::collection($user->subscriptions)]);
+        $subscriptions = $user->subscriptions()->whereHas('profile')->get();
+
+        return response()->json(['data' => UserSubscriptionResource::collection($subscriptions)]);
     }
 
     public function subscribers()
     {
         $user = auth('api')->user();
-        return response()->json(['data' => UserSubscriptionResource::collection($user->subscribers)]);
+        $subscribers = $user->subscribers()->whereHas('profile')->get();
+
+    return response()->json(['data' => UserSubscriptionResource::collection($subscribers)]);
     }
 
     public function subscriptionsAndSubscribersByUserId($id) {
