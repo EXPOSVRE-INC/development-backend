@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Resources;
-
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ImageResource extends JsonResource
@@ -28,8 +27,13 @@ class ImageResource extends JsonResource
         } else if ($this->type == 'video') {
             $data['link'] = $this->getUrl();
             $data['isVideo'] = true;
-//            $data['video'] = route('video-stream', ['uuid' => $this->uuid]);
+
+            $data['thumb'] = $this->hasGeneratedConversion('thumb')
+            ? $this->getUrl('thumb')
+            : $this->getUrl('original');
         }
+
+
 
         return $data;
     }
