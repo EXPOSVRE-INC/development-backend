@@ -684,6 +684,13 @@ class PostController extends Controller
         $user = auth('api')->user();
         $post = Post::where(['id' => $id])->first();
 
+
+            $title = trim($post->title);
+            $desc = trim($post->description);
+
+           if (empty($title) || empty($desc)) {
+                return response()->json(['error' => 'Title and Description cannot be empty or whitespace.'], 400);
+            }
         $postHasFiles = $post->hasMedia('files');
         if (!$postHasFiles && (!$request->has('files') || empty($request->get('files')))) {
             return response()->json([
