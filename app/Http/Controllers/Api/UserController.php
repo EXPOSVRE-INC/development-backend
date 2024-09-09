@@ -412,9 +412,12 @@ class UserController extends Controller
     public function subscriptionsAndSubscribersByUserId($id) {
         $user = User::where(['id' => $id])->first();
 
+        $subscribers =   $user->subscribers()->whereHas('profile')->get();
+        $subscriptions = $user->subscriptions()->whereHas('profile')->get();
+
         return response()->json(['data' => [
-            'subscriptions' => UserSubscriptionResource::collection($user->subscriptions),
-            'subscribers' => UserSubscriptionResource::collection($user->subscribers)
+            'subscriptions' => UserSubscriptionResource::collection($subscriptions),
+            'subscribers' => UserSubscriptionResource::collection($subscribers)
         ]]);
     }
 

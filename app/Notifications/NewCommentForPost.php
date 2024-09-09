@@ -61,6 +61,12 @@ class NewCommentForPost extends Notification
 
         return $apnMessage;
     }
+    public function routeNotificationForApn($notifiable)
+    {
+        dump($notifiable->token);
+        Log::debug('MyNotification routeNotificationForApn called');
+        return $notifiable->token;
+    }
 
     public function toDatabase($notifiable)
     {
@@ -78,5 +84,23 @@ class NewCommentForPost extends Notification
 
 
         return $notification;
+    }
+
+    public function toMail($notifiable)
+    {
+        dump($this);
+        $deepLink = 'EXPOSVRE://postcomment/'. $this->post->id;
+
+        $notification = new \App\Models\Notification();
+        $notification->title = 'commented on your post';
+        $notification->description = 'commented on your post';
+        $notification->type = 'postcomment';
+        $notification->user_id = $this->post->owner_id;
+        $notification->sender_id = $this->user->id;
+        $notification->post_id = $this->post->id;
+        $notification->deep_link = $deepLink;
+        $notification->save();
+
+        return (new MailMessage);
     }
 }

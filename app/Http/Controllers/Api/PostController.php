@@ -29,6 +29,7 @@ use Illuminate\Http\UploadedFile;
 use Imagick;
 use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use function GuzzleHttp\Promise\all;
 
 class PostController extends Controller
@@ -47,10 +48,17 @@ class PostController extends Controller
 
     }
 
-    public function getPost(Post $post)
+    public function getPost($id)
     {
-
-        return new PostResource($post);
+        try {
+            $post = Post::findOrFail($id);
+            return new PostResource($post);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The post has been deleted!',
+            ], 404);
+        }
 
     }
 
