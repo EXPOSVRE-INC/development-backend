@@ -21,7 +21,7 @@ class NotificationResource extends JsonResource
         $data = [
             'id' => $this->id,
             'userId' => $this->sender_id,
-            'username' => ($this->sender->profile) ? $this->sender->profile->firstName . ' ' . $this->sender->profile->lastName : '',
+            'username' => ($this->sender && $this->sender->profile) ? $this->sender->profile->firstName . ' ' . $this->sender->profile->lastName : '',
             'avatar' => ($this->sender) ? $this->sender->getFirstMediaUrl('preview') : '',
             'datetime' => Carbon::createFromFormat('Y-m-d H:i:s', $this->created_at)->timestamp,
             'deeplink' => $this->deep_link,

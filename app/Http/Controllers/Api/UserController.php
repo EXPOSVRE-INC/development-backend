@@ -481,9 +481,15 @@ class UserController extends Controller
     }
 
     public function getNotificationsList(Request $request) {
-        $notifications = auth()->user()->notifications;
+        $user = auth()->user();
 
-        return response()->json(['data' => NotificationResource::collection($notifications)]);
+        if ($user->profile) {
+            $notifications = $user->notifications;
+
+            return response()->json(['data' => NotificationResource::collection($notifications)]);
+        }
+
+       return response()->json(['data' => []], 404);
     }
 
     public function marketLike($id) {
