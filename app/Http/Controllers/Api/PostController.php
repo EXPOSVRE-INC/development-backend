@@ -844,7 +844,7 @@ class PostController extends Controller
             $notification->description = 'commented on your post';
             $notification->type = 'postcomment';
             $notification->user_id = $post->owner_id;
-            $notification->sender_id = $post->id;
+            $notification->sender_id = $user->id;
             $notification->post_id = $post->id;
             $notification->deep_link = $deepLink;
             $notification->save();
