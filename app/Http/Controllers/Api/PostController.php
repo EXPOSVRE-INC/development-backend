@@ -56,7 +56,7 @@ class PostController extends Controller
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'The post has been deleted!',
+                'message' => 'The post has been deleted',
             ], 404);
         }
 
