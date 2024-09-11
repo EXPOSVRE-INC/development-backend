@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,9 @@ use Illuminate\Support\Facades\Route;
 //Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 //    return $request->user();
 //});
+Route::get('publish', [AuthController::class, 'publishMessage']);
+// Route::get('publish', 'AuthController@publishMessage');
+
 
 Route::group([
     'middleware' => ['api', 'x-token'],
@@ -244,7 +248,7 @@ Route::group([
             Route::get('/block/{id}', 'UserController@blockUser');
             Route::get('/blocked/list', 'UserController@blockedList');
             Route::get('/unblock/{id}', 'UserController@unblockUser');
-            
+
             Route::post('/feed', 'UserController@feed');
 
             Route::post('/set-push-token', 'UserController@setToken');

@@ -27,7 +27,6 @@ use Twilio\Rest\Client;
 
 class AuthController extends Controller
 {
-
     private $stripeService;
     /**
      * Create a new AuthController instance.
@@ -37,7 +36,16 @@ class AuthController extends Controller
     public function __construct(StripeService $stripeService)
     {
         $this->stripeService = $stripeService;
-        $this->middleware('auth:api', ['except' => ['login', 'register', 'sendRecoveryPassword', 'resetPassword', 'confirmResetPassword']]);
+        $this->middleware('auth:api', [
+            'except' => [
+                'login',
+                'register',
+                'sendRecoveryPassword',
+                'resetPassword',
+                'confirmResetPassword',
+                'publishMessage'
+            ],
+        ]);
     }
 
     /**
@@ -47,26 +55,45 @@ class AuthController extends Controller
      */
     public function login()
     {
-	$credentials = request(['email', 'password']);
+        $credentials = request(['email', 'password']);
         $user = User::where(['email' => $credentials['email']])->first();
 
-        if (! $token = auth('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized', 'message' => 'Wrong email or password'], 401);
+        if (!($token = auth('api')->attempt($credentials))) {
+            return response()->json(
+                [
+                    'error' => 'Unauthorized',
+                    'message' => 'Wrong email or password',
+                ],
+                401
+            );
         }
 
         if ($user->status == 'deleted') {
-            return response()->json([
-                'error' => 'Account Deactivated',
-                'message' => 'Your account has been deleted. Please contact support for assistance.'
-            ], 403);
+            return response()->json(
+                [
+                    'error' => 'Account Deactivated',
+                    'message' =>
+                        'Your account has been deleted. Please contact support for assistance.',
+                ],
+                403
+            );
         }
 
-        if ($user->profile != null && $user->profile->phone != null && $user->phoneIsActivated == 1) {
+        if (
+            $user->profile != null &&
+            $user->profile->phone != null &&
+            $user->phoneIsActivated == 1
+        ) {
             return $this->respondWithToken($token);
         } else {
-            return response()->json(['error' => 'Unauthorized', 'message' => 'Your phone number unverified'], 401);
+            return response()->json(
+                [
+                    'error' => 'Unauthorized',
+                    'message' => 'Your phone number unverified',
+                ],
+                401
+            );
         }
-
     }
 
     /**
@@ -122,7 +149,6 @@ class AuthController extends Controller
             $user->subscribe($exposureUser);
         }
 
-
         return new UserResource($user);
     }
 
@@ -136,12 +162,13 @@ class AuthController extends Controller
         $user->save();
 
         return new UserResource($user);
-
     }
 
-    public function registerProfile(Request $request) {
-
-        $profile = UserProfile::firstOrNew(['user_id' => auth('api')->user()->id]);
+    public function registerProfile(Request $request)
+    {
+        $profile = UserProfile::firstOrNew([
+            'user_id' => auth('api')->user()->id,
+        ]);
         $user = auth('api')->user();
 
         if ($request->has('username')) {
@@ -150,8 +177,14 @@ class AuthController extends Controller
         }
         $profile->firstName = $request->get('firstName');
         $profile->lastName = $request->get('lastName');
-        $profile->birthDate = Carbon::createFromTimestamp($request->get('birthDate'));
-        if ($profile->phone == NULL || $profile->phone == "" || $request->has('phone')) {
+        $profile->birthDate = Carbon::createFromTimestamp(
+            $request->get('birthDate')
+        );
+        if (
+            $profile->phone == null ||
+            $profile->phone == '' ||
+            $request->has('phone')
+        ) {
             $profile->phone = $request->get('phone');
         }
         $profile->jobTitle = $request->get('jobTitle');
@@ -167,82 +200,113 @@ class AuthController extends Controller
         return response()->json(['data' => new UserResource($user)]);
     }
 
-    public function verifyPhone(Request $request) {
+    public function verifyPhone(Request $request)
+    {
         $accountSid = env('TWILIOACCOUNTID');
         $authToken = env('TWILIOTOKENID');
         $appSid = env('TWILIOAPPSID');
         $twilio = new Client($accountSid, $authToken);
 
-//        $request->validate(['phone' => 'unique:user_profile']);
-        $result = $twilio->verify->v2->services($appSid)
-            ->verifications
-            ->create('+' . $request->get('phone'), 'sms');
+        //        $request->validate(['phone' => 'unique:user_profile']);
+        try {
+            $result = $twilio->verify->v2
+                ->services($appSid)
+                ->verifications->create('+' . $request->get('phone'), 'sms');
 
-        $user = auth('api')->user();
-
-        if ($user->profile == null) {
-            $newProfile = new UserProfile();
-//            $newProfile->id = 0;
-            $newProfile->user_id = $user->id;
-            $newProfile->firstName = "";
-            $newProfile->lastName = "";
-            $newProfile->phone = $request->get('phone');
-            $newProfile->jobTitle = "";
-            $newProfile->jobDescription = "";
-            $user->profile = $newProfile;
-            $newProfile->save();
-            $profile = $newProfile;
-        } else {
-            $profile = auth('api')->user()->profile;
-        }
-        $profile->phone = $request->get('phone');
-        $profile->save();
-
-        return response()->json(['data' => true]);
-    }
-
-    public function verifyPhoneCode(Request $request) {
-        $accountSid = env('TWILIOACCOUNTID');
-        $authToken = env('TWILIOTOKENID');
-        $appSid = env('TWILIOAPPSID');
-        $twilio = new Client($accountSid, $authToken);
-
-        $phoneNumber = auth('api')->user()->profile->phone;
-        if ($phoneNumber == null || $phoneNumber == "") {
-            $phoneNumber = $request->get('phone');
-            $userProfile = auth('api')->user()->profile;
-            $userProfile->phone = $phoneNumber;
-            $userProfile->save();
-        }
-
-
-        $verification = $twilio->verify->v2->services($appSid)
-            ->verificationChecks
-            ->create([
-                'to' => '+' . $phoneNumber,
-                'code' => $request->get('code')
-            ]);
-
-        $userProfile = auth('api')->user()->profile;
-        $userProfile->phone = $phoneNumber;
-        $userProfile->save();
-
-        if ($verification->valid) {
             $user = auth('api')->user();
-            $user->phoneIsActivated = true;
-            $user->save();
+
+            if ($user->profile == null) {
+                $newProfile = new UserProfile();
+                $newProfile->user_id = $user->id;
+                $newProfile->phone = $request->get('phone');
+                $user->profile = $newProfile;
+                $newProfile->save();
+                $profile = $newProfile;
+            } else {
+                $profile = auth('api')->user()->profile;
+            }
+            $profile->phone = $request->get('phone');
+            $profile->save();
+
             return response()->json(['data' => true]);
-        } else {
-            return response()->json(['data' => false]);
+
+        } catch (\Twilio\Exceptions\RestException $e) {
+            return response()->json([
+                'data' => false,
+                'error' =>  $e->getMessage(),
+                'message'=>"The phone number is unverified"
+            ], 403);
         }
     }
 
-    public function verifyEmail(Request $request) {
+    public function verifyPhoneCode(Request $request)
+    {
+        $accountSid = env('TWILIOACCOUNTID');
+        $authToken = env('TWILIOTOKENID');
+        $appSid = env('TWILIOAPPSID');
+        $twilio = new Client($accountSid, $authToken);
 
+        try {
+            // Check if Service SID is set
+            if (empty($appSid)) {
+                return response()->json([
+                    'data' => false,
+                    'error' => 'Twilio Service SID is missing or invalid.'
+                ], 400);
+            }
+
+            // Get the phone number from the user's profile
+            $phoneNumber = auth('api')->user()->profile->phone;
+            if (empty($phoneNumber)) {
+                $phoneNumber = $request->get('phone');
+                $userProfile = auth('api')->user()->profile;
+                $userProfile->phone = $phoneNumber;
+                $userProfile->save();
+            }
+
+            // Verify the code using Twilio
+            $verification = $twilio->verify->v2
+                ->services($appSid)
+                ->verificationChecks->create([
+                    'to' => '+' . $phoneNumber,
+                    'code' => $request->get('code'),
+                ]);
+
+            // If verification is valid, activate the phone number
+            if ($verification->valid) {
+                $user = auth('api')->user();
+                $user->phoneIsActivated = true;
+                $user->save();
+                return response()->json(['data' => true]);
+            } else {
+                // Handle invalid OTP
+                return response()->json([
+                    'data' => false,
+                    'error' => 'Invalid verification code.'
+                ], 400);
+            }
+
+        } catch (\Twilio\Exceptions\RestException $e) {
+            // Handle specific Twilio errors (like wrong Service SID)
+            return response()->json([
+                'data' => false,
+                'error' => 'Twilio Error: ' . $e->getMessage()
+            ], $e->getStatusCode() ?? 403);
+        } catch (\Exception $e) {
+            // Handle general errors
+            return response()->json([
+                'data' => false,
+                'error' => 'An unexpected error occurred: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
-    public function verifyEmailCode(Request $request) {
+    public function verifyEmail(Request $request)
+    {
+    }
 
+    public function verifyEmailCode(Request $request)
+    {
     }
 
     /**
@@ -257,21 +321,28 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-//            'expires_in' => -1
-//            'expires_in' => auth()->factory()->getTTL() * 60
+            //            'expires_in' => -1
+            //            'expires_in' => auth()->factory()->getTTL() * 60
         ]);
     }
 
-    public function changePassword(Request $request) {
+    public function changePassword(Request $request)
+    {
         #Match The Old Password
-        if(!Hash::check($request->old_password, auth('api')->user()->password)){
-            return response()->json(['error' => true, 'status' => "error", 'message' => "Old Password Doesn't match!"]);
+        if (
+            !Hash::check($request->old_password, auth('api')->user()->password)
+        ) {
+            return response()->json([
+                'error' => true,
+                'status' => 'error',
+                'message' => "Old Password Doesn't match!",
+            ]);
         }
 
         #Update the new Password
         if ($request->new_password == $request->confirm_password) {
             User::whereId(auth('api')->user()->id)->update([
-                'password' => Hash::make($request->new_password)
+                'password' => Hash::make($request->new_password),
             ]);
 
             return response()->json(['data' => []]);
@@ -279,12 +350,13 @@ class AuthController extends Controller
             return response()->json([
                 'error' => true,
                 'status' => 'error',
-                'message' => "New password and Confirm password Doesn't match!"
+                'message' => "New password and Confirm password Doesn't match!",
             ]);
         }
     }
 
-    public function setAddress(Request $request) {
+    public function setAddress(Request $request)
+    {
         $user = auth('api')->user();
         if ($user->address) {
             $user->address->delete();
@@ -301,53 +373,66 @@ class AuthController extends Controller
         $address->save();
 
         return response()->json(['data' => new UserAddressResource($address)]);
-//        $address->lat = $request->get('lat');
-//        $address->lon = $request->get('lon');
+        //        $address->lat = $request->get('lat');
+        //        $address->lon = $request->get('lon');
     }
 
-    public function getAddress() {
+    public function getAddress()
+    {
         $user = auth('api')->user();
         if ($user->address) {
-            return response()->json(['data' => new UserAddressResource($user->address)]);
+            return response()->json([
+                'data' => new UserAddressResource($user->address),
+            ]);
         } else {
-            return response()->json(['data' =>
-            [
-                'country' => '',
-                'state' => '',
-                'city' => '',
-                'zip' => '',
-                'address' => '',
-            ]
+            return response()->json([
+                'data' => [
+                    'country' => '',
+                    'state' => '',
+                    'city' => '',
+                    'zip' => '',
+                    'address' => '',
+                ],
             ]);
         }
     }
 
-    public function addPaymentData(Request $request) {
-
+    public function addPaymentData(Request $request)
+    {
         $user = auth('api')->user();
         if (!$user->stripeCustomerId) {
             $customer = $this->stripeService->createCustomer($request, $user);
             $customerId = $customer->id;
         } else {
-//            $client = new StripeClient(env('STRIPE_SECRET'));
-//
-//            $client->paymentMethods->attach($request->stripePaymentMethod, [
-//                'customer' => $user->stripeCustomerId
-//            ]);
+            //            $client = new StripeClient(env('STRIPE_SECRET'));
+            //
+            //            $client->paymentMethods->attach($request->stripePaymentMethod, [
+            //                'customer' => $user->stripeCustomerId
+            //            ]);
 
             $card = $this->stripeService->createCard($request->all());
-//            $customer = Customer::createSource($user->stripeCustomerId, ['paymentMethod' => $card->id]);
-//            $customerId = $user->stripeCustomerId;
+            //            $customer = Customer::createSource($user->stripeCustomerId, ['paymentMethod' => $card->id]);
+            //            $customerId = $user->stripeCustomerId;
         }
 
-        return response()->json(['data' => PaymentCardResource::collection(auth('api')->user()->paymentCards)]);
+        return response()->json([
+            'data' => PaymentCardResource::collection(
+                auth('api')->user()->paymentCards
+            ),
+        ]);
     }
 
-    public function getCardList() {
-        return response()->json(['data' => PaymentCardResource::collection(auth('api')->user()->paymentCards)]);
+    public function getCardList()
+    {
+        return response()->json([
+            'data' => PaymentCardResource::collection(
+                auth('api')->user()->paymentCards
+            ),
+        ]);
     }
 
-    public function getFinishRegistration() {
+    public function getFinishRegistration()
+    {
         $user = auth('api')->user();
         $user->isConfirmed = true;
         $user->save();
@@ -355,29 +440,32 @@ class AuthController extends Controller
         return response()->json(['data' => new UserResource($user)]);
     }
 
-    public function sendRecoveryPassword(Request $request) {
+    public function sendRecoveryPassword(Request $request)
+    {
         if ($request->has('email')) {
-            $status = Password::sendResetLink(
-                $request->only('email')
-            );
+            $status = Password::sendResetLink($request->only('email'));
 
             return response()->json(['data' => $status]);
 
-//            Mail::to($request->get('email'))->send(new ResetPassword($data));
+            //            Mail::to($request->get('email'))->send(new ResetPassword($data));
         }
     }
 
-    public function resetPassword($token, Request $request) {
+    public function resetPassword($token, Request $request)
+    {
         $user = User::where(['email' => $request->get('email')])->first();
         $checkToken = Password::tokenExists($user, $token);
         if ($checkToken == true) {
-            return redirect()->to('EXPOSVRE://passwordreset/' . $user->email . '/' . $token);
+            return redirect()->to(
+                'EXPOSVRE://passwordreset/' . $user->email . '/' . $token
+            );
         } else {
             return response()->json(['data' => 'Wrong token!']);
         }
     }
 
-    public function confirmResetPassword(Request $request) {
+    public function confirmResetPassword(Request $request)
+    {
         $request->merge(['password_confirmation' => $request->get('password')]);
         $request->validate([
             'token' => 'required',
@@ -385,11 +473,18 @@ class AuthController extends Controller
             'password' => 'required|min:8|confirmed',
         ]);
         $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
+            $request->only(
+                'email',
+                'password',
+                'password_confirmation',
+                'token'
+            ),
             function ($user, $password) {
-                $user->forceFill([
-                    'password' => $password
-                ])->setRememberToken(Str::random(60));
+                $user
+                    ->forceFill([
+                        'password' => $password,
+                    ])
+                    ->setRememberToken(Str::random(60));
 
                 $user->save();
 
@@ -398,5 +493,8 @@ class AuthController extends Controller
         );
 
         return response()->json(['data' => $status]);
+    }
+    public function publishMessage(){
+      echo "heyyy";
     }
 }
