@@ -24,6 +24,8 @@ use Illuminate\Support\Str;
 use Stripe\Customer;
 use Stripe\StripeClient;
 use Twilio\Rest\Client;
+use Illuminate\Support\Facades\Validator;
+
 
 class AuthController extends Controller
 {
@@ -43,7 +45,8 @@ class AuthController extends Controller
                 'sendRecoveryPassword',
                 'resetPassword',
                 'confirmResetPassword',
-                'publishMessage'
+                'publishMessage',
+                'twoFaVerifyPhoneCode',
             ],
         ]);
     }
@@ -56,7 +59,7 @@ class AuthController extends Controller
     public function login()
     {
         $credentials = request(['email', 'password']);
-        $user = User::where(['email' => $credentials['email']])->first();
+        $user = User::where(['email' => $credentials['email']])->with('profile')->first();
 
         if (!($token = auth('api')->attempt($credentials))) {
             return response()->json(
@@ -79,6 +82,22 @@ class AuthController extends Controller
             );
         }
 
+        if ($user->twoFactorEnabled == 1) {
+            if ($user->profile && $user->profile->phone) {
+                $this->sendOtp($user->profile->phone);
+                return response()->json([
+                    'phone' => $user->profile->phone,
+                ]);
+            }
+
+            return response()->json(
+                [
+                    'error' => 'Unauthorized',
+                    'message' => 'Your phone number is not registered.',
+                ],
+                401
+            );
+        }
         if (
             $user->profile != null &&
             $user->profile->phone != null &&
@@ -171,10 +190,16 @@ class AuthController extends Controller
         ]);
         $user = auth('api')->user();
 
+        if (!$profile->firstName && !$request->has('firstName')) {
+            return response()->json(['error' => 'First name is required'], 422);
+        }
+
         if ($request->has('username')) {
             $user->username = $request->get('username');
-            $user->save();
         }
+
+        $user->twoFactorEnabled  = $request->get('twoFactorEnabled') ?? false;
+        $user->save();
         $profile->firstName = $request->get('firstName');
         $profile->lastName = $request->get('lastName');
         $profile->birthDate = Carbon::createFromTimestamp(
@@ -497,4 +522,105 @@ class AuthController extends Controller
     public function publishMessage(){
       echo "heyyy";
     }
+
+    protected function sendOtp($phoneNumber)
+    {
+        $accountSid = env('TWILIOACCOUNTID');
+        $authToken = env('TWILIOTOKENID');
+        $appSid = env('TWILIOAPPSID');
+        $twilio = new \Twilio\Rest\Client($accountSid, $authToken);
+
+        try {
+            $twilio->verify->v2
+                ->services($appSid)
+                ->verifications
+                ->create('+' . $phoneNumber, 'sms');
+        } catch (\Twilio\Exceptions\RestException $e) {
+            // Handle Twilio errors
+            throw new \Exception('Failed to send OTP: ' . $e->getMessage());
+        }
+    }
+
+    public function twoFaVerifyPhoneCode(Request $request)
+    {
+        $accountSid = env('TWILIOACCOUNTID');
+        $authToken = env('TWILIOTOKENID');
+        $appSid = env('TWILIOAPPSID');
+        $twilio = new Client($accountSid, $authToken);
+
+
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required',
+            'code' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Validation errors occurred.',
+                    'errors' => $validator->errors(),
+                ],
+                422
+            );
+        }
+
+        try {
+            if (empty($appSid)) {
+                return response()->json([
+                    'data' => false,
+                    'error' => 'Twilio Service SID is missing or invalid.'
+                ], 400);
+            }
+
+            $phoneNumber = $request->get('phone');
+
+            $verification = $twilio->verify->v2
+                ->services($appSid)
+                ->verificationChecks->create([
+                    'to' => '+' . $phoneNumber,
+                    'code' => $request->get('code'),
+                ]);
+
+            if ($verification->valid) {
+                $profile = UserProfile::where('phone', $phoneNumber)->first();
+
+                if ($profile && $profile->user) {
+                    $user = $profile->user;
+                    $user->phoneIsActivated = true;
+                    $user->save();
+
+                    $token = auth('api')->login($user);
+
+                    return response()->json([
+                        'data' => true,
+                        'access_token' => $token,
+                        'token_type' => 'bearer',
+                    ]);
+                } else {
+                    return response()->json([
+                        'data' => false,
+                        'error' => 'User not found for the provided phone number.'
+                    ], 404);
+                }
+            } else {
+                return response()->json([
+                    'data' => false,
+                    'error' => 'Invalid verification code.'
+                ], 400);
+            }
+
+        } catch (\Twilio\Exceptions\RestException $e) {
+            return response()->json([
+                'data' => false,
+                'error' => 'Twilio Error: ' . $e->getMessage()
+            ], $e->getStatusCode() ?? 403);
+        } catch (\Exception $e) {
+            return response()->json([
+                'data' => false,
+                'error' => 'An unexpected error occurred: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }
