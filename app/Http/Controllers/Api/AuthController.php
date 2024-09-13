@@ -525,6 +525,7 @@ class AuthController extends Controller
 
     protected function sendOtp($phoneNumber)
     {
+        //send otp
         $accountSid = env('TWILIOACCOUNTID');
         $authToken = env('TWILIOTOKENID');
         $appSid = env('TWILIOAPPSID');
