@@ -27,6 +27,7 @@ use AWS\CRT\Log;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
 use function Aws\filter;
 
 class UserController extends Controller
@@ -396,15 +397,30 @@ class UserController extends Controller
     public function subscriptions()
     {
         $user = auth('api')->user();
-        $subscriptions = $user->subscriptions()->whereHas('profile')->get();
-
+        $subscriptions = $user->subscriptions()
+            ->whereHas('profile')
+            ->whereDoesntHave('blockedBy', function (Builder $query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->whereDoesntHave('blocks', function (Builder $query) use ($user) {
+                $query->where('blocking_id', $user->id);
+            })
+            ->get();
         return response()->json(['data' => UserSubscriptionResource::collection($subscriptions)]);
     }
 
     public function subscribers()
     {
         $user = auth('api')->user();
-        $subscribers = $user->subscribers()->whereHas('profile')->get();
+        $subscribers = $user->subscribers()
+            ->whereHas('profile')
+            ->whereDoesntHave('blockedBy', function (Builder $query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->whereDoesntHave('blocks', function (Builder $query) use ($user) {
+                $query->where('blocking_id', $user->id);
+            })
+            ->get();
 
     return response()->json(['data' => UserSubscriptionResource::collection($subscribers)]);
     }
@@ -508,7 +524,6 @@ class UserController extends Controller
 
     public function setupSettings(Request $request) {
         $user = auth('api')->user();
-        // echo "<pre>";print_r($request->all());die;
         if ($user->setting) {
             $user->setting->update($request->only('followersHidden','followedHidden'));
             $setting = $user->setting;

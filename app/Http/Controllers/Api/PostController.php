@@ -1009,10 +1009,16 @@ class PostController extends Controller
             if ($post->publish_date == null || $post->publish_date <= $now) {
                 if ($user->isBlocking($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
                     return false;
-                } else {
+                }
+                if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                    return false;
+                }
+                else {
                     return true;
                 }
-            } else {
+            }
+
+            else {
                 return false;
             }
         });
@@ -1040,7 +1046,15 @@ class PostController extends Controller
                 } else {
                     return true;
                 }
-            } else {
+            }
+            else if ($user->isBlockedBy($post->owner) || $post->publish_date == null || $post->publish_date <= $now) {
+                if ($post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+            else {
                 return false;
             }
         });

@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Resources;
-
+use Illuminate\Database\Eloquent\Builder;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -39,8 +39,27 @@ class UserSubscriptionResource extends JsonResource
             'verify' => (bool) $this->verify,
             'subscribed' => auth('api')->user()->isSubscriber($this->id),
             'subscribing' => auth('api')->user()->isSubscription($this->id),
-            'followers' => $this->subscribers()->count(),
-            'followed' => $this->subscriptions()->count(),
+            // 'followers' => $this->subscribers()->count(),
+            // 'followed' => $this->subscriptions()->count(),
+
+            'followers' => auth('api')->user()->subscribers()
+                ->whereHas('profile')
+                ->whereDoesntHave('blockedBy', function (Builder $query) {
+                    $query->where('user_id', $this->id);
+                })
+                ->whereDoesntHave('blocks', function (Builder $query) {
+                    $query->where('blocking_id', $this->id);
+                })
+                ->count(),
+            'followed' => auth('api')->user()->subscriptions()
+                ->whereHas('profile')
+                ->whereDoesntHave('blockedBy', function (Builder $query) {
+                    $query->where('user_id', $this->id);
+                })
+                ->whereDoesntHave('blocks', function (Builder $query) {
+                    $query->where('blocking_id', $this->id);
+                })
+                ->count(),
             'followersHidden' => $this->setting ? (bool) $this->setting->followersHidden : false,
             'followedHidden' => $this->setting ? (bool) $this->setting->followedHidden : false,
         ];

@@ -97,11 +97,11 @@ class SearchController extends Controller
                 ->pluck('blocking_id')
                 ->toArray();
 
+
             $blockedByUserIds = Block::where('blocking_id', $currentUser->id)
                 ->pluck('user_id')
                 ->toArray();
 
-            $excludedUserIds = array_merge($blockedUserIds, $blockedByUserIds);
 
             $searchTerm = $query; // Store the search term in a separate variable
 
@@ -112,8 +112,15 @@ class SearchController extends Controller
                             ->where('firstName', 'LIKE', '%' . $searchTerm . '%')
                             ->orWhere('lastName', 'LIKE', '%' . $searchTerm . '%');
                     });
-            })->whereNotIn('id', $excludedUserIds);
+            });
 
+            if (!empty($blockedByUserIds)) {
+                $peopleQuery->whereNotIn('id', $blockedByUserIds);
+            }
+
+            if (in_array($currentUser->id, $blockedUserIds)) {
+                $peopleQuery->whereNotIn('id', $blockedUserIds);
+            }
             $people = $peopleQuery->limit(100)->get();
 
             return response()->json([

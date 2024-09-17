@@ -35,23 +35,36 @@ class PaymentController extends Controller
         return response()->json(['data' => $account]);
     }
 
+    public function createStripeBankAccount(Request $request) {
+        $account = $this->stripeService->createBankAccount($request);
+
+        return response()->json(['data' => $account]);
+    }
+
     public function buyPost(Request $request) {
         $order = $this->stripeService->buy($request);
         return response()->json(['data' => new PurchasesResource($order)]);
     }
 
     public function listAccountPayoutMethods(Request $request) {
+
         $user = auth('api')->user();
         $account = Account::retrieve($user->stripeAccountId, []);
 
-        if (auth('api')->user()->paymentAccounts->count() < 1 && $account->external_accounts != null ){
-            $externalAccount = new PaymentAccount();
-            $externalAccount->stripeId = $account->external_accounts->data[0]->id;
-            $externalAccount->accountNumber = $account->external_accounts->data[0]->last4;
-            $externalAccount->nameOfBank = $account->external_accounts->data[0]->bank_name;
-            $externalAccount->user_id = $user->id;
-            $externalAccount->isActive = 1;
-            $externalAccount->save();
+
+        if ($account->external_accounts && count($account->external_accounts->data) > 0) {
+            if (auth('api')->user()->paymentAccounts->count() < 1) {
+                $externalAccountData = $account->external_accounts->data[0];
+
+                // Create a new PaymentAccount record
+                $externalAccount = new PaymentAccount();
+                $externalAccount->stripeId = $externalAccountData->id;
+                $externalAccount->accountNumber = $externalAccountData->last4;
+                $externalAccount->nameOfBank = $externalAccountData->bank_name;
+                $externalAccount->user_id = $user->id;
+                $externalAccount->isActive = 1;
+                $externalAccount->save();
+            }
         }
         auth('api')->user()->refresh();
 

@@ -99,6 +99,7 @@ Route::group([
             Route::post('/set-default-payout-method', 'PaymentController@setDefaultAccount');
 
             Route::post('/account', 'PaymentController@addStripeAccount');
+            Route::post('/create-bank-account', 'PaymentController@createStripeBankAccount');
             Route::get('/list-payouts', 'PaymentController@listAccountPayoutMethods');
 
             Route::post('/buy', 'PaymentController@buyPost');
