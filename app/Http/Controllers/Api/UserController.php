@@ -111,8 +111,9 @@ class UserController extends Controller
     {
         $user = User::where(['id' => $id])->first();
         $currentUser = auth()->user();
-        if ($currentUser && $currentUser->hasBlocked($id)) {
-            return response()->json(['error' => 'You have blocked this user.'], 403);
+
+        if ($user->hasBlocked($currentUser->id)) {
+            return response()->json(['error' => 'You do not have access to this user’s profile because they have blocked you.'], 403);
         }
         if ($user) {
             return new UserInfoResource($user);
