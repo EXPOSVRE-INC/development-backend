@@ -836,6 +836,10 @@ class PostController extends Controller
         try {
             $user = auth('api')->user();
 
+            if ($post->owner->hasBlocked($user->id)) {
+                return response()->json(['error' => 'You cannot comment on this post because the owner has blocked you.'], 403);
+            }
+
             $comment = $request->get('comment');
             $deepLink = 'EXPOSVRE://postcomment/'. $post->id;
 
@@ -931,6 +935,10 @@ class PostController extends Controller
     public function likePost(Post $post)
     {
         $user = auth('api')->user();
+
+        if ($post->owner->hasBlocked($user->id)) {
+            return response()->json(['error' => 'You cannot like this post because the owner has blocked you.'], 403);
+        }
 
         $deepLink = 'EXPOSVRE://postlike/'. $post->id;
 
@@ -1075,6 +1083,10 @@ class PostController extends Controller
     public function favoritePost(Post $post)
     {
         $user = auth('api')->user();
+
+        if ($post->owner->hasBlocked($user->id)) {
+            return response()->json(['error' => 'You cannot favorite this post because the owner has blocked you.'], 403);
+        }
         $user->favorite($post);
         $post->touch();
 
