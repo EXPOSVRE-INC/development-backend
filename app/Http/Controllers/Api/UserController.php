@@ -110,6 +110,10 @@ class UserController extends Controller
     public function userInfo($id)
     {
         $user = User::where(['id' => $id])->first();
+        $currentUser = auth()->user();
+        if ($currentUser && $currentUser->hasBlocked($id)) {
+            return response()->json(['error' => 'You have blocked this user.'], 403);
+        }
         if ($user) {
             return new UserInfoResource($user);
         } else {
