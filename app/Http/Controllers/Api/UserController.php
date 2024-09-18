@@ -502,7 +502,13 @@ class UserController extends Controller
         if ($user->profile) {
             $notifications = $user->notifications;
 
-            return response()->json(['data' => NotificationResource::collection($notifications)]);
+        $filteredNotifications = $notifications->filter(function($notification) use ($user) {
+            $senderId = $notification->sender_id ?? '';
+
+            return !$user->hasBlocked($senderId);
+        });
+
+            return response()->json(['data' => NotificationResource::collection($filteredNotifications)]);
         }
 
        return response()->json(['data' => []], 404);
