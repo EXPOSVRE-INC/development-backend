@@ -19,6 +19,7 @@ class CheckMqttBlock extends Command
     // Listen to chat messages
     public function handle()
     {
+        //mqtt connection
         $mqtt = MQTT::connection();
 
         $mqtt->subscribe(
