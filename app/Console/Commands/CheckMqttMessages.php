@@ -48,7 +48,7 @@ class CheckMqttMessages extends Command
             if ($message->received == false) {
                 $userFrom = User::where(['id' => $message->from])->first();
                 $userTo = User::where(['id' => $message->to])->first();
-                $deepLink = 'EXPOSVRE://user/'. $this->sender->id;
+                $deepLink = 'EXPOSVRE://user/'. $userFrom->id;
 
                 $notification = new \App\Models\Notification();
                 $notification->title = 'You have new message from,' . $userFrom->username;

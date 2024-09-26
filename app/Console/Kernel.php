@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\CheckMqttBlock;
 use App\Console\Commands\CheckMqttComments;
 use App\Console\Commands\CheckMqttMessages;
 use App\Console\Commands\ClearLastDayViewsCount;
@@ -15,6 +16,7 @@ class Kernel extends ConsoleKernel
         Commands\RemovePostsWithoutImage::class,
         CheckMqttComments::class,
         CheckMqttMessages::class,
+        CheckMqttBlock::class,
         ClearLastDayViewsCount::class
     ];
     /**
