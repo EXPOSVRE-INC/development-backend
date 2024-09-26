@@ -37,6 +37,7 @@ class CheckMqttBlock extends Command
 
                 if ($isBlocked && (!isset($messageData['removed']) || $messageData['removed'] !== true)) {
                     $messageData['removed'] = true;
+                    $messageData['received'] = false;
 
                     $updatedMessage = json_encode($messageData);
 
