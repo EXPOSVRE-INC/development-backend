@@ -5,6 +5,7 @@ namespace App\Console;
 use App\Console\Commands\CheckMqttBlock;
 use App\Console\Commands\CheckMqttComments;
 use App\Console\Commands\CheckMqttMessages;
+use App\Console\Commands\CheckMqttUnblock;
 use App\Console\Commands\ClearLastDayViewsCount;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -17,6 +18,7 @@ class Kernel extends ConsoleKernel
         CheckMqttComments::class,
         CheckMqttMessages::class,
         CheckMqttBlock::class,
+        CheckMqttUnblock::class,
         ClearLastDayViewsCount::class
     ];
     /**
