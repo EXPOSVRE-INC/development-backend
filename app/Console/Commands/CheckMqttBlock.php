@@ -83,13 +83,11 @@ class CheckMqttBlock extends Command
         Log::info("Published to receiver chat/{$userTo}/update: " . $receiverMessage);
     }
 
-    // Handle logic for when users are unblocked
     protected function handleUnblockedUsers($userFrom, $userTo)
     {
         Log::info('Handling unblock event...');
         $mqtt = MQTT::connection();
 
-        // Notify sender that chat is visible again
         $senderMessage = json_encode([
             'action' => 'unblock',
             'message' => 'You have unblocked the user. The conversation is now visible.',
@@ -98,7 +96,6 @@ class CheckMqttBlock extends Command
         $mqtt->publish("chat/{$userFrom}/update", $senderMessage);
         Log::info("Published unblock to sender chat/{$userFrom}/update: " . $senderMessage);
 
-        // Notify receiver that chat is visible again
         $receiverMessage = json_encode([
             'action' => 'unblock',
             'message' => 'This conversation is now visible due to an unblock.',
