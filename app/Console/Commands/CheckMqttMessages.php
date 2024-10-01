@@ -63,6 +63,7 @@ class CheckMqttMessages extends Command
                 $userTo->notify(new MessageNewNotification($userFrom, $userTo, $message->message));
 
             }
+            //ddd
                // handle block and unblock users at real-time
                 $fromId = $message->from;
                 $toId = $message->to;
