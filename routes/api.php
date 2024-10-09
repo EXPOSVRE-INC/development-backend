@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ChatController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -265,7 +266,6 @@ Route::group([
             Route::post('/tag/remove', 'UserController@removeTag');
 
             Route::post('/sort-posts', 'PostController@sortPostsOrderForDashboard');
-
             Route::group([
                 'prefix' => 'interests',
             ], function ($router) {
@@ -299,5 +299,17 @@ Route::group([
         ], function ($router) {
             Route::get('/', 'CategoryInterestsController@index');
         });
+        Route::group([
+            'prefix' => 'conversations',
+            'middleware' => ['auth:api']
+        ], function ($router) {
+            Route::get('/', [ChatController::class, 'index']); // List all conversations
+            Route::get('/messages/{id}', [ChatController::class, 'fetchMessage']); // List all messages in a conversation
+            Route::get('/fetch-message/{to}', [ChatController::class, 'getMessage']); // List all messages in a conversation
+            Route::post('/send-message', [ChatController::class, 'sendMessage']);
+
+        });
+
+
     });
 });

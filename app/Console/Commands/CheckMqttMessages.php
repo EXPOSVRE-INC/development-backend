@@ -43,31 +43,22 @@ class CheckMqttMessages extends Command
     {
         $mqtt = MQTT::connection();
 
-        $mqtt->subscribe('chat/#', function ($topic, $message) {
-//            dump($topic);
-            $message = json_decode($message);
-            if ($message->received == false) {
-                $userFrom = User::where(['id' => $message->from])->first();
-                $userTo = User::where(['id' => $message->to])->first();
-                $deepLink = 'EXPOSVRE://user/'. $userFrom->id;
+        $mqtt->subscribe('newMessage/#', function ($topic, $payload) {
+            $messageData = json_decode($payload, true);
 
-                $notification = new \App\Models\Notification();
-                $notification->title = 'You have new message from,' . $userFrom->username;
-                $notification->description = $userFrom->username . ':' . $message->message;
-                $notification->type = 'newmessage';
-                $notification->user_id = $userTo->id;
-                $notification->sender_id = $userFrom->id;
-                $notification->deep_link = $deepLink;
-                $notification->save();
-
-                $userTo->notify(new MessageNewNotification($userFrom, $userTo, $message->message));
-
-            }
-        }, 0);
+            // Handle the incoming message data
+            $this->processMessage($messageData);
+        });
 
         $mqtt->loop(true);
 
         $mqtt->disconnect();
     }
 
+    protected function processMessage($data)
+    {
+        // Handle the received data here, e.g., log it, update database, send notifications, etc.
+        // Example:
+        \Log::info('Received message:', $data);
+    }
 }

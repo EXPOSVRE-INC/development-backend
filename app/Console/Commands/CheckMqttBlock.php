@@ -27,9 +27,6 @@ class CheckMqttBlock extends Command
             function ($topic, $message) use ($mqtt) {
                 $messageData = json_decode($message, true);
 
-                if (!isset($messageData['from']) || !isset($messageData['to'])) {
-                }
-
                 $fromId = $messageData['from'];
                 $toId = $messageData['to'];
 
