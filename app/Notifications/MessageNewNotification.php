@@ -65,18 +65,18 @@ class MessageNewNotification extends Notification
 
     public function toDatabase($notifiable)
     {
-        $deepLink = 'EXPOSVRE://user/'. $this->sender->id;
+//         $deepLink = 'EXPOSVRE://user/'. $this->sender->id;
 
-        $notification = new \App\Models\Notification();
-        $notification->title = 'You have new message from,' . $this->sender->username;
-        $notification->description = $this->sender->username . ':' . $this->message;
-        $notification->type = 'newmessage';
-        $notification->user_id = $this->receiver->id;
-        $notification->sender_id = $this->sender->id;
-//        $notification->post_id = $this->collection->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
+//         $notification = new \App\Models\Notification();
+//         $notification->title = 'You have new message from,' . $this->sender->username;
+//         $notification->description = $this->sender->username . ':' . $this->message;
+//         $notification->type = 'newmessage';
+//         $notification->user_id = $this->receiver->id;
+//         $notification->sender_id = $this->sender->id;
+// //        $notification->post_id = $this->collection->id;
+//         $notification->deep_link = $deepLink;
+//         $notification->save();
 
-        return $notification;
+//         return $notification;
     }
 }

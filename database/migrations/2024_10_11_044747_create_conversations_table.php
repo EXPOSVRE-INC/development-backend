@@ -17,6 +17,7 @@ class CreateConversationsTable extends Migration
             $table->id();
             $table->unsignedBigInteger('sender'); // First user in the conversation
             $table->unsignedBigInteger('receiver'); // Second user in the conversation
+            $table->string('status');
             $table->timestamps();
         });
     }

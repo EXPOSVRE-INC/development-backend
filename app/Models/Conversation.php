@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class Conversation extends Model
 {
     use HasFactory;
-    protected $fillable = ['sender', 'receiver'];
+    protected $fillable = ['sender', 'receiver', 'status','id'];
 
-    public function chats()
+    public function chat()
     {
-        return $this->hasMany(Chat::class, 'conversation_id');
+        return $this->hasOne(Chat::class, 'conversation_id');
     }
 
     public function senderUser()

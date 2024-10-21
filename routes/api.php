@@ -304,9 +304,12 @@ Route::group([
             'middleware' => ['auth:api']
         ], function ($router) {
             Route::get('/', [ChatController::class, 'index']); // List all conversations
-            Route::get('/messages/{id}', [ChatController::class, 'fetchMessage']); // List all messages in a conversation
-            Route::get('/fetch-message/{to}', [ChatController::class, 'getMessage']); // List all messages in a conversation
-            Route::post('/send-message', [ChatController::class, 'sendMessage']);
+            Route::get('/{sender}{receiver}', [ChatController::class, 'fetchConversationDetail']); // List all messages in a conversation
+            Route::get('/chat/fetch-message', [ChatController::class, 'getMessage']);
+            Route::post('/chat/send-message', [ChatController::class, 'sendMessage']);
+            Route::put('/chat/read-message/{chatId}', [ChatController::class, 'readMessage']);
+            Route::put('/chat/edit-message/{chatId}', [ChatController::class, 'editMessage']);
+            Route::delete('/chat/delete-message/{chatId}', [ChatController::class, 'deleteMessage']);
 
         });
 

@@ -21,8 +21,11 @@ class CreateChatsTable extends Migration
             $table->text('message');
             $table->boolean('received')->default(false);
             $table->boolean('removed')->default(false);
+            $table->string('message_id')->nullable();
+            $table->string('datetime')->nullable();
             $table->timestamps();
         });
+
     }
 
     /**

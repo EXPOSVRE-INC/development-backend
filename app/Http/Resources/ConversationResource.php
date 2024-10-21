@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Resources;
-
+use App\Http\Resources\UserInfoResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ConversationResource extends JsonResource
@@ -16,19 +16,23 @@ class ConversationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'sender' => [
-                'id' => $this->senderUser->id,
-                'first_name' => $this->senderUser->profile->firstName ?? '',
-                'last_name' => $this->senderUser->profile->lastName ?? '',
-            ],
-            'receiver' => [
-                'id' => $this->receiverUser->id,
-                'first_name' => $this->receiverUser->profile->firstName ?? '',
-                'last_name' => $this->receiverUser->profile->lastName ?? '',
-            ],
-            'chats' => $this->whenLoaded('chats'), // Load related chats
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'sender' => new UserInfoResource($this->senderUser),
+            'receiver' => new UserInfoResource($this->receiverUser),
+            'unread_count' => $this->unread_count,
+            'chat' => $this->whenLoaded('chat', function () {
+                return [
+                    'id' => $this->chat->id,
+                    'conversation_id' => $this->chat->conversation_id,
+                    'from' => $this->chat->from,
+                    'to' => $this->chat->to,
+                    'message' => $this->chat->message,
+                    'received' => (bool) $this->chat->received,
+                    'removed' => (bool) $this->chat->removed,
+                    'datetime' => $this->chat->datetime,
+                    'read' => (bool) $this->chat->read,
+                    'message_id' => $this->chat->message_id,
+                ];
+            }),
         ];
     }
 }

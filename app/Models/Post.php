@@ -8,7 +8,6 @@ use Illuminate\Support\Carbon;
 use Orkhanahmadov\LaravelCommentable\Commentable;
 use Overtrue\LaravelFavorite\Traits\Favoriteable;
 use Overtrue\LaravelLike\Traits\Likeable;
-use Spatie\Image\Manipulations;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -80,12 +79,16 @@ class Post extends Model implements HasMedia
             ->extractVideoFrameAtSecond(1)
 //            ->fit(Manipulations::FIT_CROP, 300, 300)
             ->width(300)
+            ->quality(100)
+            ->sharpen(10)
             ->nonQueued();
         $this
             ->addMediaConversion('small')
             ->extractVideoFrameAtSecond(1)
 //            ->fit(Manipulations::FIT_CROP, 48, 48)
             ->width(48)
+            ->quality(100)
+            ->sharpen(10)
             ->nonQueued();
 
         $this
@@ -93,6 +96,8 @@ class Post extends Model implements HasMedia
             ->extractVideoFrameAtSecond(1)
 //            ->fit(Manipulations::FIT_CROP, 640, 640)
             ->width(640)
+            ->quality(100)
+            ->sharpen(10)
             ->nonQueued();
     }
 

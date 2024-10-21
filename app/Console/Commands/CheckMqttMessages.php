@@ -1,10 +1,6 @@
 <?php
 
 namespace App\Console\Commands;
-
-use App\Models\Block;
-use App\Models\User;
-use App\Notifications\MessageNewNotification;
 use Illuminate\Console\Command;
 use PhpMqtt\Client\Facades\MQTT;
 
@@ -43,11 +39,8 @@ class CheckMqttMessages extends Command
     {
         $mqtt = MQTT::connection();
 
-        $mqtt->subscribe('newMessage/#', function ($topic, $payload) {
+        $mqtt->subscribe('chat/#', function ($topic, $payload) {
             $messageData = json_decode($payload, true);
-
-            // Handle the incoming message data
-            $this->processMessage($messageData);
         });
 
         $mqtt->loop(true);
@@ -55,10 +48,5 @@ class CheckMqttMessages extends Command
         $mqtt->disconnect();
     }
 
-    protected function processMessage($data)
-    {
-        // Handle the received data here, e.g., log it, update database, send notifications, etc.
-        // Example:
-        \Log::info('Received message:', $data);
-    }
+
 }

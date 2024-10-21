@@ -118,17 +118,23 @@ class User extends Authenticatable implements JWTSubject, HasMedia
         $this
             ->addMediaConversion('preview')
             ->fit(Manipulations::FIT_CROP, 300, 300)
+            ->quality(100)
+            ->sharpen(10)
             ->nonQueued();
 
         $this
             ->addMediaConversion('small')
             ->extractVideoFrameAtSecond(1)
             ->fit(Manipulations::FIT_CROP, 48, 48)
+            ->quality(100)
+            ->sharpen(10)
             ->nonQueued();
         $this
             ->addMediaConversion('original')
             ->extractVideoFrameAtSecond(1)
             ->fit(Manipulations::FIT_CROP, 640, 640)
+            ->quality(100)
+            ->sharpen(10)
             ->nonQueued();
     }
 

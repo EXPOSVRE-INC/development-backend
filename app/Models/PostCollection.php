@@ -27,33 +27,39 @@ class PostCollection extends Model implements HasMedia
         'description',
         'allowToComment',
         'allowToCrown',
-        'user_id'
+        'user_id',
     ];
 
-    public function posts() {
+    public function posts()
+    {
         return $this->hasMany(Post::class, 'collection_id', 'id');
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->hasOne(User::class, 'id', 'user_id');
     }
 
     public function registerMediaConversions(Media $media = null): void
     {
-        $this
-            ->addMediaConversion('preview')
+        $this->addMediaConversion('preview')
             ->fit(Manipulations::FIT_CROP, 300, 300)
+            ->quality(100)
+            ->sharpen(10)
             ->nonQueued();
 
-        $this
-            ->addMediaConversion('small')
+        $this->addMediaConversion('small')
             ->extractVideoFrameAtSecond(1)
             ->fit(Manipulations::FIT_CROP, 48, 48)
+            ->quality(100)
+            ->sharpen(10)
             ->nonQueued();
-        $this
-            ->addMediaConversion('original')
+
+        $this->addMediaConversion('original')
             ->extractVideoFrameAtSecond(1)
             ->fit(Manipulations::FIT_CROP, 640, 640)
+            ->quality(100)
+            ->sharpen(10)
             ->nonQueued();
     }
 }
