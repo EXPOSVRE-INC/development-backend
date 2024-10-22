@@ -483,7 +483,42 @@ return [
             'label_color' => 'success',
             'active' => ['admin/categories*']
         ],
+        [
+            'header' => 'Music Library',
+            'can' => 'post-ads scheduled',
+        ],
+        [
+            'text'    => 'Music Library',
+            'icon'    => 'fas fa-music',
+            'can' => 'post-ads scheduled',
+            'submenu' => [
+                [
+                    'text' => 'Artists',
+                    'url'  => 'admin/artists',
+                    'label_color' => 'success',
+                    'can' => 'post-ads scheduled'
+                ],
+                [
+                    'text' => 'Genres',
+                    'url'  => 'admin/genres',
+                    'label_color' => 'success',
+                    'can' => 'post-ads published'
 
+                ],
+                [
+                    'text' => 'Moods',
+                    'url'  => 'admin/moods',
+                    'label_color' => 'success',
+                    'can' => 'post-articles archive'
+                ],
+                [
+                    'text' => 'Songs',
+                    'url'  => 'admin/songs',
+                    'label_color' => 'success',
+                    'can' => 'post-articles archive'
+                ],
+            ],
+        ],
 
 //
 //

@@ -36,26 +36,26 @@ $config = [
     <x-adminlte-datatable id="table1" :heads="$heads" :config="$config">
 
         @foreach($reports as $report)
-            <tr data-id="{{$report->user->id}}">
+            <tr data-id="{{$report->user->id ?? ''}}">
                 <td>
                 </td>
                 <td>
-                    {{$report->comment->id}}
+                    {{$report->comment->id ?? ''}}
                 </td>
                 <td>
-                    {{$report->user->username}}
+                    {{$report->user->username ?? ''}}
                 </td>
                 <td>
-                    {{$report->user->profile->firstName . ' ' . $report->user->profile->lastName}}
+                    {{ $report->user ? ($report->user->profile->firstName . ' ' . $report->user->profile->lastName) : '' }}
                 </td>
                 <td>
                     Flagged
                 </td>
                 <td>
-                    {{$report->reason}}
+                    {{$report->reason ?? ''}}
                 </td>
                 <td>
-                    {{$report->comment->comment}}
+                    {{$report->comment->comment ?? ''}}
                 </td>
 {{--                <td>--}}
 {{--                    @php--}}

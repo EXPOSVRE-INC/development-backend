@@ -5,8 +5,11 @@ use App\Http\Controllers\Admin\Auth\AuthController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserReportController;
 use App\Http\Controllers\Admin\PostReportController;
+use App\Http\Controllers\Admin\SongController;
+use App\Http\Controllers\Admin\GenreController;
+use App\Http\Controllers\Admin\MoodController;
 use App\Http\Controllers\Admin\CommentReportController;
-
+use App\Http\Controllers\Admin\ArtistController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -123,6 +126,50 @@ Route::group([
         Route::post('edit/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'edit'])->name('category-edit-post');
         Route::get('delete/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'delete'])->name('category-delete');
 
+    });
+
+    Route::group([
+        'prefix' => 'songs',
+    ], function ($router) {
+        Route::get('/', [SongController::class, 'index'])->name('song-index');
+        Route::get('create', [SongController::class, 'createForm'])->name('song-create');
+        Route::post('create', [SongController::class, 'create'])->name('create-song');
+        Route::get('edit/{id}', [SongController::class, 'editSongForm'])->name('song-edit-form');
+        Route::post('edit/{id}', [SongController::class, 'edit'])->name('song-edit');
+        Route::get('delete/{id}', [SongController::class, 'delete'])->name('song-delete');
+
+    });
+
+    Route::group([
+        'prefix' => 'genres',
+    ], function ($router) {
+        Route::get('/', [GenreController::class, 'getGenre'])->name('genre-index');
+        Route::get('create', [GenreController::class, 'createGenreForm'])->name('song-genre-form');
+        Route::post('create', [GenreController::class, 'createGenre'])->name('song-genre-create');
+        Route::get('edit/{id}', [GenreController::class, 'editGenreForm'])->name('genre-edit-form');
+        Route::post('edit/{id}', [GenreController::class, 'editGenre'])->name('genre-edit');
+        Route::get('delete/{id}', [GenreController::class, 'deleteGenre'])->name('genre-delete');
+    });
+
+
+    Route::group([
+        'prefix' => 'moods',
+    ], function ($router) {
+        Route::get('/', [MoodController::class, 'getMoods'])->name('mood-index');
+        Route::get('create', [MoodController::class, 'createMoodForm'])->name('mood-form');
+        Route::post('create', [MoodController::class, 'createMood'])->name('mood-create');
+        Route::get('edit/{id}', [MoodController::class, 'editMoodForm'])->name('mood-edit-form');
+        Route::post('edit/{id}', [MoodController::class, 'editMood'])->name('mood-edit');
+        Route::get('delete/{id}', [MoodController::class, 'deleteMood'])->name('mood-delete');
+    });
+
+    Route::group([
+        'prefix' => 'artists',
+    ], function ($router) {
+        Route::get('/', [ArtistController::class, 'index'])->name('artist-index');
+        Route::get('create/{id}', [ArtistController::class, 'createForm'])->name('artist-form');
+        Route::post('create', [ArtistController::class, 'create'])->name('artist-create');
+        Route::get('delete/{id}', [ArtistController::class, 'delete'])->name('artist-delete');
     });
 
     Route::group([

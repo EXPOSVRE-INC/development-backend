@@ -64,7 +64,7 @@ $config = [
                             $image = $post->getFirstMediaUrl('files', 'original');
                         }
                     @endphp
-                    <img height="64" src="{{$image}}">
+                    <img height="64" src="{{$image ?? ''}}">
                 </td>
 {{--                <td>--}}
 {{--                    <button class="btn btn-xs btn-default text-primary mx-1 shadow" title="Edit">--}}
