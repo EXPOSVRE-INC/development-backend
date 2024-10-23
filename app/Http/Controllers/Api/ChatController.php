@@ -299,6 +299,7 @@ class ChatController extends Controller
 
         $chat = Chat::find($chatId);
 
+
         if ($chat) {
             $chat->update([
                 'message' => $request->input('message'),
@@ -307,18 +308,25 @@ class ChatController extends Controller
             $receiverId = $chat->to; // Assuming 'to' is the receiver's ID
             $topic = "chat/updateMessage/{$receiverId}/{$chat->id}";
 
-            $payload = json_encode([
+            $payloadArray = [
                 'message' => $chat->message,
                 'from' => $chat->from,
                 'to' => $chat->to,
-                'read' => $chat->read,
-                'received' => $chat->received,
-                'id' => $chat->id,
-                'removed' => $chat->removed,
+                'read' => (bool) $chat->read,
+                'received' => (bool) $chat->received,
+                'id' => (int) $chat->id,
+                'removed' => (bool) $chat->removed,
                 'message_id' => $chat->message_id,
-                'datetime' => $chat->dateTime,
-            ]);
+                'datetime' => $chat->datetime,
+            ];
 
+            if (!empty($chat->payload) && $chat->payload != 'null') {
+                $payloadArray['payload'] = $chat->payload;
+            } else {
+                $payloadArray['payload'] = null; // Empty object if no payload
+            }
+
+            $payload = json_encode($payloadArray);
             $mqtt = MQTT::connection();
             $mqtt->publish($topic, $payload, 0, false);
 
@@ -348,14 +356,15 @@ class ChatController extends Controller
             $topic = "chat/deleteMessage/{$receiverId}/{$chatId}"; // Create the topic
 
             $payload = json_encode([
-                'id' => $chatId,
+                'id' => (int) $chatId,
                 'message' => '<REMOVED>',
                 'from' => $chat->from,
                 'to' => $chat->to,
+                'read'=> (bool) $chat->read,
                 'removed' => true,
-                'received' => $chat->received,
+                'received' => (bool) $chat->received,
                 'message_id' => $chat->message_id,
-                'datetime' => $chat->dateTime,
+                'datetime' => $chat->datetime,
             ]);
 
             $mqtt = MQTT::connection();
