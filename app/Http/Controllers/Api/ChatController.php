@@ -10,6 +10,7 @@ use App\Models\Chat;
 use App\Models\User;
 use PhpMqtt\Client\Facades\MQTT;
 use App\Http\Resources\ConversationResource;
+use App\Http\Resources\ConversationUserInfoResource;
 use App\Notifications\MessageNewNotification;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 class ChatController extends Controller
@@ -175,6 +176,7 @@ class ChatController extends Controller
             $senderId = $userFrom;
             $receiverId = $userTo;
 
+             $newConversation = false;
             $conversation = Conversation::where(function ($query) use (
                 $senderId,
                 $receiverId
@@ -190,26 +192,15 @@ class ChatController extends Controller
                 })
                 ->first();
 
-            if (!$conversation) {
-                $conversation = Conversation::create([
-                    'sender' => $senderId,
-                    'receiver' => $receiverId,
-                    'status' => 'active',
-                ]);
-
-                $conversationTopic = "chat/newConversation/{$receiverId}/{$conversation->id}";
-                $mqtt = MQTT::connection();
-                $mqtt->publish(
-                    $conversationTopic,
-                    json_encode([
-                        'conversation_id' => $conversation->id,
+                if (!$conversation) {
+                    $conversation = Conversation::create([
                         'sender' => $senderId,
                         'receiver' => $receiverId,
-                    ]),
-                    0,
-                    false
-                );
-            }
+                        'status' => 'active',
+                    ]);
+                    $newConversation = true;
+                }
+
             $chat = Chat::create([
                 'conversation_id' => $conversation->id,
                 'from' => $userFrom,
@@ -223,6 +214,41 @@ class ChatController extends Controller
                 'payload' => json_encode($payload),
             ]);
 
+            $unreadCount = Chat::where('conversation_id', $conversation->id)
+                    ->where('read', false)
+                    ->count();
+
+            $senderResource = new ConversationUserInfoResource(User::find($userFrom));
+            $receiverResource = new ConversationUserInfoResource(User::find($userTo));
+
+            if ($newConversation) {
+                $latestChat = $conversation->chat()->where('removed', false)->latest()->first();
+                $conversationTopic = "chat/newConversation/{$receiverId}/{$conversation->id}";
+                $mqtt = MQTT::connection();
+                $mqtt->publish(
+                    $conversationTopic,
+                    json_encode([
+                        'conversation_id' => $conversation->id,
+                        'sender' => $senderResource,
+                        'receiver' => $receiverResource,
+                        'unread_count' => $unreadCount ?? 0,
+                        'chat' => $latestChat ? [
+                            'id' => $latestChat->id,
+                            'conversation_id' => $latestChat->conversation_id,
+                            'from' => $latestChat->from,
+                            'to' => $latestChat->to,
+                            'message' => $latestChat->message,
+                            'received' => (bool) $latestChat->received,
+                            'removed' => (bool) $latestChat->removed,
+                            'datetime' => $latestChat->datetime,
+                            'read' => (bool) $latestChat->read,
+                            'message_id' => $latestChat->message_id,
+                        ] : null,
+                    ]),
+                    0,
+                    false
+                );
+            }
             $mqtt = MQTT::connection();
             $topic = "chat/newMessage/{$userTo}/{$chat->id}";
 
