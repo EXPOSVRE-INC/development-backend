@@ -378,7 +378,6 @@ class ChatController extends Controller
             );
         }
 
-        // If the chat message does not exist, return a 404 response
         return response()->json(['message' => 'Chat not found'], 404);
     }
 }
