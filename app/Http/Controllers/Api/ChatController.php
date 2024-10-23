@@ -36,7 +36,6 @@ class ChatController extends Controller
     if ($conversations->isEmpty()) {
         return response()->json(
             [
-                'message' => 'No active conversations found.',
                 'data' => [],
             ],
             404
