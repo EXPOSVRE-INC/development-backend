@@ -11,6 +11,7 @@ use App\Models\User;
 use PhpMqtt\Client\Facades\MQTT;
 use App\Http\Resources\ConversationResource;
 use App\Http\Resources\ConversationUserInfoResource;
+use App\Http\Resources\UserInfoResource;
 use App\Notifications\MessageNewNotification;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 class ChatController extends Controller
@@ -218,8 +219,8 @@ class ChatController extends Controller
                     ->where('read', false)
                     ->count();
 
-            $senderResource = new ConversationUserInfoResource(User::find($userFrom));
-            $receiverResource = new ConversationUserInfoResource(User::find($userTo));
+            $senderResource = new UserInfoResource(User::find($userFrom));
+            $receiverResource = new UserInfoResource(User::find($userTo));
 
             if ($newConversation) {
                 $latestChat = $conversation->chat()->where('removed', false)->latest()->first();
@@ -243,6 +244,7 @@ class ChatController extends Controller
                             'datetime' => $latestChat->datetime,
                             'read' => (bool) $latestChat->read,
                             'message_id' => $latestChat->message_id,
+                            'payload' => $latestChat->payload,
                         ] : null,
                     ]),
                     0,
