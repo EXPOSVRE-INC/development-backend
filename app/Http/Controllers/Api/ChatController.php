@@ -26,7 +26,8 @@ class ChatController extends Controller
             ->where('status', 'active')
             ->withCount([
                 'chat as unread_count' => function ($query) {
-                    $query->where('read', false);
+                    $query->where('read', false)
+                          ->where('removed', false);
                 }
             ])
             ->with([
@@ -199,6 +200,7 @@ class ChatController extends Controller
 
             $unreadCount = Chat::where('conversation_id', $conversation->id)
                     ->where('read', false)
+                    ->where('removed', false)
                     ->count();
 
             $senderResource = new UserInfoResource(User::find($userFrom));
