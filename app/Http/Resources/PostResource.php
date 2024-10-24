@@ -4,8 +4,8 @@ namespace App\Http\Resources;
 
 use App\Http\Service\StripeService;
 use App\Models\PriceRequest;
-use AWS\CRT\Log;
 use Carbon\Carbon;
+use FFMpeg\FFMpeg;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Spatie\MediaLibrary\Support\ImageFactory;
 
