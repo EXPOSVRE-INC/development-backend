@@ -381,7 +381,7 @@ class ChatController extends Controller
                 'removed' => true,
                 'message' => '<REMOVED>',
             ]);
-            $topic = "chat/deleteMessage/{$receiverId}/{$chat->id}"; // Create the topic
+            $topic = "message/deleteMessage/{$receiverId}/{$chat->id}"; // Create the topic
 
             $payload = json_encode([
                 'id' => (int) $chatId,
