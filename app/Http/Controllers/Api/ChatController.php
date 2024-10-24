@@ -13,25 +13,26 @@ use App\Http\Resources\ConversationResource;
 use App\Http\Resources\UserInfoResource;
 use App\Notifications\MessageNewNotification;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+
 class ChatController extends Controller
 {
     public function index()
     {
         $userId = auth()->user()->id;
-
         $conversations = Conversation::where(function ($query) use ($userId) {
             $query->where('sender', $userId)
                 ->orWhere('receiver', $userId);
         })
             ->where('status', 'active')
             ->withCount([
-                'chat as unread_count' => function ($query) {
+                'chat as unread_count' => function ($query) use ($userId){
                     $query->where('read', false)
+                        ->where('from', '!=', $userId)
                           ->where('removed', false);
                 }
             ])
             ->with([
-                'chat' => function ($query) {
+                'chat' => function ($query){
                     $query->where('removed', false)
                         ->latest('created_at');
                 }
@@ -66,7 +67,7 @@ class ChatController extends Controller
     public function getMessage(Request $request)
     {
         $userId = auth()->user()->id;
-
+        $conversation = null;
         // Check if a conversationId is provided
         if ($request->has('conversationId')) {
             $conversationId = $request->query('conversationId');
@@ -93,10 +94,10 @@ class ChatController extends Controller
             $otherUserId = $request->query('participantId');
             $chats = Chat::where(function ($query) use ($userId, $otherUserId) {
                 $query->where('from', $userId)->where('to', $otherUserId);
-            })->where('removed',false)
+            })->where('removed', false)
                 ->orWhere(function ($query) use ($userId, $otherUserId) {
                     $query->where('from', $otherUserId)->where('to', $userId);
-                })->where('removed',false)
+                })->where('removed', false)
                 ->latest()
                 ->get();
         } else {
@@ -105,14 +106,8 @@ class ChatController extends Controller
                 400
             );
         }
-
+        //   echo $chats;die;
         if ($chats->isNotEmpty()) {
-            $chats->each(function ($chat) {
-                $chat->update([
-                    'read' => true,
-                    'received' => true,
-                ]);
-            });
             return response()->json([
                 'data' => ChatResource::collection($chats),
             ]);
@@ -140,8 +135,7 @@ class ChatController extends Controller
                 );
             }
             $postData = $request->input('payload');
-            if($postData)
-            {
+            if ($postData) {
                 foreach ($postData as $key => $value) {
                     if (empty($value)) {
                         $postData[$key] = '';
@@ -160,7 +154,7 @@ class ChatController extends Controller
             $senderId = $userFrom;
             $receiverId = $userTo;
 
-             $newConversation = false;
+            $newConversation = false;
             $conversation = Conversation::where(function ($query) use (
                 $senderId,
                 $receiverId
@@ -176,14 +170,14 @@ class ChatController extends Controller
                 })
                 ->first();
 
-                if (!$conversation) {
-                    $conversation = Conversation::create([
-                        'sender' => $senderId,
-                        'receiver' => $receiverId,
-                        'status' => 'active',
-                    ]);
-                    $newConversation = true;
-                }
+            if (!$conversation) {
+                $conversation = Conversation::create([
+                    'sender' => $senderId,
+                    'receiver' => $receiverId,
+                    'status' => 'active',
+                ]);
+                $newConversation = true;
+            }
 
             $chat = Chat::create([
                 'conversation_id' => $conversation->id,
@@ -199,9 +193,9 @@ class ChatController extends Controller
             ]);
 
             $unreadCount = Chat::where('conversation_id', $conversation->id)
-                    ->where('read', false)
-                    ->where('removed', false)
-                    ->count();
+                ->where('read', false)
+                ->where('removed', false)
+                ->count();
 
             $senderResource = new UserInfoResource(User::find($userFrom));
             $receiverResource = new UserInfoResource(User::find($userTo));
@@ -285,12 +279,18 @@ class ChatController extends Controller
     public function readMessage($chatId)
     {
         $chat = Chat::find($chatId);
+        $userId = auth()->user()->id;
 
-        if ($chat) {
-            $chat->update([
-                'read' => true,
-                'received' => true,
-            ]);
+        $chats = Chat::where('created_at','<=' ,$chat->created_at)->where('conversation_id', $chat->conversation_id)->where('to', $userId)->get();
+
+
+        if ($chats) {
+            $chats->each(function ($chat) {
+                $chat->update([
+                    'read' => true,
+                    'received' => true,
+                ]);
+            });
             return response()->json(
                 [
                     'data' => new ChatResource($chat),
@@ -371,7 +371,7 @@ class ChatController extends Controller
                 'message' => '<REMOVED>',
                 'from' => $chat->from,
                 'to' => $chat->to,
-                'read'=> (bool) $chat->read,
+                'read' => (bool) $chat->read,
                 'removed' => true,
                 'received' => (bool) $chat->received,
                 'message_id' => $chat->message_id,
