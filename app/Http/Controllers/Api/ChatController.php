@@ -47,28 +47,10 @@ class ChatController extends Controller
         ]);
     }
 
-    public function fetchConversationDetail($sender, $receiver)
-    {
-        $conversation = Conversation::where('sender', $sender)
-            ->where('receiver', $receiver)
-            ->where('status', 'active')
-            ->with('chats') // Load related chats
-            ->get();
-        $mqtt = MQTT::connection();
-
-        $topic = "chat/newConversation/{$receiver}/#";
-        $mqtt->publish($topic, 0, true);
-
-        return response()->json([
-            'data' => ConversationResource::collection($conversation),
-        ]);
-    }
-
     public function getMessage(Request $request)
     {
         $userId = auth()->user()->id;
         $conversation = null;
-        // Check if a conversationId is provided
         if ($request->has('conversationId')) {
             $conversationId = $request->query('conversationId');
             try {
@@ -86,10 +68,8 @@ class ChatController extends Controller
 
             $chats = Chat::where('conversation_id', $conversationId)
                 ->where('removed', false)
-                ->latest()
                 ->get();
         }
-        // Check if a participantId is provided
         elseif ($request->has('participantId')) {
             $otherUserId = $request->query('participantId');
             $chats = Chat::where(function ($query) use ($userId, $otherUserId) {
@@ -98,7 +78,6 @@ class ChatController extends Controller
                 ->orWhere(function ($query) use ($userId, $otherUserId) {
                     $query->where('from', $otherUserId)->where('to', $userId);
                 })->where('removed', false)
-                ->latest()
                 ->get();
         } else {
             return response()->json(
@@ -106,7 +85,6 @@ class ChatController extends Controller
                 400
             );
         }
-        //   echo $chats;die;
         if ($chats->isNotEmpty()) {
             return response()->json([
                 'data' => ChatResource::collection($chats),
@@ -283,7 +261,6 @@ class ChatController extends Controller
 
         $chats = Chat::where('created_at','<=' ,$chat->created_at)->where('conversation_id', $chat->conversation_id)->where('to', $userId)->get();
 
-
         if ($chats) {
             $chats->each(function ($chat) {
                 $chat->update([
@@ -316,7 +293,7 @@ class ChatController extends Controller
                 'message' => $request->input('message'),
             ]);
 
-            $receiverId = $chat->to; // Assuming 'to' is the receiver's ID
+            $receiverId = $chat->to;
             $topic = "chat/updateMessage/{$receiverId}/{$chat->id}";
 
             $payloadArray = [
@@ -334,7 +311,7 @@ class ChatController extends Controller
             if (!empty($chat->payload) && $chat->payload != 'null') {
                 $payloadArray['payload'] = $chat->payload;
             } else {
-                $payloadArray['payload'] = null; // Empty object if no payload
+                $payloadArray['payload'] = null;
             }
 
             $payload = json_encode($payloadArray);
@@ -349,7 +326,6 @@ class ChatController extends Controller
             );
         }
 
-        // If the chat message does not exist, return a 404 response
         return response()->json(['message' => 'Chat not found'], 404);
     }
 
@@ -364,7 +340,7 @@ class ChatController extends Controller
                 'removed' => true,
                 'message' => '<REMOVED>',
             ]);
-            $topic = "message/deleteMessage/{$receiverId}/{$chat->id}"; // Create the topic
+            $topic = "message/deleteMessage/{$receiverId}/{$chat->id}";
 
             $payload = json_encode([
                 'id' => (int) $chatId,
@@ -380,7 +356,6 @@ class ChatController extends Controller
 
             $mqtt = MQTT::connection();
             $mqtt->publish($topic, $payload, 0, false);
-            // Return a success response
             return response()->json(
                 [
                     'data' => new ChatResource($chat),
@@ -392,16 +367,4 @@ class ChatController extends Controller
         return response()->json(['message' => 'Chat not found'], 404);
     }
 
-    public function deleteConversation($conversationId)
-    {
-        $conversation = Conversation::find($conversationId);
-
-        if ($conversation) {
-            Chat::where('conversation_id', $conversationId)->delete();
-
-            $conversation->delete();
-            return response()->json(['message' => 'Conversation and related chats deleted successfully'], 200);
-        }
-        return response()->json(['message' => 'Conversation not found'], 404);
-    }
 }
