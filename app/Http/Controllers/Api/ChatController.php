@@ -40,6 +40,13 @@ class ChatController extends Controller
             ->whereHas('chat', function ($query) {
                 $query->where('removed', false);
             })
+            ->join('chats', function ($join) {
+                $join->on('conversations.id', '=', 'chats.conversation_id')
+                    ->where('chats.removed', false);
+            })
+            ->select('conversations.*')
+            ->orderBy('chats.created_at', 'desc')
+            ->distinct()
             ->get();
 
         return response()->json([
