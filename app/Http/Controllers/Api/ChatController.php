@@ -17,42 +17,44 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 class ChatController extends Controller
 {
     public function index()
-    {
-        $userId = auth()->user()->id;
-        $conversations = Conversation::where(function ($query) use ($userId) {
-            $query->where('sender', $userId)
-                ->orWhere('receiver', $userId);
-        })
-            ->where('status', 'active')
-            ->withCount([
-                'chat as unread_count' => function ($query) use ($userId){
-                    $query->where('read', false)
-                        ->where('from', '!=', $userId)
-                          ->where('removed', false);
-                }
-            ])
-            ->with([
-                'chat' => function ($query){
-                    $query->where('removed', false)
-                        ->latest('created_at');
-                }
-            ])
-            ->whereHas('chat', function ($query) {
-                $query->where('removed', false);
-            })
-            ->join('chats', function ($join) {
-                $join->on('conversations.id', '=', 'chats.conversation_id')
-                    ->where('chats.removed', false);
-            })
-            ->select('conversations.*')
-            ->orderBy('chats.created_at', 'desc')
-            ->distinct()
-            ->get();
+{
+    $userId = auth()->user()->id;
 
-        return response()->json([
-            'data' => ConversationResource::collection($conversations),
-        ]);
-    }
+    $conversations = Conversation::where(function ($query) use ($userId) {
+            $query->where('sender', $userId)
+                  ->orWhere('receiver', $userId);
+        })
+        ->where('status', 'active')
+        ->withCount([
+            'chat as unread_count' => function ($query) use ($userId) {
+                $query->where('read', false)
+                      ->where('from', '!=', $userId)
+                      ->where('removed', false);
+            }
+        ])
+        ->with([
+            'chat' => function ($query) {
+                $query->where('removed', false)
+                      ->latest('created_at');
+            }
+        ])
+        ->whereHas('chat', function ($query) {
+            $query->where('removed', false);
+        })
+        ->join('chats', function ($join) {
+            $join->on('conversations.id', '=', 'chats.conversation_id')
+                 ->where('chats.removed', false);
+        })
+        ->select('conversations.*')
+        ->groupBy('conversations.id')
+        ->orderByRaw('MAX(chats.created_at) DESC')
+        ->get();
+
+    return response()->json([
+        'data' => ConversationResource::collection($conversations),
+    ]);
+}
+
 
     public function getMessage(Request $request)
     {
