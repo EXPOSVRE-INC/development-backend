@@ -335,7 +335,6 @@ class ChatController extends Controller
 
         if ($chat) {
             $receiverId = $chat->to;
-
             $chat->update([
                 'removed' => true,
                 'message' => '<REMOVED>',
@@ -356,6 +355,14 @@ class ChatController extends Controller
 
             $mqtt = MQTT::connection();
             $mqtt->publish($topic, $payload, 0, false);
+
+            $conversationId = $chat->conversation_id;
+            $remainingMessages = Chat::where('conversation_id', $conversationId)->where('removed', false)->count();
+
+            if ($remainingMessages == 0) {
+                Chat::where('conversation_id', $conversationId)->delete();
+                Conversation::where('id', $conversationId)->delete();
+            }
             return response()->json(
                 [
                     'data' => new ChatResource($chat),
