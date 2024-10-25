@@ -23,7 +23,6 @@ class SearchController extends Controller
 
         $currentUser = auth('api')->user();
 
-        \Log::info(json_encode($request->all()));
         if ($type == 'posts') {
             $blockedUserIds = Block::where('user_id', $currentUser->id)
                 ->pluck('blocking_id')

@@ -89,7 +89,6 @@ class CheckMqttComments extends Command
 
                     $notification = $post->owner->notify(new NewCommentForPost($user, $message->message, $post));
 
-                    Log::info(json_encode($notification));
 //                }
             } else if (str_contains($topic, 'galleries')) {
                 $collection = PostCollection::where(['id' => $message->forGalleryId])->first();

@@ -53,7 +53,6 @@ class LikeNotification extends Notification
 //        $notification->deep_link = $deepLink;
 //        $notification->save();
 
-//        Log::info(json_encode($notification));
 //        dump($notification);
 
         $apnMessage = ApnMessage::create()

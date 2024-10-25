@@ -44,7 +44,6 @@ class PostResource extends JsonResource
             ->first();
         //        dump($user->id);
         //        dump($this->id);
-        //        \Log::info($this->id);
 
         //        dump($priceRequest);
         $data = [
