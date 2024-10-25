@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use PhpMqtt\Client\Facades\MQTT;
+use Illuminate\Support\Facades\Log;
+
 
 class CheckMqttMessages extends Command
 {
@@ -39,8 +41,13 @@ class CheckMqttMessages extends Command
     {
         $mqtt = MQTT::connection();
 
-        $mqtt->subscribe('chat/#', function ($topic, $payload) {
-            $messageData = json_decode($payload, true);
+        $mqtt->subscribe('message/readMessage/#',  function ($topic, $message){
+                $messageData = json_decode($message, true);
+                if ($messageData) {
+                      Log::info("topic name" , $topic);
+                } else {
+                    echo "Failed to decode message from topic {$topic}.";
+                }
         });
 
         $mqtt->loop(true);
