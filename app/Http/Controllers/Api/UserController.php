@@ -203,8 +203,6 @@ class UserController extends Controller
 
         $user = auth('api')->user();
 
-        \Log::info($user);
-
         $userInterests = $user->interests()->get();
         $userInterestsArray = $userInterests
             ->map(function ($interest) {
@@ -368,8 +366,6 @@ class UserController extends Controller
         //        };
         $posts = collect($posts);
 
-        \Log::info($postsInterested);
-
         $postsInterested =
             count($postsInterested) > 0
                 ? array_values($postsInterested->diff($posts)->toArray())
@@ -411,7 +407,6 @@ class UserController extends Controller
 
     public function userPosts($id)
     {
-        \Log::info('USER ID ' . $id);
         $user = User::where(['id' => $id])->first();
         $posts = $user->load('posts')->posts;
         $posts = $posts->filter(function ($post) {

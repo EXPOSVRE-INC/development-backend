@@ -60,7 +60,6 @@ class SearchPostService {
     }
 
     public function filterPosts(SearchPostRequest $request) {
-        \Log::info(json_encode($request->all()));
 //        \DB::enableQueryLog();
         $posts = (new Post())->newQuery();
 

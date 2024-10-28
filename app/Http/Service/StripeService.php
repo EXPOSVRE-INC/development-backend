@@ -251,7 +251,6 @@ class StripeService
         $payment_method = $user->paymentCards->filter(function ($card) {
            return $card->isActive == 1;
         })->first();
-        Log::info(json_encode($payment_method));
         if ($price > 0) {
             $payment_intent = \Stripe\PaymentIntent::create([
                 'payment_method_types' => ['card'],

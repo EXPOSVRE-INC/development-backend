@@ -312,8 +312,6 @@ class PostController extends Controller
             $checkMethod . '&cats=pornography,csam,weapons,drugs,gestures,underwear,extremism,gore,ocr&imgurl=' .
             $imageUrl);
         $jsonBodyResp = json_decode($response);
-        Log::info($response);
-
 
         if ($jsonBodyResp->rsp->porn > 25) {
             $result = ['res' => false, 'message' => 'porn ' . $jsonBodyResp->rsp->porn . '%'];
@@ -340,10 +338,6 @@ class PostController extends Controller
     public function createPost(CreatePostRequest $request)
     {
 
-        Log::info('Request CREATE: ' . json_encode($request->all()));
-        Log::info($request->get('id'));
-//        dd($request->all());
-
             $title = trim($request->get('title'));
             $desc = trim($request->get('description'));
 
@@ -360,8 +354,6 @@ class PostController extends Controller
         if ($request->get('id') == 0) {
 
             $user = auth('api')->user();
-
-            \Log::info(json_encode($request->all()));
 
             $request->merge(['owner_id' => $user->id]);
 
@@ -587,7 +579,6 @@ class PostController extends Controller
                     $report->model = 'post';
                     $report->model_id = $post->id;
                     $report->save();
-                    Log::info($post->id);;
                 }
             }
 
@@ -721,8 +712,6 @@ class PostController extends Controller
             $request->merge(['fixed_price' => (int)request()->get('fixed_price') * 100]);
         }
 
-        Log::info('Request: ' . json_encode($request->all()));
-        Log::info('Post: ' . json_encode($post));
         $post->update($request->all());
 
         $media = $user->getMedia('temp');
@@ -759,8 +748,6 @@ class PostController extends Controller
 
         $interests = $request->get('interests');
 
-        \Log::info($interests);
-
         foreach ($post->interests as $postInterest) {
             $interestPostAssignment = InterestsPostAssigment::where(['post_id' => $post->id, 'interest_id' => $postInterest->id])->first();
             $interestPostAssignment->delete();
@@ -769,7 +756,6 @@ class PostController extends Controller
         if (is_array($interests)) {
             foreach ($interests as $interest) {
                 if ($interest) {
-                    \Log::info($interest);
                     $findInterest = InterestsCategory::where(['name' => $interest])->first();
                     $post->assignInterest($findInterest->id);
                 }
