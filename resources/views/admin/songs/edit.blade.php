@@ -106,7 +106,6 @@
             <source src="{{ Storage::url($song->full_song_file) }}" type="audio/mpeg">
             Your browser does not support the audio tag.
         </audio>
-        <span style="padding-left: 12px">{{ basename($song->full_song_file) }}</span>
     </div>
     @endif
 
@@ -114,7 +113,7 @@
         placeholder="Upload 15 second clip of song" label-class="text-lightblue">
         <x-slot name="prependSlot">
             <div class="input-group-text">
-                <i class="fas fa-music text-lightblue"></i>
+                <i class="fas fa-play text-lightblue"></i>
             </div>
         </x-slot>
     </x-adminlte-input-file>
@@ -127,7 +126,6 @@
             <source src="{{ Storage::url($song->clip_15_sec) }}" type="audio/mpeg">
             Your browser does not support the audio tag.
         </audio>
-        <span style="padding-left: 12px">{{ basename($song->clip_15_sec) }}</span>
     </div>
     @endif
 
@@ -156,7 +154,7 @@
         value="{{ old('title', $song->title) }}">
         <x-slot name="prependSlot">
             <div class="input-group-text">
-                <i class="fas fa-user text-lightblue"></i>
+                <i class="fas fa-heading text-lightblue"></i>
             </div>
         </x-slot>
     </x-adminlte-input>

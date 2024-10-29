@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\MusicController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -299,6 +300,7 @@ Route::group([
         ], function ($router) {
             Route::get('/', 'CategoryInterestsController@index');
         });
+
         Route::group([
             'prefix' => 'conversations',
             'middleware' => ['auth:api']
@@ -312,6 +314,19 @@ Route::group([
 
         });
 
+
+        Route::group([
+            'prefix' => 'songs',
+            'middleware' => ['auth:api']
+        ], function ($router) {
+            Route::get('/genres', [MusicController::class, 'getGenres']); // List all conversations
+            Route::get('/moods', [MusicController::class, 'getMoods']);
+            // Route::post('/chat/send-message', [ChatController::class, 'sendMessage']);
+            // Route::put('/chat/read-message/{chatId}', [ChatController::class, 'readMessage']);
+            // Route::put('/chat/edit-message/{chatId}', [ChatController::class, 'editMessage']);
+            // Route::delete('/chat/delete-message/{chatId}', [ChatController::class, 'deleteMessage']);
+
+        });
 
     });
 });

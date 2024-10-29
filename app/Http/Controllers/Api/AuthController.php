@@ -472,7 +472,7 @@ class AuthController extends Controller
 
             return response()->json(['data' => $status]);
 
-            //            Mail::to($request->get('email'))->send(new ResetPassword($data));
+            Mail::to($request->get('email'))->send(new ResetPassword($data));
         }
     }
 
