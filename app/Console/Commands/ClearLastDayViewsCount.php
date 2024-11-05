@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Post;
+use App\Models\Song;
 use Illuminate\Console\Command;
 
 class ClearLastDayViewsCount extends Command
@@ -42,6 +43,12 @@ class ClearLastDayViewsCount extends Command
         foreach ($posts as $post) {
             $post->views_by_last_day = 0;
             $post->save();
+        }
+
+        $songs = Song::all();
+        foreach ($songs as $song) {
+            $song->views_by_last_day = 0;
+            $song->save();
         }
     }
 }

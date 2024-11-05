@@ -39,21 +39,7 @@
                     {{$song->id}}
                 </td>
                 <td>
-                    @php
-                        // if ($post->getFirstMedia('thumb') && str_contains($post->getFirstMedia('thumb')->mime_type, 'image')) {
-                        //     $image = $post->getFirstMediaUrl('thumb');
-                        // } else if ($post->getFirstMedia('thumb') && str_contains($post->getFirstMedia('thumb')->mime_type, 'video')) {
-                        //     $image = $post->getFirstMediaUrl('thumb', 'original');
-                        // } else {
-						// 	if ($post->getFirstMedia('files') && str_contains($post->getFirstMedia('files')->mime_type, 'image')) {
-                        //         $image = $post->getFirstMediaUrl('files');
-                        //     } else if ($post->getFirstMedia('files') && str_contains($post->getFirstMedia('files')->mime_type, 'video')) {
-                        //         $image = $post->getFirstMediaUrl('files', 'original');
-                        //     }
-						// }
-
-                    @endphp
-                    <img height="64" src="{{URL::asset('storage/'.$song->image_file)}}">
+                    <img height="64" src="{{$song->image_file}}">
                 </td>
                 <td>
                    {{$song->title}}
@@ -63,19 +49,19 @@
                     {{$song->artist ? $song->artist->name : ''}}
                 </td>
                 <td>
-                    {{$song->genre->name ?? ''}}
+                    {{$song->genre->name ?? '--'}}
                 </td>
                 <td>
-                    {{$song->mood->name ?? ''}}
+                    {{$song->mood->name ?? '--'}}
                 </td>
                 <td>
                     {{$song->song_length ?? ''}}
                 </td>
                 <td>
-                    {{$song->listens_count ?? 0}}
+                    {{$song->views_count ?? 0}}
                 </td>
                 <td>
-                    {{0}}
+                    {{ $song->posts_count  ?? 0}}
                 </td>
                 <td>
                     {{ \Carbon\Carbon::parse($song->created_at)->format('m/d/y') }}

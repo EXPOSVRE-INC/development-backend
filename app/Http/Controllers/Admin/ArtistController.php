@@ -65,7 +65,7 @@ class ArtistController extends Controller
             $artist->status = 'inactive';
             $artist->save();
 
-            Song::where('artist_id', $artist_id)->update(['status' => 'inactive']);
+            Song::where('artist_id', $artist_id)->update(['status' => 'deleted']);
         }
         return redirect()->route('artist-index');
     }

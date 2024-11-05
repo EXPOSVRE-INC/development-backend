@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Overtrue\LaravelLike\Traits\Likeable;
+use Overtrue\LaravelFavorite\Traits\Favoriteable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Song extends Model
 {
-    use HasFactory;
+    use HasFactory , Likeable, Favoriteable;
 
     protected $table ='songs';
     protected $fillable = [
@@ -17,13 +19,15 @@ class Song extends Model
         'song_length',
         'image_file',
         'likes_count',
-        'listens_count',
+        'views_count',
         'status',
         'artist_id',
         'genre_id',
+        'user_id',
         'mood_id',
         'full_song_file',
         'clip_15_sec',
+        'viewsByLastDay'
       ];
 
       public function artist()
@@ -39,5 +43,9 @@ class Song extends Model
       public function mood()
       {
           return $this->belongsTo(Mood::class);
+      }
+      public function posts()
+      {
+        return $this->hasMany(Post::class, 'song_id');
       }
 }

@@ -86,22 +86,25 @@
     </x-adminlte-input-file>
 
     <x-adminlte-select2 id="artist_id" name="artist_id" label="Artist" label-class="text-lightblue" igroup-size="md"
-        igroup-size="sm" :config="$config">
+    igroup-size="sm"  :config="$config">
         <x-slot name="prependSlot">
             <div class="input-group-text bg-gradient-red">
                 <i class="fas fa-user"></i>
             </div>
         </x-slot>
-        <x-slot name="appendSlot">
-            <x-adminlte-button theme="outline-dark" label="Clear" icon="fas fa-lg fa-ban text-danger" />
-        </x-slot>
-        <option />
+        <option value="">Select Artist...</option>
         @foreach($artists as $artist)
-        <option value="{{$artist->id}}"> {{$artist->name}}</option>
+        <option value="{{ $artist->id }}" {{ old('artist_id')==$artist->id ? 'selected' : '' }}>
+            {{ $artist->name }}
+        </option>
         @endforeach
     </x-adminlte-select2>
-    <a class="newArtistText" href="{{route('artist-form','new')}}">New Artist</a>
-    <x-adminlte-input name="title" label="Title" placeholder="Title" label-class="text-lightblue">
+
+    <a class="newArtistText" href="{{ route('artist-form', 'new') }}">New Artist</a>
+
+    <!-- Title Input -->
+    <x-adminlte-input name="title" label="Title" placeholder="Title" label-class="text-lightblue"
+        value="{{ old('title') }}">
         <x-slot name="prependSlot">
             <div class="input-group-text">
                 <i class="fas fa-user text-lightblue"></i>
@@ -119,34 +122,33 @@
     </x-adminlte-textarea>
 
     <x-adminlte-select2 id="genre_id" name="genre_id" label="Genre" label-class="text-lightblue" igroup-size="md"
-        igroup-size="sm" :config="$config">
+    igroup-size="sm" :config="$config">
         <x-slot name="prependSlot">
             <div class="input-group-text bg-gradient-red">
                 <i class="fas fa-list"></i>
             </div>
         </x-slot>
-        <x-slot name="appendSlot">
-            <x-adminlte-button theme="outline-dark" label="Clear" icon="fas fa-lg fa-ban text-danger" />
-        </x-slot>
-        <option />
+        <option value="">Select Genre...</option>
         @foreach($genres as $genre)
-        <option value="{{$genre->id}}"> {{$genre->name}}</option>
+        <option value="{{ $genre->id }}" {{ old('genre_id')==$genre->id ? 'selected' : '' }}>
+            {{ $genre->name }}
+        </option>
         @endforeach
     </x-adminlte-select2>
 
+    <!-- Mood Selection -->
     <x-adminlte-select2 id="mood_id" name="mood_id" label="Mood" label-class="text-lightblue" igroup-size="md"
-        igroup-size="sm" :config="$config">
+    igroup-size="sm" :config="$config">
         <x-slot name="prependSlot">
             <div class="input-group-text bg-gradient-red">
                 <i class="fas fa-icons"></i>
             </div>
         </x-slot>
-        <x-slot name="appendSlot">
-            <x-adminlte-button theme="outline-dark" label="Clear" icon="fas fa-lg fa-ban text-danger" />
-        </x-slot>
-        <option />
+        <option value="">Select Mood...</option>
         @foreach($moods as $mood)
-        <option value="{{$mood->id}}"> {{$mood->name}}</option>
+        <option value="{{ $mood->id }}" {{ old('mood_id')==$mood->id ? 'selected' : '' }}>
+            {{ $mood->name }}
+        </option>
         @endforeach
     </x-adminlte-select2>
 

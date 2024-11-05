@@ -77,7 +77,7 @@
         <input type="file" name="image_file" id="image-upload" />
         <!-- Show the existing image if available -->
         @if($song->image_file)
-        <img src="{{URL::asset('storage/'.$song->image_file)}}" alt="Song Image">
+        <img src="{{ $song->image_file }}" alt="Song Image">
         @endif
     </div>
 
@@ -103,7 +103,7 @@
     <div class="mt-3 fileContainer mb-3">
         <strong class="clipText">Uploaded Song:</strong>
         <audio controls class="audioSong">
-            <source src="{{ Storage::url($song->full_song_file) }}" type="audio/mpeg">
+            <source src="{{ $song->full_song_file }}" type="audio/mpeg">
             Your browser does not support the audio tag.
         </audio>
     </div>
@@ -123,7 +123,7 @@
     <div class="mt-3 fileContainer mb-3">
         <strong class="clipText">Uploaded Clip:</strong>
         <audio controls class="audioSong">
-            <source src="{{ Storage::url($song->clip_15_sec) }}" type="audio/mpeg">
+            <source src="{{ $song->clip_15_sec }}" type="audio/mpeg">
             Your browser does not support the audio tag.
         </audio>
     </div>

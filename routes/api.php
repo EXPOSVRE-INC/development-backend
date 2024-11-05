@@ -321,10 +321,13 @@ Route::group([
         ], function ($router) {
             Route::get('/genres', [MusicController::class, 'getGenres']); // List all conversations
             Route::get('/moods', [MusicController::class, 'getMoods']);
-            // Route::post('/chat/send-message', [ChatController::class, 'sendMessage']);
-            // Route::put('/chat/read-message/{chatId}', [ChatController::class, 'readMessage']);
-            // Route::put('/chat/edit-message/{chatId}', [ChatController::class, 'editMessage']);
-            // Route::delete('/chat/delete-message/{chatId}', [ChatController::class, 'deleteMessage']);
+            Route::get('/list', [MusicController::class, 'songList']);
+            Route::get('/unlike/{id}', [MusicController::class, 'unlikeSong']);
+            Route::get('/detail/{id}', [MusicController::class, 'songDetail']);
+            Route::get('/like/{id}', [MusicController::class, 'likeSong']);
+            Route::get('/view/{id}', [MusicController::class, 'viewSong']);
+            Route::get('/add-favorite/{song}', [MusicController::class, 'favoriteSong']);
+            Route::get('/remove-favorite/{song}', [MusicController::class, 'unfavoriteSong']);
 
         });
 

@@ -30,7 +30,10 @@ class SongController extends Controller
     public function index()
     {
 
-        $songs = Song::where('status', 'active')->latest()->get();
+        $songs = Song::where('status', 'active')
+        ->withCount('posts')
+        ->get();
+
         return view('admin.songs.index', [
             'songs' => $songs,
         ]);
@@ -52,8 +55,6 @@ class SongController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'artist_id' => 'required|exists:artists,id',
-            'genre_id' => 'required|exists:genre,id',
-            'mood_id' => 'required|exists:moods,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'image_file' => 'required|file|max:10240',
@@ -61,27 +62,38 @@ class SongController extends Controller
             'clip_15_sec' => 'required|file|max:10240',
         ]);
 
+        $validator->after(function ($validator) use ($request) {
+            if (is_null($request->genre_id) && is_null($request->mood_id)) {
+                $validator->errors()->add('genre_id', 'Either genre_id or mood_id is required.');
+                $validator->errors()->add('mood_id', 'Either genre_id or mood_id is required.');
+            }
+        });
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
         $imagePath = null;
         $songPath = null;
         $clipPath = null;
 
         if ($request->hasFile('image_file')) {
-            $imagePath = $request
-                ->file('image_file')
-                ->store('uploads/images', 'public');
+            $imagePath = $request->file('image_file')->store('uploads/images', 'public');
+            $imageUrl = url('storage/' . $imagePath);
         }
 
         if ($request->hasFile('full_song_file')) {
-            $songPath = $request
-                ->file('full_song_file')
-                ->store('uploads/songs', 'public');
+            $songPath = $request->file('full_song_file')->store('uploads/songs', 'public');
+            $songUrl = url('storage/' . $songPath);
         }
 
         if ($request->hasFile('clip_15_sec')) {
-            $clipPath = $request
-                ->file('clip_15_sec')
-                ->store('uploads/clips', 'public');
+            $clipPath = $request->file('clip_15_sec')->store('uploads/clips', 'public');
+            $clipUrl = url('storage/' . $clipPath);
         }
+
         $songDuration = $this->calculateSongDuration(storage_path('app/public/' . $songPath));
 
         $song = new Song();
@@ -90,16 +102,18 @@ class SongController extends Controller
         $song->mood_id = $request->mood_id;
         $song->title = $request->title;
         $song->likes_count = 0;
-        $song->listens_count = 0;
+        $song->views_count = 0;
+        $song->user_id = auth()->user()->id;
         $song->song_length = $songDuration;
+        $song->status = 'active';
         $song->description = $request->description;
-        $song->image_file = $imagePath;
-        $song->full_song_file = $songPath;
-        $song->clip_15_sec = $clipPath;
+        $song->image_file = $imageUrl;
+        $song->full_song_file = $songUrl;
+        $song->clip_15_sec = $clipUrl;
+        $song->views_by_last_day = 0;
 
         $song->save();
 
-        // echo $song;
         return redirect()->route('song-index');
     }
 
@@ -145,11 +159,12 @@ class SongController extends Controller
 
 
     public function delete($song_id) {
-        $song = Song::where(['id' => $song_id])->first();
-        if ($song) {
-            $song->status = 'inactive';
-            $song->save();
-        }
-        return redirect()->route('song-index');
+    $song = Song::where(['id' => $song_id])->first();
+    if ($song) {
+        $song->update(['status' => 'deleted']);
+        return redirect()->route('song-index')->with('success', 'Song deleted successfully');
+    } else {
+        return redirect()->route('song-index')->with('error', 'Song not found');
     }
+}
 }

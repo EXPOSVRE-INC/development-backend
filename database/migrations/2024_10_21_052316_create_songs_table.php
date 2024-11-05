@@ -19,7 +19,7 @@ class CreateSongsTable extends Migration
             $table->longText('description')->nullable();
             $table->string('image_file');
             $table->integer('likes_count')->default(0);
-            $table->integer('listens_count')->default(0);
+            $table->integer('views_count')->default(0);
             $table->string('status')->default('active');
             $table->integer('artist_id');
             $table->integer('genre_id');

@@ -19,6 +19,11 @@
     </h1>
             <table class="table table-bordered table-striped">
                 <tbody>
+                @if ($moods->isEmpty())
+                    <tr>
+                        <td colspan="2" class="text-center">No data found</td>
+                    </tr>
+                 @else
                     @foreach ($moods as $mood)
                         <tr>
                             <td>{{ $mood['name'] }}</td>
@@ -32,6 +37,7 @@
                             </td>
                         </tr>
                     @endforeach
+                @endif
                 </tbody>
             </table>
 @endsection

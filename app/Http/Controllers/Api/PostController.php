@@ -9,6 +9,7 @@ use App\Http\Resources\CollectionResource;
 use App\Http\Resources\CommentResource;
 use App\Http\Resources\PostImagePreviewResource;
 use App\Http\Resources\PostResource;
+use App\Http\Resources\SongResource;
 use App\Http\Service\SearchPostService;
 use App\Models\InterestsCategory;
 use App\Models\InterestsPostAssigment;
@@ -17,6 +18,7 @@ use App\Models\Order;
 use App\Models\Post;
 use App\Models\PostCollection;
 use App\Models\Report;
+use App\Models\Song;
 use App\Models\User;
 use App\Notifications\LikeNotification;
 use App\Notifications\NewCommentForPost;
@@ -27,10 +29,9 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\UploadedFile;
 use Imagick;
-use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use function GuzzleHttp\Promise\all;
+
 
 class PostController extends Controller
 {
@@ -353,6 +354,7 @@ class PostController extends Controller
             }
         if ($request->get('id') == 0) {
 
+            $songId = $request->song_id;
             $user = auth('api')->user();
 
             $request->merge(['owner_id' => $user->id]);
@@ -363,6 +365,10 @@ class PostController extends Controller
 
             if (!$request->has('type')) {
                 $request->merge(['type' => 'image']);
+            }
+
+            if (!$request->has('song_id')) {
+                $request->merge(['song_id' => $songId]);
             }
 
             if ($request->has('shippingIncluded')) {
@@ -453,7 +459,7 @@ class PostController extends Controller
                 }
             }
 
-//        dd($user->paymentAccounts);
+            //        dd($user->paymentAccounts);
 
 
             if (!empty($liveExpiriences)) {
@@ -926,7 +932,7 @@ class PostController extends Controller
             return response()->json(['error' => 'You cannot like this post because the owner has blocked you.'], 403);
         }
 
-        $deepLink = 'EXPOSVRE://postlike/'. $post->id;
+        $deepLink = 'EXPOSVRE://postlike/' . $post->id;
 
         $notification = new \App\Models\Notification();
         $notification->title = 'liked your post';
@@ -981,16 +987,12 @@ class PostController extends Controller
     {
         $user = auth('api')->user();
         $now = Carbon::now();
-        // $posts = Post::has('likers')->withCount(['likers', 'likersByLastDay'])->orderBy('likers_by_last_day_count', 'DESC')->limit(50)->get();
 
+        // Fetch most crowned posts
         $posts = Post::has('likers')
             ->withCount([
                 'likers' => function ($query) {
-                    $query->where(
-                        'likes.created_at',
-                        '>=',
-                        Carbon::now()->subDays(7)
-                    );
+                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
                 },
             ])
             ->orderBy('likers_count', 'DESC')
@@ -1015,9 +1017,37 @@ class PostController extends Controller
             else {
                 return false;
             }
+
+            return true;
         });
 
-        return response()->json(['data' => PostResource::collection($posts)]);
+        // Fetch most crowned songs
+        $songs = Song::has('likers')
+            ->withCount([
+                'likers' => function ($query) {
+                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
+                },
+            ])
+            ->orderBy('likers_count', 'DESC')
+            ->limit(50)
+            ->get();
+
+        $merged = $posts->merge($songs)->sortByDesc('likers_count');
+
+        $merged = $merged->take(50);
+
+        $formattedData = $merged->map(function ($item) {
+            if ($item instanceof Post) {
+                return new PostResource($item);
+            } elseif ($item instanceof Song) {
+                return new SongResource($item);
+            }
+            return null;
+        })->filter()->values();
+
+        return response()->json([
+            'data' => $formattedData,
+        ]);
     }
 
     public function mostViewed()
@@ -1025,11 +1055,12 @@ class PostController extends Controller
         $user = auth('api')->user();
         $now = Carbon::now();
 
-       $sevenDaysAgo = $now->subDays(7);
+        $sevenDaysAgo = $now->subDays(7);
 
         $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
             ->limit(50)
             ->get();
+
 
         $posts = $posts->filter(function ($post) {
             return $post->reports->count() == 0;
@@ -1040,22 +1071,41 @@ class PostController extends Controller
                 } else {
                     return true;
                 }
-            }
-            else if ($user->isBlockedBy($post->owner) || $post->publish_date == null || $post->publish_date <= $now) {
+            } else if ($user->isBlockedBy($post->owner) || $post->publish_date == null || $post->publish_date <= $now) {
                 if ($post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
                     return false;
                 } else {
                     return true;
                 }
-            }
-            else {
+            } else {
                 return false;
             }
-        });
-        return response()->json(['data' => PostResource::collection($posts)]);
-    }
+         });
+            $songs = Song::where('updated_at', '>=', $sevenDaysAgo)
+                ->where('views_by_last_day', '>', 0)
+                ->orderBy('views_by_last_day', 'DESC')
+                ->limit(50)
+                ->get();
 
-    public function viewPost($id) {
+            $merged = $posts->merge($songs)->sortByDesc('views_by_last_day');
+
+
+            $formattedData = $merged->map(function ($item) {
+                if ($item instanceof Post) {
+                    return new PostResource($item);
+                } elseif ($item instanceof Song) {
+                    return new SongResource($item);
+                }
+                return null;
+            })->filter()->values();
+
+            return response()->json([
+                'data' => $formattedData,
+            ]);
+        }
+
+    public function viewPost($id)
+    {
 
         $post = Post::where(['id' => $id])->first();
 

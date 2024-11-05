@@ -59,7 +59,8 @@ class Post extends Model implements HasMedia
         'publish_date',
         'link',
         'isArticle',
-        'author'
+        'author',
+        'song_id'
     ];
 
     public function owner()
@@ -70,6 +71,9 @@ class Post extends Model implements HasMedia
     public function collection()
     {
         return $this->belongsTo(PostCollection::class);
+    }
+    public function song(){
+        return $this->belongsTo(Song::class);
     }
 
     public function registerMediaConversions(Media $media = null): void

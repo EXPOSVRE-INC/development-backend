@@ -23,18 +23,12 @@ class PostResource extends JsonResource
         $isMarket = false;
         $user = auth('api')->user();
 
-        //        dump($this->post_for_sale);
         if ($this->post_for_sale == 1) {
-            //            dump(!$user->isSubscription($this->owner_id));
             if ($user->isSubscription($this->owner_id)) {
                 $isMarket = true;
             } else {
                 $isMarket = true;
             }
-
-            //            $stripeService = new StripeService();
-            //
-            //            $stripeService->getStateTax($this->id);
         }
         $priceRequest = PriceRequest::where([
             'user_id' => $user->id,
@@ -42,21 +36,17 @@ class PostResource extends JsonResource
         ])
             ->latest()
             ->first();
-        //        dump($user->id);
-        //        dump($this->id);
-
-        //        dump($priceRequest);
         $data = [
             'id' => $this->id,
             'title' => $this->title,
             'subtitle' => $this->subtitle == null ? '' : $this->subtitle,
             'description' =>
-                $this->description == null ? '' : $this->description,
+            $this->description == null ? '' : $this->description,
             'author' => $this->author == null ? '' : $this->author,
             'link' => $this->link,
-            //                'collection_post' => (bool) $this->collection_post,
             'post_for_sale' => (bool) $this->post_for_sale,
             'collection' => $this->collection,
+            'song' =>  new SongResource($this->song),
             'unlimited_edition' => (bool) $this->unlimited_edition,
             'limited_addition_number' => (int) $this->limited_addition_number,
             'physical_item' => (bool) $this->physical_item,
@@ -96,7 +86,7 @@ class PostResource extends JsonResource
             ),
             'archived' => (bool) $this->is_archived,
             'order_priority' =>
-                $this->order_priority != null ? $this->order_priority : 0,
+            $this->order_priority != null ? $this->order_priority : 0,
             'isMarket' => (bool) $isMarket,
             'type' => $this->type,
             'currency' => $this->currency,
@@ -106,7 +96,7 @@ class PostResource extends JsonResource
             'isFree' => (bool) $this->isFree,
             'isPriceRequested' => $priceRequest != null ? true : false,
             'priceRequestStatus' =>
-                $priceRequest != null ? $priceRequest->status : 'none',
+            $priceRequest != null ? $priceRequest->status : 'none',
             'shippingIncluded' => (bool) $this->isFree,
             'shippingPrice' => (int) $this->shippingPrice / 100,
             'transactionFees' => ((int) $this->fixed_price / 100) * 0.059,
@@ -115,71 +105,69 @@ class PostResource extends JsonResource
             'files' => ImageResource::collection($this->getMedia('files')),
 
             'liveExperiences' =>
-                count($this->intervals) > 0
-                    ? LiveExperienceResource::collection($this->intervals)
-                    : [],
+            count($this->intervals) > 0
+                ? LiveExperienceResource::collection($this->intervals)
+                : [],
 
             //                'creator' => ($this->parent) ? UserResource::make($this->parent->owner) : UserResource::make($this->owner),
         ];
         //        dd($this->getMedia('files'));
 
-        if (str_contains($this->getFirstMedia('files')->mime_type, 'image')) {
-            $data['image'] = $this->getFirstMediaUrl('files');
+        // Check if there is any media in 'files' collection
+        if ($firstMedia = $this->getFirstMedia('files')) {
+            if (str_contains($firstMedia->mime_type, 'image')) {
+                $data['image'] = $this->getFirstMediaUrl('files');
 
-            if (
-                str_contains($this->getFirstMedia('files')->mime_type, 'webp')
-            ) {
-                $data['image_height'] = 160;
-                $data['image_width'] = 160;
-            } else {
-                $mediaPath = $this->getMedia('files')[0]->getPath('original');
+                if (str_contains($firstMedia->mime_type, 'webp')) {
+                    $data['image_height'] = 160;
+                    $data['image_width'] = 160;
+                } else {
+                    $mediaPath = $firstMedia->getPath('original');
+                    if (!empty($mediaPath) && file_exists($mediaPath)) {
+                        $image = ImageFactory::load($mediaPath);
+                        $data['image_height'] = $image->getHeight();
+                        $data['image_width'] = $image->getWidth();
+                    } else {
+                        $data['image_height'] = 0;
+                        $data['image_width'] = 0;
+                    }
+                }
+            } elseif (str_contains($firstMedia->mime_type, 'video')) {
+                $data['image'] = $this->getFirstMediaUrl('files', 'original');
+                $mediaPath = $firstMedia->getPath('original');
+
                 if (!empty($mediaPath) && file_exists($mediaPath)) {
-                    $image = ImageFactory::load($mediaPath);
-                    $data['image_height'] = $image->getHeight();
-                    $data['image_width'] = $image->getWidth();
+                    $ffmpeg = FFMpeg::create();
+                    $video = $ffmpeg->open($mediaPath);
+
+                    $dimension = $video
+                        ->getStreams()
+                        ->videos()
+                        ->first()
+                        ->getDimensions();
+                    $data['image_height'] = $dimension->getHeight();
+                    $data['image_width'] = $dimension->getWidth();
                 } else {
                     $data['image_height'] = 0;
                     $data['image_width'] = 0;
                 }
             }
-        } elseif (
-            str_contains($this->getFirstMedia('files')->mime_type, 'video')
-        ) {
-            $data['image'] = $this->getFirstMediaUrl('files', 'original');
-            $mediaPath = $this->getMedia('files')[0]->getPath('original');
-
-            if (!empty($mediaPath) && file_exists($mediaPath)) {
-                $ffmpeg = FFMpeg::create();
-                $video = $ffmpeg->open($mediaPath);
-
-                $dimension = $video
-                    ->getStreams()
-                    ->videos()
-                    ->first()
-                    ->getDimensions();
-                $data['image_height'] = $dimension->getHeight();
-                $data['image_width'] = $dimension->getWidth();
-            } else {
-                $data['image_height'] = 0;
-                $data['image_width'] = 0;
-            }
+        } else {
+            // No media, set default values
+            $data['image'] = null;
+            $data['image_height'] = 0;
+            $data['image_width'] = 0;
         }
 
-        $data['thumb'] =
-            $this->getFirstMedia('thumb') != null
-                ? $this->getFirstMediaUrl('thumb')
-                : $this->getFirstMediaUrl('files', 'original');
+        // Set thumbnail, falling back to 'files' collection if 'thumb' is unavailable
+        $data['thumb'] = $this->getFirstMediaUrl('thumb') ?? $this->getFirstMediaUrl('files', 'original');
+
+        // Handle video media if 'ad' is set to 1
         if ($this->ad == 1) {
             $data['video'] = $this->getFirstMediaUrl('video');
-            $data['video_preview'] =
-                $this->getFirstMedia('video') != null
-                    ? $this->getFirstMediaUrl('video', 'original')
-                    : '';
+            $data['video_preview'] = $this->getFirstMediaUrl('video', 'original') ?? '';
         }
 
-        //        if ($this->type == 'video') {
-        //            $data['video_link'] = $this->video_link;
-        //        }
 
         return $data;
     }
