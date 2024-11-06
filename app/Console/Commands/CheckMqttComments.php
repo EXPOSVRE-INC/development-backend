@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Notification;
 use App\Models\Post;
 use App\Models\PostCollection;
+use App\Models\Song;
 use App\Models\User;
 use App\Notifications\NewCommentForCollection;
 use App\Notifications\NewCommentForPost;
@@ -50,30 +51,12 @@ class CheckMqttComments extends Command
 
         $mqtt->subscribe('comments/#', function ($topic, $message) {
             $message = json_decode($message);
-            dump($message);
-            dump($topic);
+
             if (str_contains($topic, 'posts')) {
                 $post = Post::where(['id' => $message->forPostId])->first();
                 $comments = $post->comments;
-                dump('POST');
-                dump($message->forPostId);
-                dump($post->id);
-//                $commentsSearch = $comments->filter(function ($item) use ($message) {
-//                    return $item->comment == $message->message && $item->user_id == $message->userId;
-//                });
-
-                dump($message);
-//                dump($commentsSearch);
-
-//                if (count($commentsSearch) == 0) {
-                    dump($message->message);
-                    dump($post->id);
                     $user = User::where(['id' => $message->userId])->first();
-
-
                     $post->commentAs($user, $message->message);
-
-//                    dump($post->owner);
 
                     $deepLink = 'EXPOSVRE://postcomment/'. $post->id;
 
@@ -89,8 +72,14 @@ class CheckMqttComments extends Command
 
                     $notification = $post->owner->notify(new NewCommentForPost($user, $message->message, $post));
 
-//                }
-            } else if (str_contains($topic, 'galleries')) {
+            }
+            else if (str_contains($topic, 'songs')) {
+                $song = Song::where(['id' => $message->forSongId])->first();
+                $comments = $song->comments;
+                    $user = User::where(['id' => $message->userId])->first();
+                    $song->commentAs($user, $message->message);
+            }
+            else if (str_contains($topic, 'galleries')) {
                 $collection = PostCollection::where(['id' => $message->forGalleryId])->first();
 
                 $comments = $collection->comments;

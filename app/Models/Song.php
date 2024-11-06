@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use Overtrue\LaravelLike\Traits\Likeable;
+use Orkhanahmadov\LaravelCommentable\Commentable;
 use Overtrue\LaravelFavorite\Traits\Favoriteable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Song extends Model
 {
-    use HasFactory , Likeable, Favoriteable;
+    use HasFactory , Likeable, Favoriteable , Commentable;
 
     protected $table ='songs';
     protected $fillable = [
@@ -20,6 +21,7 @@ class Song extends Model
         'image_file',
         'likes_count',
         'views_count',
+        'download_count',
         'status',
         'artist_id',
         'genre_id',

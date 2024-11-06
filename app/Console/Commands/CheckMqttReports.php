@@ -81,9 +81,21 @@ class CheckMqttReports extends Command
                 $report->model_id = $message->song->id ?? '';
                 $report->save();
 
-                $user = User::where(['id' => $message->profile->user_id])->first();
-                $user->status = 'flagged';
-                $user->save();
+            }
+            else if (str_contains($topic, 'opinions')) {
+                $comment = Comment::where(['commentable_type' => 'App\Models\Song'])
+                    ->where(['commentable_id' => $message->message->forSongId])
+                    ->where(['user_id' => $message->message->userId])
+                    ->where(['comment' => $message->message->message])
+                    ->first();
+
+                $report = new Report();
+                $report->reason = $message->message->payload->reason ?? '';
+                $report->status = 'flagged';
+                $report->reporter_id = $message->userId;
+                $report->model = 'comment';
+                $report->model_id = $comment->id;
+                $report->save();
             }
             else if (str_contains($topic, 'comments')) {
                 $comment = Comment::where(['commentable_type' => 'App\Models\Post'])

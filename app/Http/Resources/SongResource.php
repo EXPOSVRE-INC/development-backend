@@ -23,6 +23,7 @@ class SongResource extends JsonResource
         'image_file' => $this->image_file,
         'likes_count' =>  (int) $this->likers()->count(),
         'views_count' => $this->views_count,
+        'download_count' => $this->download_count,
         'status' => $this->status,
         'full_song_file' => $this->full_song_file,
         'clip_15_sec' => $this->clip_15_sec,

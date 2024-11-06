@@ -33,6 +33,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 
+
 class PostController extends Controller
 {
     private $searchPostService;
@@ -46,7 +47,6 @@ class PostController extends Controller
     {
 
         return PostResource::collection(Post::all());
-
     }
 
     public function getPost($id)
@@ -60,7 +60,6 @@ class PostController extends Controller
                 'message' => 'The post has been deleted',
             ], 404);
         }
-
     }
 
     public function fileUploader(Request $request)
@@ -153,7 +152,8 @@ class PostController extends Controller
         ]);
     }
 
-    public function dropFileByUuid(Request $request) {
+    public function dropFileByUuid(Request $request)
+    {
         $uuid = $request->get('uuid');
 
         $image = Media::where(['uuid' => $uuid])->first();
@@ -283,7 +283,8 @@ class PostController extends Controller
         return response()->json(['data' => $user->getMedia('tempCollection')]);
     }
 
-    public function checkProfanityText($text) {
+    public function checkProfanityText($text)
+    {
         $profanityRoute = env('WEBPURIFY_PROFANITY_ENDPOINT');
         $profanityToken = env('WEBPURIFY_PROFANITY_TOKEN');
         $profanityMethod = 'webpurify.live.return';
@@ -291,8 +292,8 @@ class PostController extends Controller
         // Construct the full API URL with query parameters
         $apiUrl = "http://api1.webpurify.com/services/rest/?format=json&method=webpurify.live.check&api_key={$profanityToken}&text=" . urlencode($text);
 
-    $response = Http::get($apiUrl);
-    $jsonBodyResp = json_decode($response->getBody());
+        $response = Http::get($apiUrl);
+        $jsonBodyResp = json_decode($response->getBody());
         if ($jsonBodyResp->rsp->found > 0) {
             return false; // Profanity found
         } else {
@@ -300,7 +301,8 @@ class PostController extends Controller
         }
     }
 
-    public function checkImage($imageUrl) {
+    public function checkImage($imageUrl)
+    {
         $imageRoute = env('WEBPURIFY_IMAGE_ENDPOINT');
         $imageToken = env('WEBPURIFY_IMAGE_TOKEN');
         $checkMethod = 'webpurify.aim.imgcheck';
@@ -328,30 +330,30 @@ class PostController extends Controller
             $result = ['res' => false, 'message' => 'gore ' . $jsonBodyResp->rsp->gore . '%'];
         } elseif ($jsonBodyResp->rsp->drugs > 25) {
             $result = ['res' => false, 'message' => 'drugs ' . $jsonBodyResp->rsp->drugs . '%'];
-        } elseif($jsonBodyResp->rsp->weapons > 25) {
+        } elseif ($jsonBodyResp->rsp->weapons > 25) {
             $result = ['res' => false, 'message' => 'weapons ' . $jsonBodyResp->rsp->weapons . '%'];
         }
 
-//        dump($jsonBodyResp);
+        //        dump($jsonBodyResp);
         return $result;
     }
 
     public function createPost(CreatePostRequest $request)
     {
 
-            $title = trim($request->get('title'));
-            $desc = trim($request->get('description'));
+        $title = trim($request->get('title'));
+        $desc = trim($request->get('description'));
 
-            if (empty($title) || empty($desc)) {
-                return response()->json(['error' => 'Title and Description cannot be empty or whitespace.'], 400);
-            }
-            if (!$request->has('files') || empty($request->get('files'))) {
-                return response()->json([
-                    'error' => "Can't create post",
-                    'message' => "Post not created! At least one file attachment is required.",
-                    'status' => 422
-                ], 422);
-            }
+        if (empty($title) || empty($desc)) {
+            return response()->json(['error' => 'Title and Description cannot be empty or whitespace.'], 400);
+        }
+        if (!$request->has('files') || empty($request->get('files'))) {
+            return response()->json([
+                'error' => "Can't create post",
+                'message' => "Post not created! At least one file attachment is required.",
+                'status' => 422
+            ], 422);
+        }
         if ($request->get('id') == 0) {
 
             $songId = $request->song_id;
@@ -554,29 +556,28 @@ class PostController extends Controller
             }
 
 
-//        if (count($user->collections) == 0) {
-//            $collection = new PostCollection();
-//            $collection->name = $post->title;
-//            $collection->description = $post->description;
-//            $collection->allowToComment = 1;
-//            $collection->allowToCrown = 1;
-//            $collection->user_id = $user->id;
-//            $collection->save();
-//            foreach ($media as $file) {
-//                $file->move($collection, 'files');
-//            }
-//        } else {
-//            $collection = $user->collections->first();
-//        }
-//
-//        $post->collection_id = $collection->id;
+            //        if (count($user->collections) == 0) {
+            //            $collection = new PostCollection();
+            //            $collection->name = $post->title;
+            //            $collection->description = $post->description;
+            //            $collection->allowToComment = 1;
+            //            $collection->allowToCrown = 1;
+            //            $collection->user_id = $user->id;
+            //            $collection->save();
+            //            foreach ($media as $file) {
+            //                $file->move($collection, 'files');
+            //            }
+            //        } else {
+            //            $collection = $user->collections->first();
+            //        }
+            //
+            //        $post->collection_id = $collection->id;
             if (!$user->verify) {
                 $profanityCheck = $this->checkProfanityText($post->title . ' ' . $post->description);
-//            $profanityImageCheck = $this->checkImage()
+                //            $profanityImageCheck = $this->checkImage()
                 $post->save();
 
                 if ($profanityCheck) {
-
                 } else {
                     $report = new Report();
                     $report->reason = 'Reported by webpurify text. Post ID ' . $post->id;
@@ -603,18 +604,18 @@ class PostController extends Controller
                 }
             }
 
-//        if ($request->file('image')) {
-//            $post->addMedia($file)->toMediaCollection('images');
-//        }
+            //        if ($request->file('image')) {
+            //            $post->addMedia($file)->toMediaCollection('images');
+            //        }
 
             return new PostResource($post);
         } else {
             return $this->updatePost($request, $request->get('id'));
         }
-
     }
 
-    public function createCollection(Request $request) {
+    public function createCollection(Request $request)
+    {
         $user = auth('api')->user();
         $collection = new PostCollection();
         $collection->name = $request->get('title');
@@ -638,12 +639,14 @@ class PostController extends Controller
         return response()->json(['data' => CollectionResource::make($collection)]);
     }
 
-    public function getCollection($id) {
+    public function getCollection($id)
+    {
         $collection = PostCollection::where(['id' => $id])->first();
         return response()->json(['data' => CollectionResource::make($collection)]);
     }
 
-    public function removeCollection($id) {
+    public function removeCollection($id)
+    {
         $collection = PostCollection::where(['id' => $id])->first();
         if (auth('api')->user()->id == $collection->user_id) {
 
@@ -653,7 +656,8 @@ class PostController extends Controller
         }
     }
 
-    public function updateCollection($id, Request $request) {
+    public function updateCollection($id, Request $request)
+    {
         $collection = PostCollection::where(['id' => $id])->first();
 
         if (auth('api')->user()->id == $collection->user_id) {
@@ -670,13 +674,15 @@ class PostController extends Controller
         }
     }
 
-    public function listCollectionsByUser($id) {
+    public function listCollectionsByUser($id)
+    {
         $user = User::where(['id' => $id])->with(['collections'])->first();
 
         return response()->json(['data' => CollectionResource::collection($user->collections)]);
     }
 
-    public function listPostsByCollectionId($id) {
+    public function listPostsByCollectionId($id)
+    {
         $collection = PostCollection::where(['id' => $id])->first();
 
         return response()->json(['data' => $collection->posts->map(function ($item) {
@@ -690,12 +696,12 @@ class PostController extends Controller
         $post = Post::where(['id' => $id])->first();
 
 
-            $title = trim($post->title);
-            $desc = trim($post->description);
+        $title = trim($post->title);
+        $desc = trim($post->description);
 
-           if (empty($title) || empty($desc)) {
-                return response()->json(['error' => 'Title and Description cannot be empty or whitespace.'], 400);
-            }
+        if (empty($title) || empty($desc)) {
+            return response()->json(['error' => 'Title and Description cannot be empty or whitespace.'], 400);
+        }
         $postHasFiles = $post->hasMedia('files');
         if (!$postHasFiles && (!$request->has('files') || empty($request->get('files')))) {
             return response()->json([
@@ -704,9 +710,9 @@ class PostController extends Controller
                 'status' => 422
             ], 422);
         }
-//        if (count($user->getMedia('temp')) > 0 ) {
-//            $post->clearMediaCollection('files');
-//        }
+        //        if (count($user->getMedia('temp')) > 0 ) {
+        //            $post->clearMediaCollection('files');
+        //        }
         if ($request->get('time_sale_from_date') == 0) {
             $request->merge(['time_sale_from_date' => null]);
         }
@@ -728,15 +734,14 @@ class PostController extends Controller
                 $imgUrl = $file->getUrl();
                 if (!$user->verify) {
                     if (str_contains($file->mime_type, 'video')) {
-//                        TODO Change to check video profanity
+                        //                        TODO Change to check video profanity
                         $result = true;
                     } else {
                         $result = $this->checkImage($imgUrl);
                     }
-//                    dd($result);
+                    //                    dd($result);
                     $post->save();
                     if ($result['res']) {
-
                     } else {
                         $report = new Report();
                         $report->reason = 'Reported by webpurify image. Post ID ' . $post->id . ' | ' . $result['message'];
@@ -771,7 +776,6 @@ class PostController extends Controller
         $post->refresh();
 
         return new PostResource($post);
-
     }
 
     public function searchPostsByTag(Request $request)
@@ -819,7 +823,7 @@ class PostController extends Controller
 
     public function search(SearchPostRequest $request)
     {
-//        return response()->json($request->get('types'));
+        //        return response()->json($request->get('types'));
         return PostResource::collection($this->searchPostService->newFilterPosts($request));
     }
 
@@ -833,7 +837,7 @@ class PostController extends Controller
             }
 
             $comment = $request->get('comment');
-            $deepLink = 'EXPOSVRE://postcomment/'. $post->id;
+            $deepLink = 'EXPOSVRE://postcomment/' . $post->id;
 
             $notification = new \App\Models\Notification();
             $notification->title = 'commented on your post';
@@ -844,11 +848,10 @@ class PostController extends Controller
             $notification->post_id = $post->id;
             $notification->deep_link = $deepLink;
             $notification->save();
-            $post->owner->notify(new NewCommentForPost($user, $comment , $post));
+            $post->owner->notify(new NewCommentForPost($user, $comment, $post));
 
             $post->commentAs($user, $request->get('comment'));
             return response()->json(['data' => $post->comments]);
-
         } catch (\Exception $e) {
             return response()->json($e->getMessage());
         }
@@ -862,7 +865,6 @@ class PostController extends Controller
 
             $collection->commentAs($user, $request->get('comment'));
             return response()->json(['data' => CommentResource::collection($collection->comments)]);
-
         } catch (\Exception $e) {
             return response()->json($e->getMessage());
         }
@@ -873,19 +875,17 @@ class PostController extends Controller
         $collection = PostCollection::where(['id' => $id])->first();
 
         foreach ($collection->posts as $post) {
-            if ($post->owner_id == auth('api')->user()->id)
-                {
-                    $post->collection_id = null;
-                    $post->save();
-                } else {
-                    return response()->json(['error' => 'You are not an owner of post' . $post->id . '!']);
-                }
+            if ($post->owner_id == auth('api')->user()->id) {
+                $post->collection_id = null;
+                $post->save();
+            } else {
+                return response()->json(['error' => 'You are not an owner of post' . $post->id . '!']);
+            }
         }
 
         foreach ($request->get('ids') as $postId) {
             $postFind = Post::where(['id' => $postId])->first();
-            if ($postFind->owner_id == auth('api')->user()->id)
-            {
+            if ($postFind->owner_id == auth('api')->user()->id) {
                 $postFind->collection_id = $collection->id;
                 $postFind->save();
             } else {
@@ -944,17 +944,18 @@ class PostController extends Controller
         $notification->deep_link = $deepLink;
         $notification->save();
 
-//        dump($user);
+        //        dump($user);
         $post->owner->notify(new LikeNotification($user, $post));
         $user->like($post);
         $post->touch();
 
-//        dump($notification);
+        //        dump($notification);
 
         return response()->json(['data' => ['likes' => $post->likers()->count()]]);
     }
 
-    public function likeCollection($id) {
+    public function likeCollection($id)
+    {
         $collection = PostCollection::where(['id' => $id])->first();
 
         $user = auth('api')->user();
@@ -973,7 +974,8 @@ class PostController extends Controller
         return response()->json(['data' => ['likes' => $post->likers()->count()]]);
     }
 
-    public function unlikeCollection($id) {
+    public function unlikeCollection($id)
+    {
         $collection = PostCollection::where(['id' => $id])->first();
 
         $user = auth('api')->user();
@@ -1008,13 +1010,10 @@ class PostController extends Controller
                 }
                 if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
                     return false;
-                }
-                else {
+                } else {
                     return true;
                 }
-            }
-
-            else {
+            } else {
                 return false;
             }
 
@@ -1080,29 +1079,29 @@ class PostController extends Controller
             } else {
                 return false;
             }
-         });
-            $songs = Song::where('updated_at', '>=', $sevenDaysAgo)
-                ->where('views_by_last_day', '>', 0)
-                ->orderBy('views_by_last_day', 'DESC')
-                ->limit(50)
-                ->get();
+        });
+        $songs = Song::where('updated_at', '>=', $sevenDaysAgo)
+            ->where('views_by_last_day', '>', 0)
+            ->orderBy('views_by_last_day', 'DESC')
+            ->limit(50)
+            ->get();
 
-            $merged = $posts->merge($songs)->sortByDesc('views_by_last_day');
+        $merged = $posts->merge($songs)->sortByDesc('views_by_last_day');
 
 
-            $formattedData = $merged->map(function ($item) {
-                if ($item instanceof Post) {
-                    return new PostResource($item);
-                } elseif ($item instanceof Song) {
-                    return new SongResource($item);
-                }
-                return null;
-            })->filter()->values();
+        $formattedData = $merged->map(function ($item) {
+            if ($item instanceof Post) {
+                return new PostResource($item);
+            } elseif ($item instanceof Song) {
+                return new SongResource($item);
+            }
+            return null;
+        })->filter()->values();
 
-            return response()->json([
-                'data' => $formattedData,
-            ]);
-        }
+        return response()->json([
+            'data' => $formattedData,
+        ]);
+    }
 
     public function viewPost($id)
     {
@@ -1175,6 +1174,5 @@ class PostController extends Controller
         $newPost->save();
 
         return new PostResource($newPost);
-
     }
 }

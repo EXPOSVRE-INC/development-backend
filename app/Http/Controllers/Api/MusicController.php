@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CommentResource;
 use App\Http\Resources\GenreResource;
-use App\Http\Resources\MoodResource;
 use App\Http\Resources\SongResource;
 use App\Models\Genre;
 use App\Models\Mood;
@@ -110,4 +110,52 @@ class MusicController extends Controller
         return response()->json(['data' => new songResource($song)]);
     }
 
+    public function commentSong($id, Request $request)
+    {
+        try {
+            $user = auth('api')->user();
+            $song = Song::where(['id' => $id])->first();
+
+            $song->commentAs($user, $request->get('comment'));
+            return response()->json(['data' => CommentResource::collection($song->comments)]);
+
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage());
+        }
+    }
+    public function songListComments($id)
+    {
+        $song = Song::where(['id' => $id])->first();
+        return response()->json(['data' => CommentResource::collection($song->comments)]);
+    }
+
+    public function download($id)
+    {
+        try {
+            $song = Song::findOrFail($id);
+            $song->increment('download_count');
+
+            $fileName = basename($song->full_song_file);
+
+            $filePath = public_path('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'songs' . DIRECTORY_SEPARATOR . $fileName);
+
+            // echo $fileName;
+            if (!file_exists($filePath)) {
+                return response()->json(['error' => 'File not found'], 404);
+            }
+
+            $size = filesize($filePath);
+
+            // Return file with explicit headers
+            return response()->file($filePath, [
+                'Content-Type' => 'audio/mpeg',
+                'Content-Length' => $size,
+                'Content-Disposition' => 'attachment; filename="' . $song->title . '.mp3"',
+                'Accept-Ranges' => 'bytes',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Download failed: ' . $e->getMessage()], 500);
+        }
+    }
 }

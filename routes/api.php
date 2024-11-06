@@ -163,7 +163,6 @@ Route::group([
             'middleware' => ['auth:api']
         ], function ($router) {
             Route::get('/', 'PostController@index');
-
             Route::get('/most-crowned', 'PostController@mostCrowned');
             Route::get('/most-viewed', 'PostController@mostViewed');
 
@@ -328,7 +327,10 @@ Route::group([
             Route::get('/view/{id}', [MusicController::class, 'viewSong']);
             Route::get('/add-favorite/{song}', [MusicController::class, 'favoriteSong']);
             Route::get('/remove-favorite/{song}', [MusicController::class, 'unfavoriteSong']);
+            Route::post('comment/{id}', [MusicController::class, 'commentSong']);
+            Route::get('comments-list/{id}', [MusicController::class, 'songListComments']);
 
+            Route::get('/download/{id}', [MusicController::class, 'download']);
         });
 
     });
