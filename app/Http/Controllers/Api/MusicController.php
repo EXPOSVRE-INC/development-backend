@@ -63,6 +63,9 @@ class MusicController extends Controller
     public function likeSong($id)
     {
         $song = Song::findOrFail($id);
+        if (!$song) {
+            return response()->json(['message' => 'Song not found'], 404);
+        }
         $user = auth('api')->user();
 
         $user->like($song);
@@ -103,6 +106,9 @@ class MusicController extends Controller
 
         $song = Song::where(['id' => $id])->first();
 
+        if (!$song) {
+            return response()->json(['data' => []], 404);
+        }
         $song->views_count = $song->views_count + 1;
         $song->views_by_last_day = $song->views_by_last_day + 1;
         $song->save();

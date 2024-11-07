@@ -1105,9 +1105,11 @@ class PostController extends Controller
 
     public function viewPost($id)
     {
-
         $post = Post::where(['id' => $id])->first();
 
+        if (!$post) {
+            return response()->json(['data' => []], 404);
+        }
         $post->views_count = $post->views_count + 1;
         $post->views_by_last_day = $post->views_by_last_day + 1;
         $post->save();
