@@ -31,6 +31,9 @@ use Illuminate\Http\UploadedFile;
 use Imagick;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\Process\Process;
+use App\Jobs\ProcessVideoJob;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 
 
 
@@ -294,10 +297,15 @@ class PostController extends Controller
 
         $response = Http::get($apiUrl);
         $jsonBodyResp = json_decode($response->getBody());
-        if ($jsonBodyResp->rsp->found > 0) {
-            return false; // Profanity found
+        if (isset($jsonBodyResp->rsp) && isset($jsonBodyResp->rsp->found)) {
+            if ($jsonBodyResp->rsp->found > 0) {
+                return false; // Profanity found
+            } else {
+                return true; // No profanity found
+            }
         } else {
-            return true; // No profanity found
+
+            return true; // Default return value (no profanity found)
         }
     }
 
@@ -338,8 +346,70 @@ class PostController extends Controller
         return $result;
     }
 
+
+    private function processMediaFile($media, $song)
+    {
+        try {
+            $inputVideo = str_replace('\\', '/', $media->getPath());
+            $newAudio = $song->clip_15_sec;
+
+            // Create a temporary output path
+            $tempOutput = storage_path('app/temp_' . basename($inputVideo));
+
+            // FFmpeg command as an array
+            $ffmpegCommand = [
+                'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe',
+                '-i',
+                $inputVideo,
+                '-i',
+                $newAudio,
+                '-filter_complex',
+                '[1:a]apad',
+                '-c:v',
+                'copy',
+                '-c:a',
+                'aac',
+                '-shortest',
+                $tempOutput
+            ];
+
+            $process = new Process($ffmpegCommand);
+            $process->setTimeout(3600); // 1 hour timeout
+            $process->mustRun();
+
+            // Verify the temporary file exists and is valid
+            if (!file_exists($tempOutput)) {
+                throw new \Exception('Failed to create processed video');
+            }
+
+            // Replace the original file with the processed one
+            if (file_exists($inputVideo)) {
+                unlink($inputVideo); // Delete original file
+            }
+            rename($tempOutput, $inputVideo); // Move temp file to original location
+
+            return [
+                'success' => true,
+                'output_path' => $inputVideo
+            ];
+        } catch (\Exception $e) {
+            // Clean up temporary file if it exists
+            if (isset($tempOutput) && file_exists($tempOutput)) {
+                unlink($tempOutput);
+            }
+
+            Log::error('FFmpeg processing failed: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+
     public function createPost(CreatePostRequest $request)
     {
+
 
         $title = trim($request->get('title'));
         $desc = trim($request->get('description'));
@@ -354,7 +424,9 @@ class PostController extends Controller
                 'status' => 422
             ], 422);
         }
+
         if ($request->get('id') == 0) {
+
 
             $songId = $request->song_id;
             $user = auth('api')->user();
@@ -367,6 +439,15 @@ class PostController extends Controller
 
             if (!$request->has('type')) {
                 $request->merge(['type' => 'image']);
+            }
+
+            if ($request->song_id) {
+                $songId = $request->song_id;
+                $song = Song::findOrFail($songId);
+                $mediaIds = $request->input('files', []);
+                foreach ($mediaIds as $mediaId) {
+                    ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec);
+                }
             }
 
             if (!$request->has('song_id')) {
@@ -1014,13 +1095,10 @@ class PostController extends Controller
                 }
                 if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
                     return false;
-                }
-                else {
+                } else {
                     return true;
                 }
-            }
-
-            else {
+            } else {
                 return false;
             }
         });
@@ -1033,7 +1111,7 @@ class PostController extends Controller
         $user = auth('api')->user();
         $now = Carbon::now();
 
-       $sevenDaysAgo = $now->subDays(7);
+        $sevenDaysAgo = $now->subDays(7);
 
         $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
             ->limit(50)
@@ -1048,15 +1126,13 @@ class PostController extends Controller
                 } else {
                     return true;
                 }
-            }
-            else if ($user->isBlockedBy($post->owner) || $post->publish_date == null || $post->publish_date <= $now) {
+            } else if ($user->isBlockedBy($post->owner) || $post->publish_date == null || $post->publish_date <= $now) {
                 if ($post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
                     return false;
                 } else {
                     return true;
                 }
-            }
-            else {
+            } else {
                 return false;
             }
         });
