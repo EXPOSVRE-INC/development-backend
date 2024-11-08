@@ -989,12 +989,16 @@ class PostController extends Controller
     {
         $user = auth('api')->user();
         $now = Carbon::now();
+        // $posts = Post::has('likers')->withCount(['likers', 'likersByLastDay'])->orderBy('likers_by_last_day_count', 'DESC')->limit(50)->get();
 
-        // Fetch most crowned posts
         $posts = Post::has('likers')
             ->withCount([
                 'likers' => function ($query) {
-                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
+                    $query->where(
+                        'likes.created_at',
+                        '>=',
+                        Carbon::now()->subDays(7)
+                    );
                 },
             ])
             ->orderBy('likers_count', 'DESC')
@@ -1010,43 +1014,18 @@ class PostController extends Controller
                 }
                 if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
                     return false;
-                } else {
+                }
+                else {
                     return true;
                 }
-            } else {
+            }
+
+            else {
                 return false;
             }
-
-            return true;
         });
 
-        // Fetch most crowned songs
-        $songs = Song::has('likers')
-            ->withCount([
-                'likers' => function ($query) {
-                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
-                },
-            ])
-            ->orderBy('likers_count', 'DESC')
-            ->limit(50)
-            ->get();
-
-        $merged = $posts->merge($songs)->sortByDesc('likers_count');
-
-        $merged = $merged->take(50);
-
-        $formattedData = $merged->map(function ($item) {
-            if ($item instanceof Post) {
-                return new PostResource($item);
-            } elseif ($item instanceof Song) {
-                return new SongResource($item);
-            }
-            return null;
-        })->filter()->values();
-
-        return response()->json([
-            'data' => $formattedData,
-        ]);
+        return response()->json(['data' => PostResource::collection($posts)]);
     }
 
     public function mostViewed()
@@ -1054,12 +1033,11 @@ class PostController extends Controller
         $user = auth('api')->user();
         $now = Carbon::now();
 
-        $sevenDaysAgo = $now->subDays(7);
+       $sevenDaysAgo = $now->subDays(7);
 
         $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
             ->limit(50)
             ->get();
-
 
         $posts = $posts->filter(function ($post) {
             return $post->reports->count() == 0;
@@ -1070,37 +1048,19 @@ class PostController extends Controller
                 } else {
                     return true;
                 }
-            } else if ($user->isBlockedBy($post->owner) || $post->publish_date == null || $post->publish_date <= $now) {
+            }
+            else if ($user->isBlockedBy($post->owner) || $post->publish_date == null || $post->publish_date <= $now) {
                 if ($post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
                     return false;
                 } else {
                     return true;
                 }
-            } else {
+            }
+            else {
                 return false;
             }
         });
-        $songs = Song::where('updated_at', '>=', $sevenDaysAgo)
-            ->where('views_by_last_day', '>', 0)
-            ->orderBy('views_by_last_day', 'DESC')
-            ->limit(50)
-            ->get();
-
-        $merged = $posts->merge($songs)->sortByDesc('views_by_last_day');
-
-
-        $formattedData = $merged->map(function ($item) {
-            if ($item instanceof Post) {
-                return new PostResource($item);
-            } elseif ($item instanceof Song) {
-                return new SongResource($item);
-            }
-            return null;
-        })->filter()->values();
-
-        return response()->json([
-            'data' => $formattedData,
-        ]);
+        return response()->json(['data' => PostResource::collection($posts)]);
     }
 
     public function viewPost($id)
