@@ -427,7 +427,6 @@ class PostController extends Controller
 
         if ($request->get('id') == 0) {
 
-
             $songId = $request->song_id;
             $user = auth('api')->user();
 
@@ -440,16 +439,18 @@ class PostController extends Controller
             if (!$request->has('type')) {
                 $request->merge(['type' => 'image']);
             }
-
             if ($request->song_id) {
-                $songId = $request->song_id;
-                $song = Song::findOrFail($songId);
+                $song = Song::findOrFail($request->song_id);
                 $mediaIds = $request->input('files', []);
+
                 foreach ($mediaIds as $mediaId) {
-                    ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec);
+                    $media = Media::where('uuid', $mediaId)->first();
+
+                    if ($media && str_contains($media->mime_type, 'video')) {
+                        ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec);
+                    }
                 }
             }
-
             if (!$request->has('song_id')) {
                 $request->merge(['song_id' => $songId]);
             }
@@ -583,8 +584,16 @@ class PostController extends Controller
                                 "File not found: {$file->getPath()}"
                             );
                         }
+                        $existingMedia = $user->getMedia('temp')->first();
 
-                        $file->copy($post, 'files');
+                        if ($existingMedia) {
+                            // Update the existing media attributes
+                            $existingMedia->update([
+                                'model_id' => $post->id, // Update the model_id to the post's ID
+                                'collection_name' => 'files', // Ensure the collection name is set
+                                'model_type' => "App\Models\Post", // Optionally update the mime type if necessary
+                            ]);
+                        }
                         $imgUrl = $file->getUrl();
 
                         if (!$user->verify) {
@@ -595,7 +604,6 @@ class PostController extends Controller
                                 $result = $this->checkImage($imgUrl);
                             }
                             $post->save();
-
                             if (is_array($result) && isset($result['res'])) {
                                 if ($result['res']) {
                                     continue;
@@ -671,7 +679,7 @@ class PostController extends Controller
             }
 
 
-            $user->clearMediaCollection('temp');
+            // $user->clearMediaCollection('temp');
 
 
             $interests = $request->get('interests');
@@ -1070,23 +1078,19 @@ class PostController extends Controller
     {
         $user = auth('api')->user();
         $now = Carbon::now();
-        // $posts = Post::has('likers')->withCount(['likers', 'likersByLastDay'])->orderBy('likers_by_last_day_count', 'DESC')->limit(50)->get();
 
+        // Fetch most crowned posts
         $posts = Post::has('likers')
             ->withCount([
                 'likers' => function ($query) {
-                    $query->where(
-                        'likes.created_at',
-                        '>=',
-                        Carbon::now()->subDays(7)
-                    );
+                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
                 },
             ])
             ->orderBy('likers_count', 'DESC')
             ->limit(50)
             ->get();
 
-        $posts = $posts->filter(function ($post) {
+        $filteredPosts = $posts->filter(function ($post) {
             return $post->reports->count() == 0;
         })->filter(function ($post) use ($now, $user) {
             if ($post->publish_date == null || $post->publish_date <= $now) {
@@ -1101,9 +1105,33 @@ class PostController extends Controller
             } else {
                 return false;
             }
+
+            return true;
         });
 
-        return response()->json(['data' => PostResource::collection($posts)]);
+        // Fetch most crowned songs
+        $songs = Song::has('likers')
+            ->withCount([
+                'likers' => function ($query) {
+                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
+                },
+            ])
+            ->orderBy('likers_count', 'DESC')
+            ->limit(50)
+            ->get();
+
+            $formattedPosts = $filteredPosts->map(function ($post) {
+                return new PostResource($post);
+            })->values();
+
+            $formattedSongs = $songs->map(function ($song) {
+                return new SongResource($song);
+            })->values();
+
+            return response()->json([
+                'posts' => $formattedPosts,
+                'songs' => $formattedSongs,
+            ]);
     }
 
     public function mostViewed()
@@ -1117,7 +1145,8 @@ class PostController extends Controller
             ->limit(50)
             ->get();
 
-        $posts = $posts->filter(function ($post) {
+
+        $filteredPosts = $posts->filter(function ($post) {
             return $post->reports->count() == 0;
         })->filter(function ($post) use ($now, $user) {
             if ($user->isBlocking($post->owner) || $post->publish_date == null || $post->publish_date <= $now) {
@@ -1136,7 +1165,25 @@ class PostController extends Controller
                 return false;
             }
         });
-        return response()->json(['data' => PostResource::collection($posts)]);
+
+        $songs = Song::where('updated_at', '>=', $sevenDaysAgo)
+            ->where('views_by_last_day', '>', 0)
+            ->orderBy('views_by_last_day', 'DESC')
+            ->limit(50)
+            ->get();
+
+            $formattedPosts = $filteredPosts->map(function ($post) {
+                return new PostResource($post);
+            })->values();
+
+            $formattedSongs = $songs->map(function ($song) {
+                return new SongResource($song);
+            })->values();
+
+            return response()->json([
+                'posts' => $formattedPosts,
+                'songs' => $formattedSongs,
+            ]);
     }
 
     public function viewPost($id)

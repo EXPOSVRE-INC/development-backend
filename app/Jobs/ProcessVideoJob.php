@@ -36,86 +36,70 @@ class ProcessVideoJob implements ShouldQueue
      * Execute the job.
      */
     public function handle()
-{
-    $media = Media::where('uuid', $this->mediaId)->first();
+    {
+        $media = Media::where('uuid', $this->mediaId)->first();
+        if (!$media) {
+            Log::error('Media not found for UUID: ' . $this->mediaId);
+            return;
+        }
 
-    if (!$media) {
-        Log::error('Media not found for UUID: ' . $this->mediaId);
-        return;
+        $inputVideo = str_replace('\\', '/', $media->getPath());
+        $newAudio = $this->audioFile;
+
+        // Create a temporary output path
+        $tempOutput = storage_path('app/public/' . $media->id . '/temp_' . basename($inputVideo));
+
+        $ffmpegCommand = [
+            'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe',
+            '-i',
+            $inputVideo,
+            '-i',
+            $newAudio,
+            '-filter_complex',
+            '[1:a]apad',
+            '-c:v',
+            'copy',
+            '-c:a',
+            'aac',
+            '-shortest',
+            $tempOutput
+        ];
+
+        $process = new Process($ffmpegCommand);
+        $process->setTimeout(null);
+
+        try {
+            $process->run();
+            $user = auth('api')->user();
+            if (!$process->isSuccessful()) {
+                throw new ProcessFailedException($process);
+            }
+
+            // Check if temp file was created successfully
+            if (file_exists($tempOutput)) {
+                // Delete the original video file first
+                unlink($inputVideo);
+                // Rename the temp output file to the original file's name
+                if (rename($tempOutput, $inputVideo)) {
+                    Log::info('Successfully processed video and replaced original file: ' . $this->mediaId);
+                } else {
+                    Log::error('Failed to rename temp file to original path for media: ' . $this->mediaId);
+                }
+            } else {
+                Log::error('Temp output file not created for media: ' . $this->mediaId);
+            }
+        } catch (ProcessFailedException $e) {
+            Log::error('FFmpeg process failed for media ' . $this->mediaId . ': ' . $e->getMessage());
+            // Clean up temporary file if it exists
+            if (file_exists($tempOutput)) {
+                unlink($tempOutput);
+            }
+        } catch (\Exception $e) {
+            Log::error('Exception during video processing: ' . $e->getMessage());
+            // Clean up temporary file if it exists
+            if (file_exists($tempOutput)) {
+                unlink($tempOutput);
+            }
+        }
     }
-
-    // Correct path format for input file
-    $inputVideo = str_replace('\\', '/', $media->getPath()); // Ensure the path uses forward slashes
-    $newAudio = $this->audioFile;
-
-    // Create a temporary output path under storage/app/temp
-    $tempOutput = storage_path('app\temp_' . basename($inputVideo));
-    Log::info($tempOutput);
-
-    // FFmpeg command as an array
-    // $ffmpegCommand = [
-    //     'start', // This tells Windows to start a separate process
-    //     '/B', // Run without opening a new window
-    //     'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe',
-    //     '-i', $inputVideo,
-    //     '-i', $newAudio,
-    //     '-filter_complex', '[1:a]apad',
-    //     '-c:v', 'copy',
-    //     '-c:a', 'aac',
-    //     '-shortest',
-    //     $tempOutput
-    // ];
-
-    // $process = new Process($ffmpegCommand);
-    // Log::info([$process]);
-
-    // // $process->run();
-
-    // $process->setTimeout(null); // Remove timeout limit for process
-
-    // try {
-    //     Log::info("heyyyyyyyyyyy");
-
-    //     // Run the process with real-time output
-    //     $process->run(function ($type, $buffer) {
-    //         if (Process::ERR === $type) {
-    //             Log::error('FFmpeg Error: ' . $buffer);
-    //         } else {
-    //             Log::info('FFmpeg Output: ' . $buffer);
-    //         }
-    //     });
-
-    //     if (!$process->isSuccessful()) {
-    //         throw new ProcessFailedException($process);
-    //     }
-
-    //     // Verify the temporary file exists and is valid
-    //     if (!file_exists($tempOutput)) {
-    //         throw new \Exception('Failed to create processed video');
-    //     }
-
-    //     // Remove the original file, if it exists, before replacing it
-    //     if (file_exists($inputVideo)) {
-    //         // unlink($inputVideo); // Delete original file
-    //     }
-
-    //     // Move the temp file to the original location
-    //     rename($tempOutput, $inputVideo); // Move temp file to original location
-    //     Log::info('Successfully processed video: ' . $this->mediaId);
-
-    // } catch (ProcessFailedException $e) {
-    //     Log::error('FFmpeg process failed for media ' . $this->mediaId . ': ' . $e->getMessage());
-    //     // Clean up temporary file if it exists
-    //     if (file_exists($tempOutput)) {
-    //         unlink($tempOutput);
-    //     }
-    // } catch (\Exception $e) {
-    //     Log::error('Exception during video processing: ' . $e->getMessage());
-    //     // Clean up temporary file if it exists
-    //     if (file_exists($tempOutput)) {
-    //         unlink($tempOutput);
-    //     }
-    // }
-}
-
 }
