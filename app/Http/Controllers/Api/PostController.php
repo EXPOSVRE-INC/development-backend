@@ -1120,18 +1120,20 @@ class PostController extends Controller
             ->limit(50)
             ->get();
 
-            $formattedPosts = $filteredPosts->map(function ($post) {
-                return new PostResource($post);
-            })->values();
+        $formattedPosts = $filteredPosts->map(function ($post) {
+            return new PostResource($post);
+        })->values();
 
-            $formattedSongs = $songs->map(function ($song) {
-                return new SongResource($song);
-            })->values();
+        $formattedSongs = $songs->map(function ($song) {
+            return new SongResource($song);
+        })->values();
 
-            return response()->json([
+        return response()->json([
+            'data' => [
                 'posts' => $formattedPosts,
                 'songs' => $formattedSongs,
-            ]);
+            ]
+        ]);
     }
 
     public function mostViewed()
@@ -1172,18 +1174,20 @@ class PostController extends Controller
             ->limit(50)
             ->get();
 
-            $formattedPosts = $filteredPosts->map(function ($post) {
-                return new PostResource($post);
-            })->values();
+        $formattedPosts = $filteredPosts->map(function ($post) {
+            return new PostResource($post);
+        })->values();
 
-            $formattedSongs = $songs->map(function ($song) {
-                return new SongResource($song);
-            })->values();
+        $formattedSongs = $songs->map(function ($song) {
+            return new SongResource($song);
+        })->values();
 
-            return response()->json([
+        return response()->json([
+            'data' => [
                 'posts' => $formattedPosts,
                 'songs' => $formattedSongs,
-            ]);
+            ]
+        ]);
     }
 
     public function viewPost($id)

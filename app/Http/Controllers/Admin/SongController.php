@@ -1,14 +1,20 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
+
 use App\Http\Controllers\Controller;
 use App\Models\Artist;
 use App\Models\Genre;
 use App\Models\Mood;
+use App\Models\Post;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Song;
 use Illuminate\Http\Request;
 use FFMpeg\FFMpeg;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Support\Facades\Log;
+use App\Helpers\MediaHelper;
+
 
 class SongController extends Controller
 {
@@ -31,8 +37,8 @@ class SongController extends Controller
     {
 
         $songs = Song::where('status', 'active')
-        ->withCount('posts')
-        ->get();
+            ->withCount('posts')
+            ->get();
 
         return view('admin.songs.index', [
             'songs' => $songs,
@@ -117,16 +123,18 @@ class SongController extends Controller
         return redirect()->route('song-index');
     }
 
-    public function editSongForm($song_id) {
+    public function editSongForm($song_id)
+    {
         $song = Song::where(['id' => $song_id])->first();
         $artists = Artist::where('status', 'active')->latest()->get();
         $genres = Genre::latest()->get();
         $moods = Mood::latest()->get();
 
-        return view('admin.songs.edit', ['song' => $song , 'artists' => $artists , 'genres' => $genres , 'moods' => $moods]);
+        return view('admin.songs.edit', ['song' => $song, 'artists' => $artists, 'genres' => $genres, 'moods' => $moods]);
     }
 
-    public function edit($song_id, Request $request) {
+    public function edit($song_id, Request $request)
+    {
         $song = Song::where('id', $song_id)->first();
 
         $song->update([
@@ -158,13 +166,35 @@ class SongController extends Controller
     }
 
 
-    public function delete($song_id) {
-    $song = Song::where(['id' => $song_id])->first();
-    if ($song) {
-        $song->update(['status' => 'deleted']);
-        return redirect()->route('song-index')->with('success', 'Song deleted successfully');
-    } else {
-        return redirect()->route('song-index')->with('error', 'Song not found');
+    public function delete($song_id)
+    {
+        $song = Song::where(['id' => $song_id])->first();
+        if ($song) {
+            // Mark the song as deleted
+            $song->update(['status' => 'deleted']);
+
+            $posts = Post::where('song_id', $song->id)->get();
+
+            foreach ($posts as $post) {
+                $mediaItems = Media::where('model_id', $post->id)->get();
+
+                foreach ($mediaItems as $media) {
+                    $inputPath = $media->getPath();
+                    $outputPath = storage_path('app/public/muted_' . basename($inputPath));
+
+                    $result = MediaHelper::muteMediaAudio($inputPath, $outputPath);
+
+                    if (!$result) {
+                        Log::error("Failed to mute media: " . $inputPath);
+                    }
+                }
+            }
+
+            return redirect()->route('song-index')->with('success', 'Song deleted and media muted successfully');
+        } else {
+            return redirect()->route('song-index')->with('error', 'Song not found');
+        }
     }
-}
+
+
 }

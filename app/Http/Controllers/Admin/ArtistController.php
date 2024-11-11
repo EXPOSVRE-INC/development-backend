@@ -1,11 +1,16 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
+
+use App\Helpers\MediaHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Artist;
+use App\Models\Post;
 use App\Models\Song;
 use Closure;
 use Illuminate\Http\Request;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Support\Facades\Log;
 
 class ArtistController extends Controller
 {
@@ -65,7 +70,23 @@ class ArtistController extends Controller
             $artist->status = 'inactive';
             $artist->save();
 
-            Song::where('artist_id', $artist_id)->update(['status' => 'deleted']);
+           $song = Song::where('artist_id', $artist_id)->update(['status' => 'deleted']);
+
+           $posts = Post::where('song_id', $song->id)->get();
+
+           foreach ($posts as $post) {
+               $mediaItems = Media::where('model_id', $post->id)->get();
+
+               foreach ($mediaItems as $media) {
+                   $inputPath = $media->getPath();
+                   $outputPath = storage_path('app/public/muted_' . basename($inputPath));
+
+                   $result = MediaHelper::muteMediaAudio($inputPath, $outputPath);
+                   if (!$result) {
+                       Log::error("Failed to mute media: " . $inputPath);
+                   }
+               }
+           }
         }
         return redirect()->route('artist-index');
     }
