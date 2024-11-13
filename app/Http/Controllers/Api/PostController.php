@@ -512,15 +512,15 @@ class PostController extends Controller
 
             $post->save();
 
-            $mediaIds = $request->input('files', []);
+            // $mediaIds = $request->input('files', []);
 
-            foreach ($mediaIds as $mediaId) {
-                $media = Media::where('uuid', $mediaId)->first();
+            // foreach ($mediaIds as $mediaId) {
+            //     $media = Media::where('uuid', $mediaId)->first();
 
-                if ($media && str_contains($media->mime_type, 'video')) {
-                    MediaHelper::applyWatermark($media);
-                }
-            }
+            //     if ($media && str_contains($media->mime_type, 'video')) {
+            //         MediaHelper::applyWatermark($media);
+            //     }
+            // }
 
             $media = $user->getMedia('temp');
 
