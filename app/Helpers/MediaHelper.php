@@ -19,7 +19,7 @@ class MediaHelper
     public static function muteMediaAudio($inputPath, $outputPath)
     {
         $ffmpegCommand = [
-            'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe',
+            '/usr/bin/ffmpeg',
             '-i',
             $inputPath,
             '-an', // Remove audio
@@ -89,7 +89,7 @@ class MediaHelper
         // Create a temporary output path for the watermarked video
         $tempOutput = storage_path('app/public/' . $media->id . '/watermarked_' . basename($inputVideo));
 
-        $ffmpegPath = '"C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe"'; // Path to FFmpeg
+        $ffmpegPath = '"/usr/bin/ffmpeg"'; // Path to FFmpeg
 
         // Command to apply watermark and username text
         $command = "$ffmpegPath -i \"$inputVideo\" -i \"$watermarkPath\" -filter_complex "
