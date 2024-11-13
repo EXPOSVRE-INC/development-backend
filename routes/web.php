@@ -167,8 +167,10 @@ Route::group([
         'prefix' => 'artists',
     ], function ($router) {
         Route::get('/', [ArtistController::class, 'index'])->name('artist-index');
-        Route::get('create/{id}', [ArtistController::class, 'createForm'])->name('artist-form');
+        Route::get('create', [ArtistController::class, 'createForm'])->name('artist-form');
         Route::post('create', [ArtistController::class, 'create'])->name('artist-create');
+        Route::get('edit/{id}', [ArtistController::class, 'editArtistForm'])->name('artist-edit-form');
+        Route::post('edit/{id}', [ArtistController::class, 'editArtist'])->name('artist-edit');
         Route::get('delete/{id}', [ArtistController::class, 'delete'])->name('artist-delete');
     });
 

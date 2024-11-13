@@ -77,7 +77,9 @@
         <input type="file" name="image_file" id="image-upload" />
         <!-- Show the existing image if available -->
         @if($song->image_file)
-        <img src="{{ $song->image_file }}" alt="Song Image">
+        <img src="{{ $song->image_file }}" alt="Song Image" id="song-preview-image">
+        @else
+            <img id="song-preview-image" src="" alt="Song Image" style="display: none;">
         @endif
     </div>
 
@@ -223,6 +225,25 @@
             preview_box: "#image-preview",
             label_field: "#image-label"
         });
+    });
+
+    document.getElementById('image-upload').addEventListener('change', function(event) {
+        const previewImage = document.getElementById('song-preview-image');
+        const file = event.target.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
+            };
+
+            reader.readAsDataURL(file);
+        } else {
+            previewImage.src = '';
+            previewImage.style.display = 'none';
+        }
     });
 </script>
 <script>

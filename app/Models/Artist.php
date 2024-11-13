@@ -10,7 +10,7 @@ class Artist extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name'
+        'name', 'profile_image'
     ];
 
     public function songs()

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\MediaHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreatePostRequest;
 use App\Http\Requests\SearchPostRequest;
@@ -33,7 +34,6 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\Process\Process;
 use App\Jobs\ProcessVideoJob;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 
 
 
@@ -572,6 +572,16 @@ class PostController extends Controller
             }
 
             $post->save();
+
+            $mediaIds = $request->input('files', []);
+
+            foreach ($mediaIds as $mediaId) {
+                $media = Media::where('uuid', $mediaId)->first();
+
+                if ($media && str_contains($media->mime_type, 'video')) {
+                    MediaHelper::applyWatermark($media);
+                }
+            }
 
             $media = $user->getMedia('temp');
 

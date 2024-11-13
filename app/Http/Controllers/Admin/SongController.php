@@ -86,17 +86,23 @@ class SongController extends Controller
         $clipPath = null;
 
         if ($request->hasFile('image_file')) {
-            $imagePath = $request->file('image_file')->store('uploads/images', 'public');
+            $originalFileName = $request->file('image_file')->getClientOriginalName();
+            $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
+            $imagePath = $request->file('image_file')->storeAs( 'uploads/images', $fileNameWithoutSpaces, 'public');
             $imageUrl = url('storage/' . $imagePath);
         }
 
         if ($request->hasFile('full_song_file')) {
-            $songPath = $request->file('full_song_file')->store('uploads/songs', 'public');
+            $originalFileName = $request->file('full_song_file')->getClientOriginalName();
+            $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
+            $songPath = $request->file('full_song_file')->storeAs('uploads/songs', $fileNameWithoutSpaces , 'public');
             $songUrl = url('storage/' . $songPath);
         }
 
         if ($request->hasFile('clip_15_sec')) {
-            $clipPath = $request->file('clip_15_sec')->store('uploads/clips', 'public');
+            $originalFileName = $request->file('clip_15_sec')->getClientOriginalName();
+            $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
+            $clipPath = $request->file('clip_15_sec')->storeAs('uploads/clips', $fileNameWithoutSpaces , 'public');
             $clipUrl = url('storage/' . $clipPath);
         }
 
@@ -146,18 +152,28 @@ class SongController extends Controller
         ]);
 
         if ($request->hasFile('image_file')) {
-            $imagePath = $request->file('image_file')->store('uploads/images', 'public');
-            $song->image = $imagePath;
+            $originalFileName = $request->file('image_file')->getClientOriginalName();
+            $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
+            $imagePath = $request->file('image_file')->storeAs( 'uploads/images', $fileNameWithoutSpaces, 'public');
+            $imageUrl = url('storage/' . $imagePath);
+            $song->image_file = $imageUrl;
         }
 
         if ($request->hasFile('full_song_file')) {
-            $songPath = $request->file('full_song_file')->store('uploads/songs', 'public');
-            $song->full_song_file = $songPath;
+            $originalFileName = $request->file('full_song_file')->getClientOriginalName();
+            $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
+            $songPath = $request->file('full_song_file')->storeAs('uploads/songs', $fileNameWithoutSpaces , 'public');
+            $songUrl = url('storage/' . $songPath);
+            $song->full_song_file = $songUrl;
+
         }
 
         if ($request->hasFile('clip_15_sec')) {
-            $clipPath = $request->file('clip_15_sec')->store('uploads/clips', 'public');
-            $song->clip_15_sec = $clipPath;
+            $originalFileName = $request->file('clip_15_sec')->getClientOriginalName();
+            $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
+            $clipPath = $request->file('clip_15_sec')->storeAs('uploads/clips', $fileNameWithoutSpaces , 'public');
+            $clipUrl = url('storage/' . $clipPath);
+            $song->clip_15_sec = $clipUrl;
         }
 
         $song->save();
