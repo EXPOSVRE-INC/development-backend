@@ -346,67 +346,6 @@ class PostController extends Controller
         return $result;
     }
 
-
-    private function processMediaFile($media, $song)
-    {
-        try {
-            $inputVideo = str_replace('\\', '/', $media->getPath());
-            $newAudio = $song->clip_15_sec;
-
-            // Create a temporary output path
-            $tempOutput = storage_path('app/temp_' . basename($inputVideo));
-
-            // FFmpeg command as an array
-            $ffmpegCommand = [
-                'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe',
-                '-i',
-                $inputVideo,
-                '-i',
-                $newAudio,
-                '-filter_complex',
-                '[1:a]apad',
-                '-c:v',
-                'copy',
-                '-c:a',
-                'aac',
-                '-shortest',
-                $tempOutput
-            ];
-
-            $process = new Process($ffmpegCommand);
-            $process->setTimeout(3600); // 1 hour timeout
-            $process->mustRun();
-
-            // Verify the temporary file exists and is valid
-            if (!file_exists($tempOutput)) {
-                throw new \Exception('Failed to create processed video');
-            }
-
-            // Replace the original file with the processed one
-            if (file_exists($inputVideo)) {
-                unlink($inputVideo); // Delete original file
-            }
-            rename($tempOutput, $inputVideo); // Move temp file to original location
-
-            return [
-                'success' => true,
-                'output_path' => $inputVideo
-            ];
-        } catch (\Exception $e) {
-            // Clean up temporary file if it exists
-            if (isset($tempOutput) && file_exists($tempOutput)) {
-                unlink($tempOutput);
-            }
-
-            Log::error('FFmpeg processing failed: ' . $e->getMessage());
-            return [
-                'success' => false,
-                'error' => $e->getMessage()
-            ];
-        }
-    }
-
-
     public function createPost(CreatePostRequest $request)
     {
 
