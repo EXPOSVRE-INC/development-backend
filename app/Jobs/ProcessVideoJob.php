@@ -50,7 +50,7 @@ class ProcessVideoJob implements ShouldQueue
         $tempOutput = storage_path('app/public/' . $media->id . '/temp_' . basename($inputVideo));
 
         $ffmpegCommand = [
-            'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe',
+            '/usr/bin/ffmpeg',
             '-i',
             $inputVideo,
             '-i',
@@ -82,6 +82,7 @@ class ProcessVideoJob implements ShouldQueue
                 // Rename the temp output file to the original file's name
                 if (rename($tempOutput, $inputVideo)) {
                     Log::info('Successfully processed video and replaced original file: ' . $this->mediaId);
+                    return $inputVideo;
                 } else {
                     Log::error('Failed to rename temp file to original path for media: ' . $this->mediaId);
                 }
@@ -100,6 +101,7 @@ class ProcessVideoJob implements ShouldQueue
             if (file_exists($tempOutput)) {
                 unlink($tempOutput);
             }
+            return null;
         }
     }
 }

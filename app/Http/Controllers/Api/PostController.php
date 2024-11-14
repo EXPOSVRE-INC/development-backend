@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Helpers\MediaHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreatePostRequest;
 use App\Http\Requests\SearchPostRequest;
@@ -32,8 +31,8 @@ use Illuminate\Http\UploadedFile;
 use Imagick;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Symfony\Component\Process\Process;
 use App\Jobs\ProcessVideoJob;
+use App\Jobs\ApplyWatermarkJob;
 
 
 
@@ -378,6 +377,7 @@ class PostController extends Controller
             if (!$request->has('type')) {
                 $request->merge(['type' => 'image']);
             }
+
             if ($request->song_id) {
                 $song = Song::findOrFail($request->song_id);
                 $mediaIds = $request->input('files', []);
@@ -386,14 +386,26 @@ class PostController extends Controller
                     $media = Media::where('uuid', $mediaId)->first();
 
                     if ($media && str_contains($media->mime_type, 'video')) {
-                        ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec);
+                        ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec)->chain([
+                            new ApplyWatermarkJob($mediaId , $user->username)
+                        ]);
+                    }
+                }
+            } else {
+                $request->merge(['song_id' => $songId]);
+            }
+            if(!$request->song_id){
+                $mediaIds = $request->input('files', []);
+
+                foreach ($mediaIds as $mediaId) {
+                    $media = Media::where('uuid', $mediaId)->first();
+
+                    if ($media && str_contains($media->mime_type, 'video')) {
+                        ApplyWatermarkJob::dispatch($mediaId , $user->username);
+
                     }
                 }
             }
-            if (!$request->has('song_id')) {
-                $request->merge(['song_id' => $songId]);
-            }
-
             if ($request->has('shippingIncluded')) {
                 $request->merge(['shippingIncluded' => $request->get('shippingIncluded')]);
             } else {
@@ -511,16 +523,6 @@ class PostController extends Controller
             }
 
             $post->save();
-
-            // $mediaIds = $request->input('files', []);
-
-            // foreach ($mediaIds as $mediaId) {
-            //     $media = Media::where('uuid', $mediaId)->first();
-
-            //     if ($media && str_contains($media->mime_type, 'video')) {
-            //         MediaHelper::applyWatermark($media);
-            //     }
-            // }
 
             $media = $user->getMedia('temp');
 
