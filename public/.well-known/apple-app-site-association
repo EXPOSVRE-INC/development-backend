@@ -1,20 +1,28 @@
 {
     "applinks": {
-        "details": [{
-            "appIDs": ["Y82G5S669P.com.viaduct.exposure",
-		       "Y82G5S669P.com.viaduct.exposure.stage",
-		       "Y82G5S669P.com.viaduct.exposure.dev"],
-            "components": [{
-                "/": "/link/*",
-                "comment": "Matches any URL whose path starts with /link/"
-            }]
-        }]
+        "details": [
+            {
+                "appIDs": [
+                    "Y82G5S669P.com.viaduct.exposure",
+                    "Y82G5S669P.com.viaduct.exposure.stage",
+                    "Y82G5S669P.com.viaduct.exposure.dev",
+                    "QP535PSF5H.com.exposvre"
+                ],
+                "components": [
+                    {
+                        "/": "/link/*",
+                        "comment": "Matches any URL whose path starts with /link/"
+                    }
+                ]
+            }
+        ]
     },
     "appclips": {
         "apps": [
             "Y82G5S669P.com.viaduct.exposure",
             "Y82G5S669P.com.viaduct.exposure.stage",
-            "Y82G5S669P.com.viaduct.exposure.dev"
+            "Y82G5S669P.com.viaduct.exposure.dev",
+            "QP535PSF5H.com.exposvre"
         ]
     }
 }
