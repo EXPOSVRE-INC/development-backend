@@ -159,8 +159,8 @@ class PostResource extends JsonResource
             $data['image_width'] = 0;
         }
 
-        // Set thumbnail, falling back to 'files' collection if 'thumb' is unavailable
-        $data['thumb'] = $this->getFirstMediaUrl('thumb') ?? $this->getFirstMediaUrl('files', 'original');
+        $thumbUrl = $this->getFirstMediaUrl('thumb');
+        $data['thumb'] = !empty($thumbUrl) ? $thumbUrl : $this->getFirstMediaUrl('files', 'original');
 
         // Handle video media if 'ad' is set to 1
         if ($this->ad == 1) {
