@@ -90,6 +90,7 @@ class PostController extends Controller
         $allowedVideoExtensions = ['webm', 'mov', 'mp4'];
 
         $user = auth('api')->user();
+        $s3FolderPath = 'post-uploads';
 
         if (str_contains($uploadedMimeType, 'image')) {
             if (!in_array($uploadedExtension, $allowedImageExtensions)) {
@@ -113,11 +114,12 @@ class PostController extends Controller
                 $user
                     ->addMedia($file->getPathname())
                     ->usingFileName($file->getClientOriginalName())
-                    ->toMediaCollection('temp');
+                    ->withCustomProperties(['folder' => $s3FolderPath])
+                    ->toMediaCollection('temp', 's3');
 
                 $media = $user->getMedia('temp');
             } else {
-                $user->addMediaFromRequest('file')->toMediaCollection('temp');
+                $user->addMediaFromRequest('file')->withCustomProperties(['folder' => $s3FolderPath])->toMediaCollection('temp', 's3');
             }
         } elseif (str_contains($uploadedMimeType, 'video')) {
             if (!in_array($uploadedExtension, $allowedVideoExtensions)) {
@@ -141,9 +143,11 @@ class PostController extends Controller
                 $user
                     ->addMedia($file->getPathname())
                     ->usingFileName($file->getClientOriginalName())
-                    ->toMediaCollection('temp');
+                    ->withCustomProperties(['folder' => $s3FolderPath])
+                    ->toMediaCollection('temp', 's3');
             } else {
-                $user->addMediaFromRequest('file')->toMediaCollection('temp');
+                $user->addMediaFromRequest('file')->withCustomProperties(['folder' => $s3FolderPath])
+                ->toMediaCollection('temp', 's3');
             }
         }
 
@@ -193,7 +197,7 @@ class PostController extends Controller
         $allowedVideoExtensions = ['webm', 'mov', 'mp4'];
 
         $user = auth('api')->user();
-
+        $s3FolderPath = 'post-uploads';
         if (str_contains($uploadedMimeType, 'image')) {
             if (!in_array($uploadedExtension, $allowedImageExtensions)) {
                 $imagick = new Imagick($file->getPathname());
@@ -216,11 +220,12 @@ class PostController extends Controller
                 $user
                     ->addMedia($file->getPathname())
                     ->usingFileName($file->getClientOriginalName())
-                    ->toMediaCollection('tempCollection');
+                    ->withCustomProperties(['folder' => $s3FolderPath])
+                    ->toMediaCollection('tempCollection', 's3');
 
                 $media = $user->getMedia('tempCollection');
             } else {
-                $user->addMediaFromRequest('file')->toMediaCollection('tempCollection');
+                $user->addMediaFromRequest('file')->withCustomProperties(['folder' => $s3FolderPath])->toMediaCollection('tempCollection','s3');
             }
         } elseif (str_contains($uploadedMimeType, 'video')) {
             if (!in_array($uploadedExtension, $allowedVideoExtensions)) {
@@ -244,9 +249,10 @@ class PostController extends Controller
                 $user
                     ->addMedia($file->getPathname())
                     ->usingFileName($file->getClientOriginalName())
-                    ->toMediaCollection('tempCollection');
+                    ->withCustomProperties(['folder' => $s3FolderPath])
+                    ->toMediaCollection('tempCollection', 's3');
             } else {
-                $user->addMediaFromRequest('file')->toMediaCollection('tempCollection');
+                $user->addMediaFromRequest('file')->withCustomProperties(['folder' => $s3FolderPath])->toMediaCollection('tempCollection', 's3');
             }
         }
 

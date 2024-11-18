@@ -418,9 +418,10 @@ class UserController extends Controller
     public function avatarUpload(Request $request)
     {
         $user = auth('api')->user();
+        $s3FolderPath = 'post-uploads';
         //        $avatar = $request->file('avatar');
         $user->clearMediaCollection('preview');
-        $user->addMediaFromRequest('avatar')->toMediaCollection('preview');
+        $user->addMediaFromRequest('avatar')->withCustomProperties(['folder' => $s3FolderPath])->toMediaCollection('preview','s3');
 
         return response()->json([
             'data' => new UserUploadAvatarResource($user),
