@@ -90,6 +90,7 @@ class PostController extends Controller
         $allowedVideoExtensions = ['webm', 'mov', 'mp4'];
 
         $user = auth('api')->user();
+        $s3FolderPath = 'post-media';
 
         if (str_contains($uploadedMimeType, 'image')) {
             if (!in_array($uploadedExtension, $allowedImageExtensions)) {
@@ -113,11 +114,13 @@ class PostController extends Controller
                 $user
                     ->addMedia($file->getPathname())
                     ->usingFileName($file->getClientOriginalName())
-                    ->toMediaCollection('temp');
+                    ->withCustomProperties(['folder' => $s3FolderPath])
+                    ->toMediaCollection('temp', 's3');
 
                 $media = $user->getMedia('temp');
             } else {
-                $user->addMediaFromRequest('file')->toMediaCollection('temp');
+                $user->addMediaFromRequest('file')->withCustomProperties(['folder' => $s3FolderPath])
+                ->toMediaCollection('temp', 's3');
             }
         } elseif (str_contains($uploadedMimeType, 'video')) {
             if (!in_array($uploadedExtension, $allowedVideoExtensions)) {
@@ -141,9 +144,11 @@ class PostController extends Controller
                 $user
                     ->addMedia($file->getPathname())
                     ->usingFileName($file->getClientOriginalName())
-                    ->toMediaCollection('temp');
+                    ->withCustomProperties(['folder' => $s3FolderPath])
+                    ->toMediaCollection('temp', 's3');
             } else {
-                $user->addMediaFromRequest('file')->toMediaCollection('temp');
+                $user->addMediaFromRequest('file')->withCustomProperties(['folder' => $s3FolderPath])
+                ->toMediaCollection('temp', 's3');
             }
         }
 
@@ -1214,5 +1219,12 @@ class PostController extends Controller
         $newPost->save();
 
         return new PostResource($newPost);
+    }
+
+    public function watermark(){
+        $mediaId = '9dd0e26a-3ec5-4d1c-a384-b9cbba5589a4';
+        $userName = 'EXPOSVRE';
+        ApplyWatermarkJob::dispatch($mediaId , $userName);
+
     }
 }
