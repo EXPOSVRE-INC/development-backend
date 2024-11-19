@@ -52,7 +52,7 @@ class ApplyWatermarkJob implements ShouldQueue
                 throw new ProcessFailedException($process);
             }
             if (file_exists($tempOutput) && rename($tempOutput, $inputVideo)) {
-                Log::info('Successfully applied watermark and text overlay for media ID: ' . $this->mediaId);
+                Log::info('Successfully applied watermark and text overlay for media ID:' . $this->mediaId);
             } else {
                 Log::error('Failed to apply watermark for media ID: ' . $this->mediaId);
             }
