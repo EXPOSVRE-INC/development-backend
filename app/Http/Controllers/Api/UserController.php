@@ -210,17 +210,13 @@ class UserController extends Controller
             })
             ->toArray();
 
-        //    dd($userInterestsArray);
-
         $posts = [];
 
-        //        \DB::enableQueryLog();
         $postsInterested = Post::with('interests')
-            ->whereHas('interests', function ($query) use (
-                $userInterestsArray
-            ) {
+            ->whereHas('interests', function ($query) use ($userInterestsArray) {
                 $query->whereIn('slug', $userInterestsArray);
             })
+            ->where('status', '!=', 'archive') // Exclude archived posts
             ->get()
             ->filter(function ($post) use ($user) {
                 return !$user->isBlocking($post->owner);
@@ -231,17 +227,12 @@ class UserController extends Controller
             ->map(function (Post $post) {
                 return $post->id;
             });
-        //            ->whereIn('interests_category.slug', $userInterestsArray)->first();
-        //        dump(\DB::getQueryLog());
-        //        dd($posts);
-        //        $posts = Post::where('updated_at', '>=', $fromDate)->where('owner_id', $user->id)->get('id')->map(function (Post $post) {
-        //            return $post->id;
-        //        })->toArray();
+
         $posts = array_merge(
             $posts,
             $user->posts
                 ->filter(function ($post) {
-                    return $post->status == null;
+                    return $post->status == null && $post->status != 'archive'; // Exclude archived posts
                 })
                 ->filter(function ($post) {
                     return $post->reports->count() == 0;
@@ -260,9 +251,6 @@ class UserController extends Controller
                 ->filter(function ($post) {
                     return $post->reports->count() == 0;
                 })
-                //                ->filter(function ($post) use ($fromDate) {
-                //                    return $post->updated_at >= $fromDate;
-                //                })
                 ->filter(function ($post) use ($now) {
                     if ($post->publish_date != null) {
                         return $post->publish_date < $now;
@@ -277,7 +265,7 @@ class UserController extends Controller
                     return !$user->isBlockedBy($post->owner);
                 })
                 ->filter(function ($post) {
-                    return $post->status == null;
+                    return $post->status == null && $post->status != 'archive'; // Exclude archived posts
                 })
                 ->map(function (Post $post) {
                     return $post->id;
@@ -287,18 +275,15 @@ class UserController extends Controller
         }
 
         $postsAdditorials = Post::where(['owner_id' => 1])
-            ->where(['status' => null])
+            ->where('status', '!=', 'archive') // Exclude archived posts
             ->where('publish_date', '<', $now)
-            //            ->where(['ad' => 1])
+            ->where(['ad' => 1])
             ->get()
-            //            ->filter(function ($post) {
-            //                return $post->reports->count() == 0;
-            //            })
             ->filter(function ($post) use ($fromDate) {
                 return $post->updated_at >= $fromDate;
             })
             ->filter(function ($post) {
-                return $post->status == null;
+                return $post->status == null && $post->status != 'archive'; // Exclude archived posts
             })
             ->map(function (Post $post) {
                 return $post->id;
@@ -306,7 +291,7 @@ class UserController extends Controller
             ->toArray();
 
         $marketPosts = Post::where(['post_for_sale' => 1])
-            ->where(['status' => null])
+            ->where('status', '!=', 'archive') // Exclude archived posts
             ->get()
             ->filter(function ($post) {
                 return $post->reports->count() == 0;
@@ -327,43 +312,13 @@ class UserController extends Controller
 
         $posts = array_merge($posts, $postsAdditorials);
         $posts = array_merge($posts, $marketPosts);
-        //        if (count($posts) == 0) {
-        //            $interests = $user->interests->map(function ($interest) {
-        //                return $interest->id;
-        //            });
-        //
-        //            $posts = Post::whereHas('interests', function ($query) use ($interests) {
-        //                return $query->whereIn('interests_category.id', $interests);
-        //            })->limit(50)->get()->map(function (Post $post) {
-        //                return $post->id;
-        //            })->toArray();
-        //        }
-        //
-        //        if (count($posts) == 0) {
-        //            $posts = Post::where('id', '>', 0)->get('id')->map(function (Post $post) {
-        //                return $post->id;
-        //            })->toArray();
-        //        }
-        //        $posts = $posts->filter(function ($post) {
-        //            return $post->reports->count() == 0;
-        //        });
 
         rsort($posts);
 
         $posts = array_values(array_unique($posts, SORT_DESC));
 
         $newArray = [];
-        //        dump($postsInteresed);
 
-        //        foreach ($posts as $key => $post) {
-        //            if (!($key % 4) && $key != 0) {
-        //                foreach ($postsInteresed as $interestKey => $postInterest) {
-        //                    $newArray[] = [$postsInteresed[$interestKey], 'interest'];
-        //                }
-        //            } else {
-        //                $newArray[] = [$posts[$key], 'regular'];
-        //            }
-        //        };
         $posts = collect($posts);
 
         $postsInterested =
@@ -372,8 +327,6 @@ class UserController extends Controller
                 : [];
 
         rsort($postsInterested);
-        //        dump($postsInterested);
-        //        dump($posts);
 
         $newArray = $posts
             ->chunk(2)
@@ -388,6 +341,7 @@ class UserController extends Controller
 
         return response()->json(['data' => $newArray]);
     }
+
 
     public function notificationAction(Request $request)
     {

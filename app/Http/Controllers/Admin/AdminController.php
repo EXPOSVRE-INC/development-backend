@@ -28,6 +28,8 @@ class AdminController extends Controller {
     public function postAdForm(Request $request) {
         $request->merge([
             'ad' => 1,
+            'allow_views' => 1,
+            'allow_to_comment' => 1,
             'shippingIncluded' => 0
         ]);
         $input = $request->all();

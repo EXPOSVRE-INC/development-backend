@@ -191,6 +191,8 @@ class AdController extends Controller
         $request->merge([
             'link' => ($request->get('link') != null) ? $request->get('link') : '',
             'ad' => 1,
+            'allow_views' => 1,
+            'allow_to_comment' => 1,
             'shippingIncluded' => 0,
             'publish_date' => Carbon::createFromFormat('d/m/Y H:i', $request->get('publish_date')),
             'owner_id' => 1
