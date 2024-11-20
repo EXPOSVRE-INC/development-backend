@@ -8,7 +8,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
+    <link rel="icon" type="image/png" href="https://exposvre.com/wp-content/uploads/2023/10/cropped-Exposvre-Icon-32x32.png">
     {{-- Custom Meta Tags --}}
     @yield('meta_tags')
 

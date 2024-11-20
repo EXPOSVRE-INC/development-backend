@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'AdminLTE 3',
+    'title' => 'EXPOSVRE – Join the social media revolution.',
     'title_prefix' => '',
     'title_postfix' => '',
 
