@@ -134,7 +134,7 @@ class AdController extends Controller
     public function editAddFormPost($id, Request $request)
     {
         if ($request->has('publish_date')) {
-            $request->merge(['publish_date' => Carbon::createFromFormat('d/m/Y H:i', $request->get('publish_date'))]);
+            $request->merge(['publish_date' => Carbon::createFromFormat('d/m/Y', $request->get('publish_date'))->startOfDay()]);
         }
 
 
@@ -194,7 +194,7 @@ class AdController extends Controller
             'allow_views' => 1,
             'allow_to_comment' => 1,
             'shippingIncluded' => 0,
-            'publish_date' => Carbon::createFromFormat('d/m/Y H:i', $request->get('publish_date')),
+            'publish_date' => Carbon::createFromFormat('d/m/Y', $request->get('publish_date'))->startOfDay(),
             'owner_id' => 1
         ]);
         $input = $request->all();

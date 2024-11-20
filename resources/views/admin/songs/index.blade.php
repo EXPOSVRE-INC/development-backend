@@ -64,7 +64,7 @@ $config = [
             {{ $song->posts_count ?? 0}}
         </td>
         <td>
-            {{ \Carbon\Carbon::parse($song->created_at)->format('m/d/y') }}
+            {{ \Carbon\Carbon::parse($song->created_at)->format('d/m/y') }}
         </td>
 
         <td>

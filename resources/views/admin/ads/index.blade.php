@@ -59,7 +59,7 @@
                     {{$post->interests()->first() ? $post->interests()->first()->name : ''}}
                 </td>
                 <td>
-                    {{$post->publish_date}}
+                       {{ \Carbon\Carbon::parse($post->publish_date)->format('d/m/y') }}
                 </td>
                 <td>
                     {{$post->order_priority}}

@@ -173,11 +173,11 @@
 {{--        </x-adminlte-select2>--}}
 
         @php
-            $config = ['format' => 'DD/MM/YYYY HH:mm'];
-			$today = \Carbon\Carbon::createFromFormat('d/m/Y H:i',  \Carbon\Carbon::now()->format('d/m/Y H:i'));
+            $config = ['format' => 'DD/MM/YYYY'];
+			$today = \Carbon\Carbon::now()->startOfDay();
         @endphp
-        <x-adminlte-input-date name="publish_date" :config="$config" placeholder="Choose a date and time..."
-                               label="Publish time" label-class="text-primary" value="{{$today->subDays(1)->format('d/m/Y H:i')}}">
+        <x-adminlte-input-date name="publish_date" :config="$config" placeholder="Choose a date..."
+                               label="Publish Date" label-class="text-primary" value="{{$today->format('d/m/Y')}}">
             <x-slot name="appendSlot">
                 <x-adminlte-button theme="outline-primary" icon="far fa-lg fa-calendar"
                                    title="Set Publish Date"/>

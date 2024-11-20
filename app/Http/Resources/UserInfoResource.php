@@ -42,7 +42,8 @@ class UserInfoResource extends JsonResource
             'subscribing' => auth('api')->user()->isSubscription($this->id),
             'marketLikesCount' => $this->profile ? $this->profile->likers()->count() : 0,
             'isMarketLikeByUser' => $this->profile ? $this->profile->isLikedBy(auth('api')->user()) : false,
-            'posts' => $this->posts()->count(),
+            'posts' => $this->posts()->get()->filter(function ($post) {
+                return $post->reports->count() == 0;})->count(),
             // 'followers' => $this->subscribers()->count(),
             // 'followed' => $this->subscriptions()->count(),
 
