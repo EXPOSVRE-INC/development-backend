@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 class ArticleController extends Controller
 {
     public function scheduled() {
-        $now = Carbon::now()->toDateTimeString();
+        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
         $posts = Post::where('link', '<>', 'NULL')
             ->where(['ad' => 1])
             ->where(['isArticle' => 1])
@@ -30,7 +30,7 @@ class ArticleController extends Controller
 
 
     public function published() {
-        $now = Carbon::now()->toDateTimeString();
+        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
         $posts = Post::where('link', '<>', 'NULL')
             ->where(['ad' => 1])
             ->where(['isArticle' => 1])

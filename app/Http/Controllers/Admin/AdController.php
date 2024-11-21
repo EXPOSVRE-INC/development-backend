@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 class AdController extends Controller
 {
     public function scheduled() {
-        $now = Carbon::now()->toDateTimeString();
+        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
 //        dump($now);
         $posts = Post::where('publish_date', '>', $now)
             ->where(['owner_id' => 1])
@@ -29,7 +29,7 @@ class AdController extends Controller
 
 
     public function published() {
-        $now = Carbon::now()->toDateTimeString();
+        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
         $posts = Post::where(['owner_id' => 1])
             ->where(['status' => null])
             ->where('publish_date', '<', $now)->where(['ad' => 1])
@@ -66,7 +66,7 @@ class AdController extends Controller
 
     public function highestPriority($id) {
 
-        $now = Carbon::now()->toDateTimeString();
+        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
 
         $posts = Post::where('link', '<>', 'NULL')
             ->where(['owner_id' => 1])
@@ -134,7 +134,7 @@ class AdController extends Controller
     public function editAddFormPost($id, Request $request)
     {
         if ($request->has('publish_date')) {
-            $request->merge(['publish_date' => Carbon::createFromFormat('d/m/Y', $request->get('publish_date'))->startOfDay()]);
+            $request->merge(['publish_date' => Carbon::createFromFormat('d/m/Y H:i', $request->get('publish_date') , 'US/Eastern')]);
         }
 
 
@@ -194,7 +194,7 @@ class AdController extends Controller
             'allow_views' => 1,
             'allow_to_comment' => 1,
             'shippingIncluded' => 0,
-            'publish_date' => Carbon::createFromFormat('d/m/Y', $request->get('publish_date'))->startOfDay(),
+            'publish_date' => Carbon::createFromFormat('d/m/Y H:i', $request->get('publish_date')),
             'owner_id' => 1
         ]);
         $input = $request->all();

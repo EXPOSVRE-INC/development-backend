@@ -198,8 +198,8 @@ class UserController extends Controller
     {
         $fromDate = Carbon::createFromTimestamp(
             $request->get('last_update_date')
-        )->toDateTimeString();
-        $now = Carbon::now()->toDateTimeString();
+        )->setTimezone('US/Eastern')->toDateTimeString();
+        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
 
         $user = auth('api')->user();
 
