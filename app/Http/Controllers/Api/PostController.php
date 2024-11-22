@@ -347,8 +347,6 @@ class PostController extends Controller
 
     public function createPost(CreatePostRequest $request)
     {
-
-
         $title = trim($request->get('title'));
         $desc = trim($request->get('description'));
 
@@ -377,35 +375,66 @@ class PostController extends Controller
             if (!$request->has('type')) {
                 $request->merge(['type' => 'image']);
             }
+            $mediaIds = $request->input('files', []); // Ensure mediaIds is fetched once.
 
-            if ($request->song_id) {
+            if ($request->has('song_id') && $request->song_id) {
                 $song = Song::findOrFail($request->song_id);
-                $mediaIds = $request->input('files', []);
 
                 foreach ($mediaIds as $mediaId) {
                     $media = Media::where('uuid', $mediaId)->first();
 
                     if ($media && str_contains($media->mime_type, 'video')) {
+                        // Dispatch jobs with song clip for videos.
                         ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec)->chain([
-                            new ApplyWatermarkJob($mediaId , $user->username)
+                            new ApplyWatermarkJob($mediaId, $user->username),
                         ]);
                     }
                 }
             } else {
-                $request->merge(['song_id' => $songId]);
-            }
-            if(!$request->song_id){
-                $mediaIds = $request->input('files', []);
-
                 foreach ($mediaIds as $mediaId) {
                     $media = Media::where('uuid', $mediaId)->first();
 
                     if ($media && str_contains($media->mime_type, 'video')) {
-                        ApplyWatermarkJob::dispatch($mediaId , $user->username);
-
+                        // Dispatch watermark job for videos.
+                        ApplyWatermarkJob::dispatch($mediaId, $user->username);
                     }
                 }
+
+                // Ensure $songId is only merged if valid.
+                if (isset($songId) && $songId) {
+                    $request->merge(['song_id' => $songId]);
+                } else {
+                    $request->merge(['song_id' => null]);
+                }
             }
+            // if ($request->song_id) {
+            //     $song = Song::findOrFail($request->song_id);
+            //     $mediaIds = $request->input('files', []);
+
+            //     foreach ($mediaIds as $mediaId) {
+            //         $media = Media::where('uuid', $mediaId)->first();
+
+            //         if ($media && str_contains($media->mime_type, 'video')) {
+            //             ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec)->chain([
+            //                 new ApplyWatermarkJob($mediaId , $user->username)
+            //             ]);
+            //         }
+            //     }
+            // } else {
+            //     $request->merge(['song_id' => $songId]);
+            // }
+            // if(!$request->song_id){
+            //     $mediaIds = $request->input('files', []);
+
+            //     foreach ($mediaIds as $mediaId) {
+            //         $media = Media::where('uuid', $mediaId)->first();
+
+            //         if ($media && str_contains($media->mime_type, 'video')) {
+            //             ApplyWatermarkJob::dispatch($mediaId , $user->username);
+
+            //         }
+            //     }
+            // }
             if ($request->has('shippingIncluded')) {
                 $request->merge(['shippingIncluded' => $request->get('shippingIncluded')]);
             } else {
@@ -595,23 +624,6 @@ class PostController extends Controller
                 }
             }
 
-
-            //        if (count($user->collections) == 0) {
-            //            $collection = new PostCollection();
-            //            $collection->name = $post->title;
-            //            $collection->description = $post->description;
-            //            $collection->allowToComment = 1;
-            //            $collection->allowToCrown = 1;
-            //            $collection->user_id = $user->id;
-            //            $collection->save();
-            //            foreach ($media as $file) {
-            //                $file->move($collection, 'files');
-            //            }
-            //        } else {
-            //            $collection = $user->collections->first();
-            //        }
-            //
-            //        $post->collection_id = $collection->id;
             if (!$user->verify) {
                 $profanityCheck = $this->checkProfanityText($post->title . ' ' . $post->description);
                 //            $profanityImageCheck = $this->checkImage()
@@ -750,9 +762,29 @@ class PostController extends Controller
                 'status' => 422
             ], 422);
         }
-        //        if (count($user->getMedia('temp')) > 0 ) {
-        //            $post->clearMediaCollection('files');
-        //        }
+
+        $oldSongId = $post->song_id;
+        $newSongId = $request->get('song_id');
+
+        if ($oldSongId && !$newSongId) {
+            $request->merge(['song_id' => null]);
+
+            $postMedia = $post->getMedia('files')->filter(function ($media) {
+                return str_contains($media->mime_type, 'video');
+            });
+        }
+        else if ($newSongId && $newSongId != $oldSongId) {
+            $song = Song::findOrFail($newSongId);
+
+            $postMedia = $post->getMedia('files')->filter(function ($media) {
+                return str_contains($media->mime_type, 'video');
+            });
+
+            foreach ($postMedia as $media) {
+                ProcessVideoJob::dispatch($media->uuid, $song->clip_15_sec);
+            }
+        }
+
         if ($request->get('time_sale_from_date') == 0) {
             $request->merge(['time_sale_from_date' => null]);
         }
@@ -1216,10 +1248,10 @@ class PostController extends Controller
         return new PostResource($newPost);
     }
 
-    public function watermark(){
+    public function watermark()
+    {
         $mediaId = '9dd0e26a-3ec5-4d1c-a384-b9cbba5589a4';
         $userName = 'EXPOSVRE';
-        ApplyWatermarkJob::dispatch($mediaId , $userName);
-
+        ApplyWatermarkJob::dispatch($mediaId, $userName);
     }
 }
