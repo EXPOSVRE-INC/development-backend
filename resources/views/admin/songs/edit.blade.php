@@ -251,8 +251,41 @@
     event.preventDefault(); // Prevent form submission
 
     const clipFile = document.getElementById('clip_15_sec').files[0];
+    const imageFile = document.getElementById('image-upload').files[0];
+    const fullSongFile = document.getElementById('full_song_file').files[0];
+    const title = document.querySelector('input[name="title"]').value.trim();
+    const artist = document.getElementById('artist_id').value;
+    const genre = document.getElementById('genre_id').value;
+    const mood = document.getElementById('mood_id').value;
+
+    // Validation logic
+    if (!imageFile) {
+        alert('Please upload an image!');
+        return false;
+    }
+
+    if (!fullSongFile) {
+        alert('Please upload the full song file.');
+        return false;
+    }
+
     if (!clipFile) {
         alert('Please upload a 15-second clip.');
+        return false;
+    }
+
+    if (!artist) {
+        alert('Please select an artist.');
+        return false;
+    }
+
+    if (!title) {
+        alert('Please enter the title of the song.');
+        return false;
+    }
+
+    if (!mood && !genre) {
+        alert('Please select either a genre or a mood.');
         return false;
     }
 

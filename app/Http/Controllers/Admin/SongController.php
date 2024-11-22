@@ -89,21 +89,21 @@ class SongController extends Controller
             $originalFileName = $request->file('image_file')->getClientOriginalName();
             $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
             $imagePath = $request->file('image_file')->storeAs( 'uploads/images', $fileNameWithoutSpaces, 'public');
-            $imageUrl = url('storage/' . $imagePath);
+            $imageUrl = url('storage/' . $imagePath) ?? null;
         }
 
         if ($request->hasFile('full_song_file')) {
             $originalFileName = $request->file('full_song_file')->getClientOriginalName();
             $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
             $songPath = $request->file('full_song_file')->storeAs('uploads/songs', $fileNameWithoutSpaces , 'public');
-            $songUrl = url('storage/' . $songPath);
+            $songUrl = url('storage/' . $songPath) ?? null;
         }
 
         if ($request->hasFile('clip_15_sec')) {
             $originalFileName = $request->file('clip_15_sec')->getClientOriginalName();
             $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
             $clipPath = $request->file('clip_15_sec')->storeAs('uploads/clips', $fileNameWithoutSpaces , 'public');
-            $clipUrl = url('storage/' . $clipPath);
+            $clipUrl = url('storage/' . $clipPath) ?? null;
         }
 
         $songDuration = $this->calculateSongDuration(storage_path('app/public/' . $songPath));
@@ -119,9 +119,9 @@ class SongController extends Controller
         $song->song_length = $songDuration;
         $song->status = 'active';
         $song->description = $request->description;
-        $song->image_file = $imageUrl;
-        $song->full_song_file = $songUrl;
-        $song->clip_15_sec = $clipUrl;
+        $song->image_file = $imageUrl ?? null;
+        $song->full_song_file = $songUrl ?? null;
+        $song->clip_15_sec = $clipUrl ?? null;
         $song->views_by_last_day = 0;
 
         $song->save();

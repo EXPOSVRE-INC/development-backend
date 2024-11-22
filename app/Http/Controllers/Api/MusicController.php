@@ -20,7 +20,7 @@ class MusicController extends Controller
         if ($genres->isNotEmpty()) {
             return GenreResource::collection($genres);
         }
-        return response()->json(['data' => []], 404);
+        return response()->json(['data' => []], 200);
     }
 
     public function getMoods()
@@ -30,7 +30,7 @@ class MusicController extends Controller
         if ($moods->isNotEmpty()) {
             return GenreResource::collection($moods);
         }
-        return response()->json(['data' => []], 404);
+        return response()->json(['data' => []], 200);
     }
 
     public function songList(Request $request)
@@ -46,7 +46,7 @@ class MusicController extends Controller
 
         $songs = $songQuery->limit(100)->get();
         if ($songs->isEmpty()) {
-            return response()->json(['data' => []], 404);
+            return response()->json(['data' => []], 200);
         }
         return SongResource::collection($songs);
     }
@@ -57,7 +57,7 @@ class MusicController extends Controller
         if ($song) {
             return new SongResource($song);
         }
-        return response()->json(['data' => []], 404);
+        return response()->json(['data' => []], 200);
     }
 
     public function likeSong($id)
