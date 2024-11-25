@@ -40,7 +40,7 @@ class ApplyWatermarkJob implements ShouldQueue
 
         $command = "$ffmpegPath -i \"$inputVideo\" -i \"$watermarkPath\" -filter_complex "
             . "\"[1:v]scale=170:40[wm]; [0:v][wm]overlay=x=20:y=H-h-80[base]; "
-            . "[base]drawtext=text='@{$this->userName}':x=23:y=H-text_h-55:fontsize=14:fontcolor=#dd358b\" "
+            . "[base]drawtext=text='$this->userName':x=23:y=H-text_h-55:fontsize=14:fontcolor=#dd358b\" "
             . "-c:a copy \"$tempOutput\"";
 
         $process = Process::fromShellCommandline($command);

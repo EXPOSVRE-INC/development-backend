@@ -42,13 +42,19 @@ class ProcessVideoJob implements ShouldQueue
             Log::error('Media not found for UUID: ' . $this->mediaId);
             return;
         }
+        Log::info('handle function called');
 
         $inputVideo = str_replace('\\', '/', $media->getPath());
+        Log::info('input video file' . $inputVideo);
         $newAudio = $this->audioFile;
+        Log::info('newAudio--------------' . $newAudio);
 
         $originalVideoBackup = storage_path('app/public/' . $media->id . '/original_' . basename($inputVideo));
+        Log::info('originalVideoBackup' . $originalVideoBackup);
 
         if (!file_exists($originalVideoBackup)) {
+        Log::info('heyyyyyy');
+
             if (!copy($inputVideo, $originalVideoBackup)) {
                 Log::error('Failed to create backup of original video for media: ' . $this->mediaId);
                 return;
@@ -77,6 +83,9 @@ class ProcessVideoJob implements ShouldQueue
         } else {
             // Restore original video from backup (remove added audio)
             if (file_exists($originalVideoBackup)) {
+
+                  Log::info('originalVideoBackup  yesssssssssssssss' . $originalVideoBackup);
+
                 if (!copy($originalVideoBackup, $inputVideo)) {
                     Log::error('Failed to restore original video for media: ' . $this->mediaId);
                     return;
