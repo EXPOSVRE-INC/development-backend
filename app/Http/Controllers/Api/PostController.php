@@ -1096,30 +1096,33 @@ class PostController extends Controller
 
         $sevenDaysAgo = $now->subDays(7);
 
-            $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('status', '!=', 'archive')->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
+            $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
             ->limit(50)
             ->get();
 
 
-        $filteredPosts = $posts->filter(function ($post) {
-            return $post->reports->count() == 0;
-        })->filter(function ($post) use ($now, $user) {
-            if ($user->isBlocking($post->owner) || $post->publish_date == null || $post->publish_date <= $now) {
-                if ($post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+            $filteredPosts = $posts->filter(function ($post) {
+                return $post->reports->count() == 0;
+            })->filter(function ($post) use ($now, $user) {
+                // Exclude posts where the status is 'archive'
+                if ($post->status == 'archive') {
                     return false;
-                } else {
-                    return true;
                 }
-            } else if ($user->isBlockedBy($post->owner) || $post->publish_date == null || $post->publish_date <= $now) {
-                if ($post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+
+                if ($post->publish_date == null || $post->publish_date <= $now) {
+                    if ($user->isBlocking($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                        return false;
+                    }
+                    if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                } else {
                     return false;
-                } else {
-                    return true;
                 }
-            } else {
-                return false;
-            }
-        });
+                return true;
+            });
 
         $songs = Song::where('updated_at', '>=', $sevenDaysAgo)
             ->where('views_by_last_day', '>', 0)
