@@ -46,40 +46,62 @@ class ProcessVideoJob implements ShouldQueue
         $inputVideo = str_replace('\\', '/', $media->getPath());
         $newAudio = $this->audioFile;
 
-        // Create a temporary output path
+        $originalVideoBackup = storage_path('app/public/' . $media->id . '/original_' . basename($inputVideo));
+
+        if (!file_exists($originalVideoBackup)) {
+            if (!copy($inputVideo, $originalVideoBackup)) {
+                Log::error('Failed to create backup of original video for media: ' . $this->mediaId);
+                return;
+            }
+        }
+
         $tempOutput = storage_path('app/public/' . $media->id . '/temp_' . basename($inputVideo));
 
-        $ffmpegCommand = [
-            '/usr/bin/ffmpeg',
-            '-i',
-            $inputVideo,
-            '-i',
-            $newAudio,
-            '-filter_complex',
-            '[1:a]apad',
-            '-c:v',
-            'copy',
-            '-c:a',
-            'aac',
-            '-shortest',
-            $tempOutput
-        ];
+        if ($newAudio) {
+            // Add or replace audio
+            $ffmpegCommand = [
+                '/usr/bin/ffmpeg',
+                '-i',
+                $inputVideo,
+                '-i',
+                $newAudio,
+                '-filter_complex',
+                '[1:a]apad',
+                '-c:v',
+                'copy',
+                '-c:a',
+                'aac',
+                '-shortest',
+                $tempOutput,
+            ];
+        } else {
+            // Restore original video from backup (remove added audio)
+            if (file_exists($originalVideoBackup)) {
+                if (!copy($originalVideoBackup, $inputVideo)) {
+                    Log::error('Failed to restore original video for media: ' . $this->mediaId);
+                    return;
+                }
+                Log::info('Successfully restored original video for media: ' . $this->mediaId);
+                return $inputVideo;
+            } else {
+                Log::error('Original video backup not found for media: ' . $this->mediaId);
+                return;
+            }
+        }
 
         $process = new Process($ffmpegCommand);
         $process->setTimeout(null);
 
         try {
             $process->run();
-            $user = auth('api')->user();
+
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
             }
 
-            // Check if temp file was created successfully
             if (file_exists($tempOutput)) {
-                // Delete the original video file first
                 unlink($inputVideo);
-                // Rename the temp output file to the original file's name
+
                 if (rename($tempOutput, $inputVideo)) {
                     Log::info('Successfully processed video and replaced original file: ' . $this->mediaId);
                     return $inputVideo;
@@ -91,17 +113,14 @@ class ProcessVideoJob implements ShouldQueue
             }
         } catch (ProcessFailedException $e) {
             Log::error('FFmpeg process failed for media ' . $this->mediaId . ': ' . $e->getMessage());
-            // Clean up temporary file if it exists
             if (file_exists($tempOutput)) {
                 unlink($tempOutput);
             }
         } catch (\Exception $e) {
             Log::error('Exception during video processing: ' . $e->getMessage());
-            // Clean up temporary file if it exists
             if (file_exists($tempOutput)) {
                 unlink($tempOutput);
             }
-            return null;
         }
     }
 }

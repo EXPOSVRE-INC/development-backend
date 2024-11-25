@@ -145,14 +145,12 @@ class MusicController extends Controller
 
             $filePath = public_path('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'songs' . DIRECTORY_SEPARATOR . $fileName);
 
-            // echo $fileName;
             if (!file_exists($filePath)) {
                 return response()->json(['error' => 'File not found'], 404);
             }
 
             $size = filesize($filePath);
 
-            // Return file with explicit headers
             return response()->file($filePath, [
                 'Content-Type' => 'audio/mpeg',
                 'Content-Length' => $size,

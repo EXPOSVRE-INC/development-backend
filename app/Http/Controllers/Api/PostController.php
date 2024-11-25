@@ -363,7 +363,6 @@ class PostController extends Controller
 
         if ($request->get('id') == 0) {
 
-            $songId = $request->song_id;
             $user = auth('api')->user();
 
             $request->merge(['owner_id' => $user->id]);
@@ -375,16 +374,15 @@ class PostController extends Controller
             if (!$request->has('type')) {
                 $request->merge(['type' => 'image']);
             }
-            $mediaIds = $request->input('files', []); // Ensure mediaIds is fetched once.
+            $mediaIds = $request->input('files', []);
+            $songId = $request->get('song_id');
 
-            if ($request->has('song_id') && $request->song_id) {
-                $song = Song::findOrFail($request->song_id);
+            if ($songId) {
+                $song = Song::findOrFail($songId);
 
                 foreach ($mediaIds as $mediaId) {
                     $media = Media::where('uuid', $mediaId)->first();
-
                     if ($media && str_contains($media->mime_type, 'video')) {
-                        // Dispatch jobs with song clip for videos.
                         ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec)->chain([
                             new ApplyWatermarkJob($mediaId, $user->username),
                         ]);
@@ -393,48 +391,11 @@ class PostController extends Controller
             } else {
                 foreach ($mediaIds as $mediaId) {
                     $media = Media::where('uuid', $mediaId)->first();
-
                     if ($media && str_contains($media->mime_type, 'video')) {
-                        // Dispatch watermark job for videos.
                         ApplyWatermarkJob::dispatch($mediaId, $user->username);
                     }
                 }
-
-                // Ensure $songId is only merged if valid.
-                if (isset($songId) && $songId) {
-                    $request->merge(['song_id' => $songId]);
-                } else {
-                    $request->merge(['song_id' => null]);
-                }
             }
-            // if ($request->song_id) {
-            //     $song = Song::findOrFail($request->song_id);
-            //     $mediaIds = $request->input('files', []);
-
-            //     foreach ($mediaIds as $mediaId) {
-            //         $media = Media::where('uuid', $mediaId)->first();
-
-            //         if ($media && str_contains($media->mime_type, 'video')) {
-            //             ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec)->chain([
-            //                 new ApplyWatermarkJob($mediaId , $user->username)
-            //             ]);
-            //         }
-            //     }
-            // } else {
-            //     $request->merge(['song_id' => $songId]);
-            // }
-            // if(!$request->song_id){
-            //     $mediaIds = $request->input('files', []);
-
-            //     foreach ($mediaIds as $mediaId) {
-            //         $media = Media::where('uuid', $mediaId)->first();
-
-            //         if ($media && str_contains($media->mime_type, 'video')) {
-            //             ApplyWatermarkJob::dispatch($mediaId , $user->username);
-
-            //         }
-            //     }
-            // }
             if ($request->has('shippingIncluded')) {
                 $request->merge(['shippingIncluded' => $request->get('shippingIncluded')]);
             } else {
@@ -759,7 +720,7 @@ class PostController extends Controller
             return response()->json([
                 'error' => "Can't update post",
                 'message' => "Post not updated! At least one file attachment is required.",
-                'status' => 422
+                'status' => 422,
             ], 422);
         }
 
@@ -768,12 +729,7 @@ class PostController extends Controller
 
         if ($oldSongId && !$newSongId) {
             $request->merge(['song_id' => null]);
-
-            $postMedia = $post->getMedia('files')->filter(function ($media) {
-                return str_contains($media->mime_type, 'video');
-            });
-        }
-        else if ($newSongId && $newSongId != $oldSongId) {
+        } elseif ($newSongId && $newSongId != $oldSongId) {
             $song = Song::findOrFail($newSongId);
 
             $postMedia = $post->getMedia('files')->filter(function ($media) {
