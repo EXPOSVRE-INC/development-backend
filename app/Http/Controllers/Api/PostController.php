@@ -47,14 +47,21 @@ class PostController extends Controller
 
     public function index()
     {
-
-        return PostResource::collection(Post::all());
+        return PostResource::collection(Post::where('status', '!=', 'archive')->get());
     }
 
     public function getPost($id)
     {
         try {
             $post = Post::findOrFail($id);
+
+            if ($post->status == 'archive') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The post is archived and cannot be accessed.',
+                ], 400);
+            }
+
             return new PostResource($post);
         } catch (ModelNotFoundException $e) {
             return response()->json([
@@ -810,7 +817,7 @@ class PostController extends Controller
     {
         $tag = $request->get('tag');
 
-        return PostResource::collection(Post::withAnyTags([$tag])->limit(100)->get());
+        return PostResource::collection(Post::withAnyTags([$tag])->where('status', '!=', 'archive')->limit(100)->get());
     }
 
     public function searchPostsByInterest(Request $request)
@@ -819,7 +826,7 @@ class PostController extends Controller
 
         $posts = Post::whereHas('interests', function ($query) use ($tag) {
             return $query->where('slug', 'LIKE', $tag);
-        })->limit(100)->get();
+        })->where('status', '!=', 'archive')->limit(100)->get();
 
         if ($posts->isEmpty()) {
             return response()->json(
@@ -1020,6 +1027,7 @@ class PostController extends Controller
 
         // Fetch most crowned posts
         $posts = Post::has('likers')
+            ->where('status', '!=', 'archive')
             ->withCount([
                 'likers' => function ($query) {
                     $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
@@ -1050,6 +1058,7 @@ class PostController extends Controller
 
         // Fetch most crowned songs
         $songs = Song::has('likers')
+            ->where('status', 'active')
             ->withCount([
                 'likers' => function ($query) {
                     $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
@@ -1082,7 +1091,7 @@ class PostController extends Controller
 
         $sevenDaysAgo = $now->subDays(7);
 
-        $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
+            $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('status', '!=', 'archive')->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
             ->limit(50)
             ->get();
 
@@ -1109,6 +1118,7 @@ class PostController extends Controller
 
         $songs = Song::where('updated_at', '>=', $sevenDaysAgo)
             ->where('views_by_last_day', '>', 0)
+            ->where('status', 'active')
             ->orderBy('views_by_last_day', 'DESC')
             ->limit(50)
             ->get();
@@ -1131,7 +1141,7 @@ class PostController extends Controller
 
     public function viewPost($id)
     {
-        $post = Post::where(['id' => $id])->first();
+        $post = Post::where(['id' => $id])->where('status', '!=', 'archive')->first();
 
         if (!$post) {
             return response()->json(['data' => []], 404);

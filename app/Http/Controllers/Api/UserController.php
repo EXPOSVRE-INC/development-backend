@@ -364,7 +364,7 @@ class UserController extends Controller
         $user = User::where(['id' => $id])->first();
         $posts = $user->load('posts')->posts;
         $posts = $posts->filter(function ($post) {
-            return $post->reports->count() == 0;
+            return $post->reports->count() == 0 && $post->status != 'archive';
         });
         return PostResource::collection($posts);
     }
