@@ -1027,34 +1027,39 @@ class PostController extends Controller
 
         // Fetch most crowned posts
         $posts = Post::has('likers')
-            ->where('status', '!=', 'archive')
-            ->withCount([
-                'likers' => function ($query) {
-                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
-                },
-            ])
-            ->orderBy('likers_count', 'DESC')
-            ->limit(50)
-            ->get();
+        ->withCount([
+            'likers' => function ($query) {
+                $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
+            },
+        ])
+        ->orderBy('likers_count', 'DESC')
+        ->limit(50)
+        ->get();
 
-        $filteredPosts = $posts->filter(function ($post) {
-            return $post->reports->count() == 0;
-        })->filter(function ($post) use ($now, $user) {
-            if ($post->publish_date == null || $post->publish_date <= $now) {
-                if ($user->isBlocking($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
-                    return false;
-                }
-                if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
-                    return false;
-                } else {
-                    return true;
-                }
-            } else {
+    $filteredPosts = $posts->filter(function ($post) {
+        return $post->reports->count() == 0;
+    })->filter(function ($post) use ($now, $user) {
+        // Exclude posts where the status is 'archive'
+        if ($post->status == 'archive') {
+            return false;
+        }
+
+        if ($post->publish_date == null || $post->publish_date <= $now) {
+            if ($user->isBlocking($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
                 return false;
             }
+            if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
 
-            return true;
-        });
+        return true;
+    });
+
 
         // Fetch most crowned songs
         $songs = Song::has('likers')
