@@ -113,7 +113,7 @@ class ProcessVideoJob implements ShouldQueue
                 Log::error('Temp output file not created for media: ' . $this->mediaId);
             }
         } catch (ProcessFailedException $e) {
-            Log::error('FFmpeg process failed for media ' . $this->mediaId . ': ' . $e->getMessage());
+            Log::error('FFmpeg process failed for media file' . $this->mediaId . ': ' . $e->getMessage());
             if (file_exists($tempOutput)) {
                 unlink($tempOutput);
             }
