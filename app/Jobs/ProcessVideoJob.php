@@ -49,7 +49,7 @@ class ProcessVideoJob implements ShouldQueue
         $newAudio = $this->audioFile;
         Log::info('newAudio--------------' . $newAudio);
 
-        $originalVideoBackup = storage_path('app/public/' . $media->id . '/original_' . basename($inputVideo));
+        $originalVideoBackup = str_replace('\\', '/', storage_path('app/public/' . $media->id . '/original_' . basename($inputVideo)));
         Log::info('originalVideoBackup' . $originalVideoBackup);
 
         if (!file_exists($originalVideoBackup)) {
