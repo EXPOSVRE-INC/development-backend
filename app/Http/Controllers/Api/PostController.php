@@ -47,7 +47,7 @@ class PostController extends Controller
 
     public function index()
     {
-        return PostResource::collection(Post::where('status', '!=', 'archive')->get());
+        return PostResource::collection(Post::get());
     }
 
     public function getPost($id)
@@ -817,7 +817,10 @@ class PostController extends Controller
     {
         $tag = $request->get('tag');
 
-        return PostResource::collection(Post::withAnyTags([$tag])->where('status', '!=', 'archive')->limit(100)->get());
+        return PostResource::collection(Post::withAnyTags([$tag])->where(function ($query) {
+            $query->where('status', '!=', 'archive')
+                  ->orWhereNull('status');
+        })->limit(100)->get());
     }
 
     public function searchPostsByInterest(Request $request)
@@ -826,7 +829,10 @@ class PostController extends Controller
 
         $posts = Post::whereHas('interests', function ($query) use ($tag) {
             return $query->where('slug', 'LIKE', $tag);
-        })->where('status', '!=', 'archive')->limit(100)->get();
+        })->where(function ($query) {
+            $query->where('status', '!=', 'archive')
+                  ->orWhereNull('status');
+        })->limit(100)->get();
 
         if ($posts->isEmpty()) {
             return response()->json(
@@ -1100,7 +1106,6 @@ class PostController extends Controller
             ->limit(50)
             ->get();
 
-
             $filteredPosts = $posts->filter(function ($post) {
                 return $post->reports->count() == 0;
             })->filter(function ($post) use ($now, $user) {
@@ -1149,10 +1154,14 @@ class PostController extends Controller
 
     public function viewPost($id)
     {
-        $post = Post::where(['id' => $id])->where('status', '!=', 'archive')->first();
-
+        $post = Post::where('id', $id)
+            ->where(function ($query) {
+                $query->where('status', '!=', 'archive')
+                      ->orWhereNull('status');
+            })
+            ->first();
         if (!$post) {
-            return response()->json(['data' => []], 404);
+            return response()->json(['data' => (object) []], 404);
         }
         $post->views_count = $post->views_count + 1;
         $post->views_by_last_day = $post->views_by_last_day + 1;
