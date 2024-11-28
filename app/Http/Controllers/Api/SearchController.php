@@ -36,10 +36,14 @@ class SearchController extends Controller
 
             $searchTerm = $query;
 
-                $postsQuery = Post::where(function ($query) use ($searchTerm) {
-                    $query->where('title', 'LIKE', '%' . $searchTerm . '%')
-                        ->orWhere('description', 'LIKE', '%' . $searchTerm . '%');
-                })->whereNotIn('owner_id', $excludedUserIds)->where('status', '!=', 'archive');
+            $postsQuery = Post::where(function ($query) use ($searchTerm) {
+                $query->where('title', 'LIKE', '%' . $searchTerm . '%')
+                      ->orWhere('description', 'LIKE', '%' . $searchTerm . '%');
+            })->whereNotIn('owner_id', $excludedUserIds)
+              ->where(function ($query) {
+                  $query->where('status', '!=', 'archive')
+                        ->whereNotNull('status');
+              });
 
             if ($request->get('status') && $request->get('status') != '') {
                 $statuses = $request->get('status');
