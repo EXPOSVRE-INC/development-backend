@@ -17,8 +17,15 @@ class SearchPostService {
 
     public function newFilterPosts(SearchPostRequest $request) {
         $query = $request->get('query');
-        $posts = Post::where('title', 'LIKE', '%'.$query.'%');
-        $posts->orWhere('description', 'LIKE', '%'.$query.'%');
+        $posts = Post::where(function($q) use ($query) {
+            $q->where('title', 'LIKE', '%'.$query.'%')
+              ->orWhere('description', 'LIKE', '%'.$query.'%');
+        })
+        ->where(function($q) {
+            $q->where('status', '!=', 'archive')
+              ->orWhereNull('status');
+        });
+
         if($request->get('status') && $request->get('status') != '') {
 //                    $statuses = json_decode($request->get('status'));
             $statuses = $request->get('status');
@@ -60,8 +67,13 @@ class SearchPostService {
     }
 
     public function filterPosts(SearchPostRequest $request) {
-//        \DB::enableQueryLog();
-        $posts = (new Post())->newQuery();
+        $posts = Post::query();
+
+        $posts->where(function($q) {
+            $q->where('status', '!=', 'archive')
+              ->orWhereNull('status');
+        });
+
 
         if ($request->has('query') && $request->input('query') != '' && $request->input('query') != null) {
             $posts->where('title', 'LIKE', '%'.$request->input('query').'%');

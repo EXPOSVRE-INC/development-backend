@@ -47,7 +47,11 @@ class PostController extends Controller
 
     public function index()
     {
-        return PostResource::collection(Post::get());
+        $posts = Post::where(function ($query) {
+            $query->where('status', '!=', 'archive')
+                ->orWhereNull('status');
+        })->get();
+        return PostResource::collection($posts);
     }
 
     public function getPost($id)
