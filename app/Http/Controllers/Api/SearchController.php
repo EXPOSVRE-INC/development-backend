@@ -42,7 +42,7 @@ class SearchController extends Controller
             })->whereNotIn('owner_id', $excludedUserIds)
               ->where(function ($query) {
                   $query->where('status', '!=', 'archive')
-                        ->whereNotNull('status');
+                        ->orWhereNull('status');
               });
 
             if ($request->get('status') && $request->get('status') != '') {
