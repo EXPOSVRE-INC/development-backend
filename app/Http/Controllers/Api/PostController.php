@@ -32,9 +32,6 @@ use Imagick;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Jobs\ProcessVideoJob;
-use App\Jobs\ApplyWatermarkJob;
-
-
 
 class PostController extends Controller
 {
@@ -394,16 +391,7 @@ class PostController extends Controller
                 foreach ($mediaIds as $mediaId) {
                     $media = Media::where('uuid', $mediaId)->first();
                     if ($media && str_contains($media->mime_type, 'video')) {
-                        ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec)->chain([
-                            new ApplyWatermarkJob($mediaId, $user->username),
-                        ]);
-                    }
-                }
-            } else {
-                foreach ($mediaIds as $mediaId) {
-                    $media = Media::where('uuid', $mediaId)->first();
-                    if ($media && str_contains($media->mime_type, 'video')) {
-                        ApplyWatermarkJob::dispatch($mediaId, $user->username);
+                        ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec);
                     }
                 }
             }
@@ -1233,12 +1221,5 @@ class PostController extends Controller
         $newPost->save();
 
         return new PostResource($newPost);
-    }
-
-    public function watermark()
-    {
-        $mediaId = '9dd0e26a-3ec5-4d1c-a384-b9cbba5589a4';
-        $userName = 'EXPOSVRE';
-        ApplyWatermarkJob::dispatch($mediaId, $userName);
     }
 }
