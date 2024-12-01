@@ -163,7 +163,6 @@ Route::group([
             'middleware' => ['auth:api']
         ], function ($router) {
             Route::get('/', 'PostController@index');
-            Route::get('/watermark', 'PostController@watermark');
             Route::get('/most-crowned', 'PostController@mostCrowned');
             Route::get('/most-viewed', 'PostController@mostViewed');
 
