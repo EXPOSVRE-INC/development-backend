@@ -8,7 +8,7 @@
         <x-adminlte-input name="name" label="Name" placeholder="Name" label-class="text-lightblue" value="">
             <x-slot name="prependSlot">
                 <div class="input-group-text">
-                    <i class="fa-solid fa-link"></i>
+                    <i class="fas fa-link"></i>
                 </div>
             </x-slot>
         </x-adminlte-input>

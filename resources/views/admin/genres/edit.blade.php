@@ -8,7 +8,7 @@
         <x-adminlte-input name="name" label="Name" placeholder="Name" label-class="text-lightblue" value="{{$genre->name}}">
             <x-slot name="prependSlot">
                 <div class="input-group-text">
-                    <i class="fas fa-fw fa-user"></i>
+                    <i class="fas fa-list"></i>
                 </div>
             </x-slot>
         </x-adminlte-input>
