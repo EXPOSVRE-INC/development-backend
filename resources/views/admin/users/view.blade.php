@@ -20,7 +20,7 @@
                                 <div class="d-flex flex-column align-items-center  text-align-center">
                                     <img src="{{ $user->getFirstMediaUrl('preview') ?: asset('profileImg.jpeg') }}"
                                         onerror="this.onerror=null; this.src='{{ asset('profileImg.jpeg') }}';"
-                                        alt="Admin" class="rounded-circle" width="150" />
+                                        alt="Admin" class="rounded-circle object-cover" width="150" height="150" />
                                     <div class="mt-3">
                                         <h4>{{($user->profile && $user->profile != null ? $user->profile->firstName . '
                                             ' .$user->profile->lastName : '')}}
