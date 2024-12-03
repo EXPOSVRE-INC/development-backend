@@ -313,10 +313,15 @@ class UserController extends Controller
         $posts = array_merge($posts, $postsAdditorials);
         $posts = array_merge($posts, $marketPosts);
 
-        // Fetch and sort only post IDs
+        // Fetch post details with advanced sorting logic
         $postIds = Post::whereIn('id', array_unique($posts))
-            ->orderBy('publish_date', 'desc')
-            ->orderBy('created_at', 'desc')
+            ->get()
+            ->sortByDesc(function ($post) {
+                if ($post->publish_date === null) {
+                    return $post->created_at;
+                }
+                return $post->publish_date;
+            })
             ->pluck('id')
             ->toArray();
 
@@ -333,7 +338,6 @@ class UserController extends Controller
 
         return response()->json(['data' => $finalPostIds]);
     }
-
 
     public function notificationAction(Request $request)
     {
