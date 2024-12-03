@@ -313,13 +313,18 @@ class UserController extends Controller
         $posts = array_merge($posts, $postsAdditorials);
         $posts = array_merge($posts, $marketPosts);
 
-        rsort($posts);
-
-        $posts = array_values(array_unique($posts, SORT_DESC));
+        // Modify sorting logic to prioritize the most recent date
+        $uniquePosts = Post::whereIn('id', array_unique($posts))
+            ->orderByRaw("
+                GREATEST(
+                    COALESCE(publish_date, '1970-01-01'), 
+                    COALESCE(created_at, '1970-01-01')
+                ) DESC
+            ")
+            ->get();
 
         $newArray = [];
-
-        $posts = collect($posts);
+        $posts = $uniquePosts->pluck('id');
 
         $postsInterested =
             count($postsInterested) > 0
