@@ -216,7 +216,7 @@ class UserController extends Controller
             ->whereHas('interests', function ($query) use ($userInterestsArray) {
                 $query->whereIn('slug', $userInterestsArray);
             })
-            ->where('status', '!=', 'archive')
+            ->where('status', '!=', 'archive') // Exclude archived posts
             ->get()
             ->filter(function ($post) use ($user) {
                 return !$user->isBlocking($post->owner);
@@ -232,7 +232,7 @@ class UserController extends Controller
             $posts,
             $user->posts
                 ->filter(function ($post) {
-                    return $post->status == null && $post->status != 'archive';
+                    return $post->status == null && $post->status != 'archive'; // Exclude archived posts
                 })
                 ->filter(function ($post) {
                     return $post->reports->count() == 0;
@@ -265,7 +265,7 @@ class UserController extends Controller
                     return !$user->isBlockedBy($post->owner);
                 })
                 ->filter(function ($post) {
-                    return $post->status == null && $post->status != 'archive';
+                    return $post->status == null && $post->status != 'archive'; // Exclude archived posts
                 })
                 ->map(function (Post $post) {
                     return $post->id;
@@ -275,7 +275,7 @@ class UserController extends Controller
         }
 
         $postsAdditorials = Post::where(['owner_id' => 1])
-            ->where('status', '!=', 'archive')
+            ->where('status', '!=', 'archive') // Exclude archived posts
             ->where('publish_date', '<', $now)
             ->where(['ad' => 1])
             ->get()
@@ -283,7 +283,7 @@ class UserController extends Controller
                 return $post->updated_at >= $fromDate;
             })
             ->filter(function ($post) {
-                return $post->status == null && $post->status != 'archive';
+                return $post->status == null && $post->status != 'archive'; // Exclude archived posts
             })
             ->map(function (Post $post) {
                 return $post->id;
@@ -291,7 +291,7 @@ class UserController extends Controller
             ->toArray();
 
         $marketPosts = Post::where(['post_for_sale' => 1])
-            ->where('status', '!=', 'archive')
+            ->where('status', '!=', 'archive') // Exclude archived posts
             ->get()
             ->filter(function ($post) {
                 return $post->reports->count() == 0;
@@ -313,31 +313,35 @@ class UserController extends Controller
         $posts = array_merge($posts, $postsAdditorials);
         $posts = array_merge($posts, $marketPosts);
 
-        // Fetch post details with advanced sorting logic
-        $postIds = Post::whereIn('id', array_unique($posts))
-            ->get()
-            ->sortByDesc(function ($post) {
-                if ($post->publish_date === null) {
-                    return $post->created_at;
-                }
-                return $post->publish_date;
-            })
-            ->pluck('id')
-            ->toArray();
+        rsort($posts);
+
+        $posts = array_values(array_unique($posts, SORT_DESC));
+
+        $newArray = [];
+
+        $posts = collect($posts);
 
         $postsInterested =
             count($postsInterested) > 0
-                ? array_values($postsInterested->diff($postIds)->toArray())
+                ? array_values($postsInterested->diff($posts)->toArray())
                 : [];
 
         rsort($postsInterested);
 
-        // Merge and unique the post IDs
-        $finalPostIds = array_merge($postIds, $postsInterested);
-        $finalPostIds = array_values(array_unique($finalPostIds));
+        $newArray = $posts
+            ->chunk(2)
+            ->map(function ($items, $key) use ($postsInterested) {
+                if (array_key_exists($key, $postsInterested)) {
+                    return $items->push($postsInterested[$key]);
+                } else {
+                    return $items;
+                }
+            })
+            ->collapse();
 
-        return response()->json(['data' => $finalPostIds]);
+        return response()->json(['data' => $newArray]);
     }
+
 
     public function notificationAction(Request $request)
     {
