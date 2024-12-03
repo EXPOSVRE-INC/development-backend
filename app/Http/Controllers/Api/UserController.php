@@ -216,7 +216,7 @@ class UserController extends Controller
             ->whereHas('interests', function ($query) use ($userInterestsArray) {
                 $query->whereIn('slug', $userInterestsArray);
             })
-            ->where('status', '!=', 'archive') // Exclude archived posts
+            ->where('status', '!=', 'archive')
             ->get()
             ->filter(function ($post) use ($user) {
                 return !$user->isBlocking($post->owner);
@@ -232,7 +232,7 @@ class UserController extends Controller
             $posts,
             $user->posts
                 ->filter(function ($post) {
-                    return $post->status == null && $post->status != 'archive'; // Exclude archived posts
+                    return $post->status == null && $post->status != 'archive';
                 })
                 ->filter(function ($post) {
                     return $post->reports->count() == 0;
@@ -265,7 +265,7 @@ class UserController extends Controller
                     return !$user->isBlockedBy($post->owner);
                 })
                 ->filter(function ($post) {
-                    return $post->status == null && $post->status != 'archive'; // Exclude archived posts
+                    return $post->status == null && $post->status != 'archive';
                 })
                 ->map(function (Post $post) {
                     return $post->id;
@@ -275,7 +275,7 @@ class UserController extends Controller
         }
 
         $postsAdditorials = Post::where(['owner_id' => 1])
-            ->where('status', '!=', 'archive') // Exclude archived posts
+            ->where('status', '!=', 'archive')
             ->where('publish_date', '<', $now)
             ->where(['ad' => 1])
             ->get()
@@ -283,7 +283,7 @@ class UserController extends Controller
                 return $post->updated_at >= $fromDate;
             })
             ->filter(function ($post) {
-                return $post->status == null && $post->status != 'archive'; // Exclude archived posts
+                return $post->status == null && $post->status != 'archive';
             })
             ->map(function (Post $post) {
                 return $post->id;
@@ -291,7 +291,7 @@ class UserController extends Controller
             ->toArray();
 
         $marketPosts = Post::where(['post_for_sale' => 1])
-            ->where('status', '!=', 'archive') // Exclude archived posts
+            ->where('status', '!=', 'archive')
             ->get()
             ->filter(function ($post) {
                 return $post->reports->count() == 0;
@@ -313,33 +313,25 @@ class UserController extends Controller
         $posts = array_merge($posts, $postsAdditorials);
         $posts = array_merge($posts, $marketPosts);
 
-        rsort($posts);
-
-        $posts = array_values(array_unique($posts, SORT_DESC));
-
-        $newArray = [];
-
-        $posts = collect($posts);
+        // Fetch and sort only post IDs
+        $postIds = Post::whereIn('id', array_unique($posts))
+            ->orderBy('publish_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->pluck('id')
+            ->toArray();
 
         $postsInterested =
             count($postsInterested) > 0
-                ? array_values($postsInterested->diff($posts)->toArray())
+                ? array_values($postsInterested->diff($postIds)->toArray())
                 : [];
 
         rsort($postsInterested);
 
-        $newArray = $posts
-            ->chunk(2)
-            ->map(function ($items, $key) use ($postsInterested) {
-                if (array_key_exists($key, $postsInterested)) {
-                    return $items->push($postsInterested[$key]);
-                } else {
-                    return $items;
-                }
-            })
-            ->collapse();
+        // Merge and unique the post IDs
+        $finalPostIds = array_merge($postIds, $postsInterested);
+        $finalPostIds = array_values(array_unique($finalPostIds));
 
-        return response()->json(['data' => $newArray]);
+        return response()->json(['data' => $finalPostIds]);
     }
 
 
