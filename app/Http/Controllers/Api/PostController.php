@@ -382,19 +382,7 @@ class PostController extends Controller
             if (!$request->has('type')) {
                 $request->merge(['type' => 'image']);
             }
-            $mediaIds = $request->input('files', []);
-            $songId = $request->get('song_id');
 
-            if ($songId) {
-                $song = Song::findOrFail($songId);
-
-                foreach ($mediaIds as $mediaId) {
-                    $media = Media::where('uuid', $mediaId)->first();
-                    if ($media && str_contains($media->mime_type, 'video')) {
-                        ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec);
-                    }
-                }
-            }
             if ($request->has('shippingIncluded')) {
                 $request->merge(['shippingIncluded' => $request->get('shippingIncluded')]);
             } else {
@@ -511,8 +499,8 @@ class PostController extends Controller
                 }
             }
 
-            $post->save();
 
+            $post->save();
             $media = $user->getMedia('temp');
 
             if ($user->hasMedia('temp')) {
@@ -524,16 +512,8 @@ class PostController extends Controller
                                 "File not found: {$file->getPath()}"
                             );
                         }
-                        $existingMedia = $user->getMedia('temp')->first();
 
-                        if ($existingMedia) {
-                            // Update the existing media attributes
-                            $existingMedia->update([
-                                'model_id' => $post->id, // Update the model_id to the post's ID
-                                'collection_name' => 'files', // Ensure the collection name is set
-                                'model_type' => "App\Models\Post", // Optionally update the mime type if necessary
-                            ]);
-                        }
+                        $file->move($post, 'files');
                         $imgUrl = $file->getUrl();
 
                         if (!$user->verify) {
@@ -543,7 +523,6 @@ class PostController extends Controller
                             } else {
                                 $result = $this->checkImage($imgUrl);
                             }
-                            $post->save();
                             if (is_array($result) && isset($result['res'])) {
                                 if ($result['res']) {
                                     continue;
@@ -584,6 +563,23 @@ class PostController extends Controller
                 }
             }
 
+            $user->clearMediaCollection('temp');
+
+           $mediaIds = Media::where('model_id', $post->id)->pluck('uuid');
+            $songId = $request->get('song_id');
+
+            if ($songId) {
+                $song = Song::findOrFail($songId);
+
+                foreach ($mediaIds as $mediaId) {
+                    echo "=========================";
+                    echo $mediaId;
+                    $media = Media::where('uuid', $mediaId)->first();
+                    if ($media && str_contains($media->mime_type, 'video')) {
+                        ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec);
+                    }
+                }
+            }
             if (!$user->verify) {
                 $profanityCheck = $this->checkProfanityText($post->title . ' ' . $post->description);
                 //            $profanityImageCheck = $this->checkImage()
@@ -602,7 +598,6 @@ class PostController extends Controller
             }
 
 
-            // $user->clearMediaCollection('temp');
 
 
             $interests = $request->get('interests');
