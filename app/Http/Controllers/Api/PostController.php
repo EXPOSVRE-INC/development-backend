@@ -572,8 +572,6 @@ class PostController extends Controller
                 $song = Song::findOrFail($songId);
 
                 foreach ($mediaIds as $mediaId) {
-                    echo "=========================";
-                    echo $mediaId;
                     $media = Media::where('uuid', $mediaId)->first();
                     if ($media && str_contains($media->mime_type, 'video')) {
                         ProcessVideoJob::dispatch($mediaId, $song->clip_15_sec);
