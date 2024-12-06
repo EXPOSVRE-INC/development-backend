@@ -11,13 +11,14 @@ $heads = [
 'Song Length',
 'Library Plays',
 'Posts added to',
+'Licensed by',
 'Upload Date',
 ['label' => 'Actions', 'no-export' => true, 'width' => 5],
 ];
 
 $config = [
 'order' => [[1, 'asc']],
-'columns' => [null, null, null, null, null, null, null, null, null , null , ['orderable' => false]],
+'columns' => [null, null, null, null, null, null, null, null, null, null , null , ['orderable' => false]],
 'select' => [
 'style' => 'os',
 'selector' => 'td:first-child'
@@ -62,6 +63,9 @@ $config = [
         </td>
         <td>
             {{ $song->posts_count ?? 0}}
+        </td>
+        <td>
+            {{ "EXPOSVRE Inc."}}
         </td>
         <td>
             {{ \Carbon\Carbon::parse($song->created_at)->format('d/m/y') }}

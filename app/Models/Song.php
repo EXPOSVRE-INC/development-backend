@@ -50,4 +50,9 @@ class Song extends Model
       {
         return $this->hasMany(Post::class, 'song_id');
       }
+     public function user()
+        {
+            return $this->hasOne(User::class, 'id', 'user_id');
+        }
+
 }

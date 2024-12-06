@@ -27,7 +27,16 @@ $config = [
 ];
 
 @endphp
-
+@section('css')
+<style>
+.select-checkbox::before {
+    border-color: #ffffff !important;
+}
+.select-checkbox {
+    color: #ffffff;
+}
+</style>
+@endsection
 @section('content')
     <a id="clear" class="btn btn-danger m-2" href="">Clear account</a>
     <a id="warning" class="btn btn-danger m-2" href="">Issue a warning</a>

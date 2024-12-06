@@ -108,7 +108,7 @@
     <x-adminlte-input name="link" label="Link" placeholder="Link" label-class="text-lightblue">
         <x-slot name="prependSlot">
             <div class="input-group-text">
-                <i class="fa-solid fa-link"></i>
+                <i class="fas fa-link" style="color: #86bad8"></i>
             </div>
         </x-slot>
     </x-adminlte-input>
@@ -127,7 +127,7 @@
         placeholder="Insert description...">
         <x-slot name="prependSlot">
             <div class="input-group-text bg-dark">
-                <i class="fas fa-lg fa-file-alt text-warning"></i>
+                <i class="fas fa-lg fa-file-alt" style="color: #86bad8"></i>
             </div>
         </x-slot>
     </x-adminlte-textarea>
