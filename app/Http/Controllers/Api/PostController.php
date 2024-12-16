@@ -324,11 +324,7 @@ class PostController extends Controller
 
         $result = true;
 
-        $response = Http::get($imageRoute .
-            '?format=json&api_key=' .
-            $imageToken . '&method=' .
-            $checkMethod . '&cats=pornography,csam,weapons,drugs,gestures,underwear,extremism,gore,ocr&imgurl=' .
-            $imageUrl);
+        $response = Http::get($imageRoute .'?format=json&api_key=' . $imageToken . '&method=' . $checkMethod . '&cats=pornography,csam,weapons,drugs,gestures,underwear,extremism,gore,ocr&imgurl=' . $imageUrl);
         $jsonBodyResp = json_decode($response);
 
         if ($jsonBodyResp->rsp->porn > 25) {
