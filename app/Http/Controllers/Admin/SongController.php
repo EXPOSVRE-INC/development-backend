@@ -64,8 +64,8 @@ class SongController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'image_file' => 'required|file|max:10240',
-            'full_song_file' => 'required|file|max:10240',
-            'clip_15_sec' => 'required|file|max:10240',
+            'full_song_file' => 'required|file',
+            'clip_15_sec' => 'required|file',
         ]);
 
         $validator->after(function ($validator) use ($request) {
