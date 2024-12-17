@@ -29,7 +29,7 @@ class Song extends Model
         'mood_id',
         'full_song_file',
         'clip_15_sec',
-        'viewsByLastDay'
+        'views_by_last_day'
       ];
 
       public function artist()
