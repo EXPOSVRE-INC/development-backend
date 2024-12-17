@@ -316,38 +316,87 @@ class PostController extends Controller
         }
     }
 
+    // public function checkImage($imageUrl)
+    // {
+    //     $imageRoute = env('WEBPURIFY_IMAGE_ENDPOINT');
+    //     $imageToken = env('WEBPURIFY_IMAGE_TOKEN');
+    //     $checkMethod = 'webpurify.aim.imgcheck';
+
+    //     $result = true;
+
+    //     $response = Http::get($imageRoute .'?format=json&api_key=' . $imageToken . '&method=' . $checkMethod . '&cats=pornography,csam,weapons,drugs,gestures,underwear,extremism,gore,ocr&imgurl=' . $imageUrl);
+    //     $jsonBodyResp = json_decode($response);
+
+    //     if ($jsonBodyResp->rsp->porn > 25) {
+    //         $result = ['res' => false, 'message' => 'porn ' . $jsonBodyResp->rsp->porn . '%'];
+    //     } elseif ($jsonBodyResp->rsp->extremism > 25) {
+    //         $result = ['res' => false, 'message' => 'extremism ' . $jsonBodyResp->rsp->extremism . '%'];
+    //     } elseif ($jsonBodyResp->rsp->underwear > 25) {
+    //         $result = ['res' => false, 'message' => 'underwear ' . $jsonBodyResp->rsp->underwear . '%'];
+    //     } elseif ($jsonBodyResp->rsp->csam > 25) {
+    //         $result = ['res' => false, 'message' => 'csam ' . $jsonBodyResp->rsp->csam . '%'];
+    //     } elseif ($jsonBodyResp->rsp->gesture > 25) {
+    //         $result = ['res' => false, 'message' => 'gesture ' . $jsonBodyResp->rsp->gesture . '%'];
+    //     } elseif ($jsonBodyResp->rsp->gore > 25) {
+    //         $result = ['res' => false, 'message' => 'gore ' . $jsonBodyResp->rsp->gore . '%'];
+    //     } elseif ($jsonBodyResp->rsp->drugs > 25) {
+    //         $result = ['res' => false, 'message' => 'drugs ' . $jsonBodyResp->rsp->drugs . '%'];
+    //     } elseif ($jsonBodyResp->rsp->weapons > 25) {
+    //         $result = ['res' => false, 'message' => 'weapons ' . $jsonBodyResp->rsp->weapons . '%'];
+    //     }
+
+    //     //        dump($jsonBodyResp);
+    //     return $result;
+    // }
+
     public function checkImage($imageUrl)
-    {
-        $imageRoute = env('WEBPURIFY_IMAGE_ENDPOINT');
-        $imageToken = env('WEBPURIFY_IMAGE_TOKEN');
-        $checkMethod = 'webpurify.aim.imgcheck';
+{
+    $imageRoute = env('WEBPURIFY_IMAGE_ENDPOINT');
+    $imageToken = env('WEBPURIFY_IMAGE_TOKEN');
+    $checkMethod = 'webpurify.aim.imgcheck';
 
-        $result = true;
+    $result = ['res' => true];
+    try {
+        $response = Http::get($imageRoute, [
+            'format' => 'json',
+            'api_key' => $imageToken,
+            'method' => $checkMethod,
+            'cats' => 'pornography,csam,weapons,drugs,gestures,underwear,extremism,gore,ocr',
+            'imgurl' => $imageUrl,
+        ]);
 
-        $response = Http::get($imageRoute .'?format=json&api_key=' . $imageToken . '&method=' . $checkMethod . '&cats=pornography,csam,weapons,drugs,gestures,underwear,extremism,gore,ocr&imgurl=' . $imageUrl);
-        $jsonBodyResp = json_decode($response);
+        $jsonBodyResp = json_decode($response->body());
 
-        if ($jsonBodyResp->rsp->porn > 25) {
-            $result = ['res' => false, 'message' => 'porn ' . $jsonBodyResp->rsp->porn . '%'];
-        } elseif ($jsonBodyResp->rsp->extremism > 25) {
-            $result = ['res' => false, 'message' => 'extremism ' . $jsonBodyResp->rsp->extremism . '%'];
-        } elseif ($jsonBodyResp->rsp->underwear > 25) {
-            $result = ['res' => false, 'message' => 'underwear ' . $jsonBodyResp->rsp->underwear . '%'];
-        } elseif ($jsonBodyResp->rsp->csam > 25) {
-            $result = ['res' => false, 'message' => 'csam ' . $jsonBodyResp->rsp->csam . '%'];
-        } elseif ($jsonBodyResp->rsp->gesture > 25) {
-            $result = ['res' => false, 'message' => 'gesture ' . $jsonBodyResp->rsp->gesture . '%'];
-        } elseif ($jsonBodyResp->rsp->gore > 25) {
-            $result = ['res' => false, 'message' => 'gore ' . $jsonBodyResp->rsp->gore . '%'];
-        } elseif ($jsonBodyResp->rsp->drugs > 25) {
-            $result = ['res' => false, 'message' => 'drugs ' . $jsonBodyResp->rsp->drugs . '%'];
-        } elseif ($jsonBodyResp->rsp->weapons > 25) {
-            $result = ['res' => false, 'message' => 'weapons ' . $jsonBodyResp->rsp->weapons . '%'];
+        if (!isset($jsonBodyResp->rsp)) {
+            throw new \Exception('Invalid API response structure.');
         }
 
-        //        dump($jsonBodyResp);
-        return $result;
+        $rsp = $jsonBodyResp->rsp;
+
+        if (isset($rsp->porn) && $rsp->porn > 25) {
+            $result = ['res' => false, 'message' => 'porn ' . $rsp->porn . '%'];
+        } elseif (isset($rsp->extremism) && $rsp->extremism > 25) {
+            $result = ['res' => false, 'message' => 'extremism ' . $rsp->extremism . '%'];
+        } elseif (isset($rsp->underwear) && $rsp->underwear > 25) {
+            $result = ['res' => false, 'message' => 'underwear ' . $rsp->underwear . '%'];
+        } elseif (isset($rsp->csam) && $rsp->csam > 25) {
+            $result = ['res' => false, 'message' => 'csam ' . $rsp->csam . '%'];
+        } elseif (isset($rsp->gesture) && $rsp->gesture > 25) {
+            $result = ['res' => false, 'message' => 'gesture ' . $rsp->gesture . '%'];
+        } elseif (isset($rsp->gore) && $rsp->gore > 25) {
+            $result = ['res' => false, 'message' => 'gore ' . $rsp->gore . '%'];
+        } elseif (isset($rsp->drugs) && $rsp->drugs > 25) {
+            $result = ['res' => false, 'message' => 'drugs ' . $rsp->drugs . '%'];
+        } elseif (isset($rsp->weapons) && $rsp->weapons > 25) {
+            $result = ['res' => false, 'message' => 'weapons ' . $rsp->weapons . '%'];
+        }
+    } catch (\Exception $e) {
+        Log::error('An error occurred while processing the file', ['error' => $e->getMessage()]);
+        $result = ['res' => false, 'message' => 'An error occurred while checking the image.'];
     }
+
+    return $result;
+}
 
     public function createPost(CreatePostRequest $request)
     {
