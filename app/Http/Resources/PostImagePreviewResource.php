@@ -19,7 +19,7 @@ class PostImagePreviewResource extends JsonResource
             'uuid' => $this->uuid,
             'name' => $this->file_name,
             'size' => $this->size,
-            'link' => $this->getUrl('small'),
+            'link' => $this->getUrl('original'),
         ];
 
         if ($this->type == 'video') {
