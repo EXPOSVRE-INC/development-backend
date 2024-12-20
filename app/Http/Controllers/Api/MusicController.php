@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CommentResource;
 use App\Http\Resources\GenreResource;
+use App\Http\Resources\MoodResource;
 use App\Http\Resources\SongResource;
 use App\Models\Genre;
 use App\Models\Mood;
@@ -15,20 +16,39 @@ class MusicController extends Controller
 {
     public function getGenres()
     {
-        $genres = Genre::latest()->get();
+        $genreOrder = [
+            'POP', 'HIP HOP', 'RAP', 'COUNTRY', 'R&B',
+            'ELECTRONIC/DANCE', 'EDM', 'FOLK', 'ROCK',
+            'ALTERNATIVE', 'WORLD'
+        ];
+
+        $genres = Genre::whereIn('name', $genreOrder)
+            ->orderByRaw('FIELD(name, ' . implode(',', array_map(fn($item) => "'$item'", $genreOrder)) . ')')
+            ->get();
 
         if ($genres->isNotEmpty()) {
             return GenreResource::collection($genres);
         }
+
         return response()->json(['data' => []], 200);
     }
 
+
     public function getMoods()
     {
-        $moods = Mood::latest()->get();
+        $moodOrder = [
+            'JOYFUL/ENERGETIC', 'CALMING/RELAXING/CONTEMPLATIVE',
+            'SAD/ MELANCHOLIC', 'EPIC/DRAMATIC', 'MYSTERIOUS',
+            'ROMANTIC', 'TENSE/ANXIOUS/SCARY', 'UPLIFTING/OPTIMISTIC',
+            'PUMPED UP'
+        ];
+
+        $moods = Mood::whereIn('name', $moodOrder)
+            ->orderByRaw('FIELD(name, ' . implode(',', array_map(fn($item) => "'$item'", $moodOrder)) . ')')
+            ->get();
 
         if ($moods->isNotEmpty()) {
-            return GenreResource::collection($moods);
+            return MoodResource::collection($moods);
         }
         return response()->json(['data' => []], 200);
     }
