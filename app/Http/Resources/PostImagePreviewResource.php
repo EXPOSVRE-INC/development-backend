@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources;
 use FFMpeg\FFMpeg;
-use Intervention\Image\Facades\Image;
+use Spatie\MediaLibrary\Support\ImageFactory;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class PostImagePreviewResource extends JsonResource
@@ -25,11 +25,10 @@ class PostImagePreviewResource extends JsonResource
         ];
 
         if (str_starts_with($this->mime_type, 'image/')) {
-            $imagePath = $this->getPath();
-
-            $image = Image::make($imagePath);
-            $data['image_height'] = $image->height();
-            $data['image_width'] = $image->width();
+            $imagePath = $this->getPath('original');
+            $image = ImageFactory::load($imagePath);
+            $data['image_height'] = $image->getHeight();
+            $data['image_width'] = $image->getWidth();
         }
         elseif (str_contains($this->mime_type, 'video')) {
             $videoPath = $this->getPath('original');
