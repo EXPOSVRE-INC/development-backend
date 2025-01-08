@@ -24,32 +24,6 @@ class PostImagePreviewResource extends JsonResource
             'link' => $this->getUrl('original'),
         ];
 
-        if (str_starts_with($this->mime_type, 'image/')) {
-            $imagePath = $this->getPath('original');
-            $image = ImageFactory::load($imagePath);
-            $data['image_height'] = $image->getHeight();
-            $data['image_width'] = $image->getWidth();
-        }
-        elseif (str_contains($this->mime_type, 'video')) {
-            $videoPath = $this->getPath('original');
-
-            if (!empty($videoPath) && file_exists($videoPath)) {
-                $ffmpeg = FFMpeg::create();
-                $video = $ffmpeg->open($videoPath);
-
-                $dimension = $video
-                    ->getStreams()
-                    ->videos()
-                    ->first()
-                    ->getDimensions();
-
-                $data['image_height'] = $dimension->getHeight();
-                $data['image_width'] = $dimension->getWidth();
-            } else {
-                $data['image_height'] = 0;
-                $data['image_width'] = 0;
-            }
-        }
         if ($this->type == 'video') {
             $data['isVideo'] = true;
         }
