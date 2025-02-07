@@ -61,7 +61,7 @@ class CheckMqttReports extends Command
 //                dump($user);
             } else if (str_contains($topic, 'post')) {
                 $report = new Report();
-                $report->reason = '';
+                $report->reason = $message->reason ?? '';
                 $report->status = 'flagged';
                 $report->reporter_id = $message->userId;
                 $report->model = 'post';
