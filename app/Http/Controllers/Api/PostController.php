@@ -401,10 +401,9 @@ class PostController extends Controller
     public function createPost(CreatePostRequest $request)
     {
         $title = trim($request->get('title'));
-        $desc = trim($request->get('description'));
 
-        if (empty($title) || empty($desc)) {
-            return response()->json(['error' => 'Title and Description cannot be empty or whitespace.'], 400);
+        if (empty($title)) {
+            return response()->json(['error' => 'Title cannot be empty or whitespace.'], 400);
         }
         if (!$request->has('files') || empty($request->get('files'))) {
             return response()->json([
