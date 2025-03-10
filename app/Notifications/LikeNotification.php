@@ -76,8 +76,8 @@ class LikeNotification extends Notification
         $deepLink = 'EXPOSVRE://postlike/'. $this->post->id;
 
         $notification = new \App\Models\Notification();
-        $notification->title = 'liked your post';
-        $notification->description = 'like on your post';
+        $notification->title = 'USER loved your post';
+        $notification->description = 'USER loved your post';
         $notification->type = 'like';
         $notification->user_id = $this->post->owner_id;
         $notification->sender_id = $this->user->id;
@@ -94,8 +94,8 @@ class LikeNotification extends Notification
         $deepLink = 'EXPOSVRE://postlike/'. $this->post->id;
 
         $notification = new \App\Models\Notification();
-        $notification->title = 'liked your post';
-        $notification->description = 'like on your post';
+        $notification->title = 'USER loved your post';
+        $notification->description = 'USER loved your post';
         $notification->type = 'like';
         $notification->user_id = $this->post->owner_id;
         $notification->sender_id = $this->user->id;

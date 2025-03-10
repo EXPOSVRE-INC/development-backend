@@ -66,7 +66,7 @@ class PriceRequestAcceptedNotification extends Notification
         return ApnMessage::create()
             ->badge(1)
             ->title('Price request accepted')
-            ->body('Hi! The price of post is ' . round($this->post->price, 2) . '$')
+            ->body('Hello, the price of this is ' . round($this->post->price, 2) . '$')
             ->custom('deepLink', 'EXPOSVRE://notifications');
     }
 
@@ -74,7 +74,7 @@ class PriceRequestAcceptedNotification extends Notification
     {
         $deepLink = 'EXPOSVRE://post/' . $this->post->id;
         $notification = new \App\Models\Notification();
-        $notification->title = 'Hi! The price of post is ' . round($this->post->price, 2) . '$';
+        $notification->title = 'Hello, the price of this is ' . round($this->post->price, 2) . '$';
         $notification->description = $this->request->id;
         $notification->type = 'priceResponded';
         $notification->user_id = $this->requestor->id;
