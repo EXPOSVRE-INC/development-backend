@@ -200,7 +200,7 @@ class PaymentController extends Controller
 
         $deepLink = 'EXPOSVRE://post/' . $request->post->id;
         $notification = new \App\Models\Notification();
-        $notification->title = 'Hi! The price of post is ' . round($request->post->fixed_price/100, 2) . '$';
+        $notification->title = 'Hello, the price of this is ' . round($request->post->fixed_price/100, 2) . '$';
         $notification->description = $request->id;
         $notification->type = 'priceRespondedApprove';
         $notification->user_id = $request->requestor->id;
