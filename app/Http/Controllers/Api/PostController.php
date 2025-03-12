@@ -1005,7 +1005,7 @@ class PostController extends Controller
         $deepLink = 'EXPOSVRE://postlike/' . $post->id;
 
         $notification = new \App\Models\Notification();
-        $notification->title = 'liked your post';
+        $notification->title = 'USER loved your post';
         $notification->description = 'like on your post';
         $notification->type = 'like';
         $notification->user_id = $post->owner_id;
