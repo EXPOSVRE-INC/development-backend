@@ -746,10 +746,9 @@ class PostController extends Controller
 
 
         $title = trim($post->title);
-        $desc = trim($post->description);
 
-        if (empty($title) || empty($desc)) {
-            return response()->json(['error' => 'Title and Description cannot be empty or whitespace.'], 400);
+        if (empty($title)) {
+            return response()->json(['error' => 'Title cannot be empty or whitespace.'], 400);
         }
         $postHasFiles = $post->hasMedia('files');
         if (!$postHasFiles && (!$request->has('files') || empty($request->get('files')))) {
