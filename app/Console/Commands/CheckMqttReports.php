@@ -68,6 +68,12 @@ class CheckMqttReports extends Command
                 $report->model_id = $message->post->id;
                 $report->save();
 
+                $post = Post::find($message->post->id);
+                if ($post) {
+                    $post->status = 'flagged';
+                    $post->save();
+                }
+                
                 $user = User::where(['id' => $message->profile->user_id])->first();
                 $user->status = 'flagged';
                 $user->save();

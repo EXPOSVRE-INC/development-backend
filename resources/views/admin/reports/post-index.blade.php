@@ -45,7 +45,7 @@ $config = [
     <x-adminlte-datatable id="table1" :heads="$heads" :config="$config">
 
         @foreach($posts as $post)
-            <tr data-id="{{$post->owner->id}}">
+            <tr data-id="{{$post->id}}">
                 <td></td>
                 <td>
                     {{$post->id}}
@@ -110,7 +110,7 @@ $config = [
 
                 $.ajax({
                     type: "POST",
-                    url: "{{route('clear-accounts')}}",
+                    url: "{{route('clear-post-accounts')}}",
                     // contentType: 'application/json',
                     // processData: false,
                     headers: {
@@ -141,7 +141,7 @@ $config = [
 
                 $.ajax({
                     type: "POST",
-                    url: "{{route('issue-accounts')}}",
+                    url: "{{route('issue-post-accounts')}}",
                     // contentType: 'application/json',
                     // processData: false,
                     headers: {
@@ -172,7 +172,7 @@ $config = [
 
                 $.ajax({
                     type: "POST",
-                    url: "{{route('ban-accounts')}}",
+                    url: "{{route('ban-post-accounts')}}",
                     // contentType: 'application/json',
                     // processData: false,
                     headers: {
