@@ -82,6 +82,17 @@ class AuthController extends Controller
             );
         }
 
+        if ($user->status == 'ban') {
+            return response()->json(
+                [
+                    'error' => 'Account Banned',
+                    'message' =>
+                        "Your account has been banned for violating EXPOSVRE's terms and conditions!",
+                ],
+                403
+            );
+        }
+
         if ($user->twoFactorEnabled == 1) {
             if ($user->profile && $user->profile->phone) {
                 $this->sendOtp($user->profile->phone);

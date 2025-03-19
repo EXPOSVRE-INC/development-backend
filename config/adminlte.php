@@ -355,6 +355,20 @@ return [
 //                    'label'       => 4,
 //                    'label_color' => 'success',
                 ],
+                [
+                    'text' => 'Warnings',
+                    'url'  => 'admin/posts-warnings',
+                    'can' => 'account-reports warnings'
+//                    'label'       => 4,
+//                    'label_color' => 'success',
+                ],
+                [
+                    'text' => 'Banned',
+                    'url'  => 'admin/posts-banned',
+                    'can' => 'account-reports banned'
+//                    'label'       => 4,
+//                    'label_color' => 'success',
+                ],
             ],
         ],
         [
