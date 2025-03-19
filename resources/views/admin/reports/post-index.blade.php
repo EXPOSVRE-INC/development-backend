@@ -60,10 +60,10 @@ $config = [
                     Flagged
                 </td>
                 <td>
-                    {{$post->reports->count()}}
+                    {{$post->reports->count() ?? ''}}
                 </td>
                 <td>
-                    {{$post->reports->first()->reason}}
+                    {{ $post->reports->first()?->reason ?? '' }}
                 </td>
                 <td>
                     @php
@@ -118,7 +118,8 @@ $config = [
                     },
                     data: {'ids': ids},
                     success: function(data){
-                        console.log(data)
+                        console.log(data);
+                        window.location.reload();
                     },
                 });
             } else {
@@ -148,7 +149,8 @@ $config = [
                     },
                     data: {'ids': ids},
                     success: function(data){
-                        console.log(data)
+                        console.log(data);
+                        window.location.reload();
                     },
                 });
             } else {

@@ -44,6 +44,7 @@ Route::group([
     'prefix' => 'admin',
     'middleware' => ['web', 'admin'],
 ], function ($router) {
+  
     Route::get('dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
     Route::get('reports', [UserReportController::class, 'userReports'])->name('reports');
@@ -64,6 +65,8 @@ Route::group([
 
 
     Route::get('post-reports', [PostReportController::class, 'postReports'])->name('post-reports');
+    Route::get('posts-warnings', [PostReportController::class, 'warnings'])->name('posts-warnings');
+    Route::get('posts-banned', [PostReportController::class, 'banned'])->name('posts-banned');
 
     Route::get('create-ad', [AdminController::class, 'getAdForm'])->name('admin-ad');
 
