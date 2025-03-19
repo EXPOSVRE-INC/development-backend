@@ -12,32 +12,20 @@ use Illuminate\Http\Request;
 class PostReportController extends Controller
 {
     public function postReports() {
-        $posts = Post::whereHas('reports')
-        ->whereHas('owner', function ($query) {
-            $query->where('status', 'flagged');
-        })
-        ->get();
+        $posts = Post::has('reports')->get();
         return view('admin.reports.post-index', ['posts' => PostReportResource::collection($posts)]);
 
     }
 
     public function warnings()
     {
-        $posts = Post::whereHas('reports')
-        ->whereHas('owner', function ($query) {
-            $query->where('status', 'warning');
-        })
-        ->get();
+        $posts = Post::where('status','warning')->has('reports')->get();
         return view('admin.reports.post-index', ['posts' => PostReportResource::collection($posts)]);
     }
 
     public function banned()
     {
-        $posts = Post::whereHas('reports')
-        ->whereHas('owner', function ($query) {
-            $query->where('status', 'ban');
-        })
-        ->get();
+        $posts = Post::where('status','ban')->has('reports')->get();
         return view('admin.reports.post-index', ['posts' => PostReportResource::collection($posts)]);
     }
 
@@ -59,19 +47,25 @@ class PostReportController extends Controller
     }
 
     public function issueAccounts(Request $request) {
-        $postsIds = $request->get('ids');
-
-        foreach ($postsIds as $postId) {
-            $post = Post::where(['id' => $postId]);
-            $post->status = 'warning';
-            $post->save();
-
-            $owner = $post->owner;
-            $owner->status = 'warning';
-            $owner->warningCount = $owner->warningCount + 1;
-
-            $owner->save();
-//            $owner->notify(new IssueWarningNotification());
+        $postIds = $request->get('ids');
+        foreach ($postIds as $postId) {
+            $post = Post::find($postId);
+    
+            if ($post) {
+                $post->status = 'warning';
+                $post->save();
+    
+                if ($post->owner) {
+                    $owner = $post->owner;
+                    $owner->status = 'warning';
+                    $owner->warningCount = $owner->warningCount + 1;
+    
+                    $owner->save();
+    
+                    // Uncomment this when you want to notify
+                    // $owner->notify(new IssueWarningNotification());
+                }
+            }
         }
 //        foreach ($request->get('ids') as $id) {
 //            $user = User::where('id', $id)->first();
@@ -85,18 +79,22 @@ class PostReportController extends Controller
         return response()->json(['data' => 'success']);
     }
 
-    public function banAccounts(Request $request) {
+    public function banAccounts(Request $request) 
+    {
         foreach ($request->get('ids') as $id) {
-            $post = Post::where(['owner_id' => $id]);
-            $post->status = 'ban';
-            $post->save();
-
-
-            $user = User::where('id', $id)->first();
-            $user->status = 'ban';
-            $user->save();
+            $posts = Post::where('id', $id)->get();
+            foreach ($posts as $post) {
+                $post->status = 'ban';
+                $post->save();
+            }
+    
+            if ($post->owner) {
+                $user = $post->owner;
+                $user->status = 'ban';
+                $user->save();
+            }
         }
-
+    
         return response()->json(['data' => 'success']);
     }
 }
