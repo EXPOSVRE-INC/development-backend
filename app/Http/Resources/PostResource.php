@@ -159,8 +159,18 @@ class PostResource extends JsonResource
             $data['image_width'] = 0;
         }
 
-        $thumbUrl = $this->getFirstMediaUrl('thumb');
-        $data['thumb'] = !empty($thumbUrl) ? $thumbUrl : $this->getFirstMediaUrl('files', 'original');
+        // $thumbUrl = $this->getFirstMediaUrl('thumb');
+        // $data['thumb'] = !empty($thumbUrl) ? $thumbUrl : $this->getFirstMediaUrl('files', 'original');
+
+        $files = $this->getMedia('files');
+
+        if (count($files) === 1) {
+            $data['thumb'] = $files[0]->getUrl('original');
+        } elseif (count($files) > 1) {
+            $data['thumb'] = $files[0]->getUrl();
+        } else {
+            $data['thumb'] = $this->getFirstMediaUrl('thumb');
+        }
 
         // Handle video media if 'ad' is set to 1
         if ($this->ad == 1) {
