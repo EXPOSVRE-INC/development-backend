@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Report;
 use App\Models\User;
+use App\Models\Post;
 use Illuminate\Console\Command;
 use Orkhanahmadov\LaravelCommentable\Models\Comment;
 use PhpMqtt\Client\Facades\MQTT;
@@ -69,12 +70,11 @@ class CheckMqttReports extends Command
                 $report->save();
 
                 $post = Post::find($message->post->id);
-                if ($post) {
+                  if ($post) {
                     $post->status = 'flagged';
                     $post->save();
-                }
-                
-                $user = User::where(['id' => $message->profile->user_id])->first();
+                } 
+                $user = User::where(['id' => $message->post->user->profile->user_id])->first();
                 $user->status = 'flagged';
                 $user->save();
             }

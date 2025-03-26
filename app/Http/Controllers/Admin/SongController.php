@@ -99,10 +99,10 @@ class SongController extends Controller
             $songUrl = url('storage/' . $songPath) ?? null;
         }
 
-        if ($request->hasFile('clip_15_sec')) {
-            $originalFileName = $request->file('clip_15_sec')->getClientOriginalName();
+        if ($request->hasFile('clip_20_sec')) {
+            $originalFileName = $request->file('clip_20_sec')->getClientOriginalName();
             $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
-            $clipPath = $request->file('clip_15_sec')->storeAs('uploads/clips', $fileNameWithoutSpaces , 'public');
+            $clipPath = $request->file('clip_20_sec')->storeAs('uploads/clips', $fileNameWithoutSpaces , 'public');
             $clipUrl = url('storage/' . $clipPath) ?? null;
         }
 
@@ -168,10 +168,10 @@ class SongController extends Controller
 
         }
 
-        if ($request->hasFile('clip_15_sec')) {
-            $originalFileName = $request->file('clip_15_sec')->getClientOriginalName();
+        if ($request->hasFile('clip_20_sec')) {
+            $originalFileName = $request->file('clip_20_sec')->getClientOriginalName();
             $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
-            $clipPath = $request->file('clip_15_sec')->storeAs('uploads/clips', $fileNameWithoutSpaces , 'public');
+            $clipPath = $request->file('clip_20_sec')->storeAs('uploads/clips', $fileNameWithoutSpaces , 'public');
             $clipUrl = url('storage/' . $clipPath);
             $song->clip_15_sec = $clipUrl;
         }
