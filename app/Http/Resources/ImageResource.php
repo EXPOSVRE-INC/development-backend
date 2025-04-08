@@ -6,6 +6,9 @@ use App\Models\Post;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Spatie\MediaLibrary\Support\ImageFactory;
+use FFMpeg\FFMpeg;
+use Exception;
 
 class ImageResource extends JsonResource
 {
@@ -64,10 +67,42 @@ class ImageResource extends JsonResource
             }
         }
 
-        // Handle other media types (e.g., images or webp)
         if ($this->type == 'image' || $this->type == 'webp') {
             $data['link'] = $this->original_url;
+
+            $mediaPath = $this->getPath('original');
+            if (str_contains($this->mime_type, 'image/webp')) {
+                $data['image_width'] = 160;
+                $data['image_height'] = 160;
+            } elseif (!empty($mediaPath) && file_exists($mediaPath)) {
+                $image = ImageFactory::load($mediaPath);
+                $data['image_height'] = $image->getHeight();
+                $data['image_width'] = $image->getWidth();
+            } else {
+                $data['image_width'] = 0;
+                $data['image_height'] = 0;
+            }
         }
+
+        if ($this->type == 'video') {
+            $mediaPath = $this->getPath('original');
+            if (!empty($mediaPath) && file_exists($mediaPath)) {
+                try {
+                    $ffmpeg = FFMpeg::create();
+                    $video = $ffmpeg->open($mediaPath);
+                    $dimension = $video->getStreams()->videos()->first()->getDimensions();
+                    $data['image_width'] = $dimension->getWidth();
+                    $data['image_height'] = $dimension->getHeight();
+                } catch (\Exception $e) {
+                    $data['image_width'] = 0;
+                    $data['image_height'] = 0;
+                }
+            } else {
+                $data['image_width'] = 0;
+                $data['image_height'] = 0;
+            }
+        }
+
 
         return $data;
     }
