@@ -478,13 +478,21 @@ class AuthController extends Controller
 
     public function sendRecoveryPassword(Request $request)
     {
-        if ($request->has('email')) {
-            $status = Password::sendResetLink($request->only('email'));
-
-            return response()->json(['data' => $status]);
-
-            Mail::to($request->get('email'))->send(new ResetPassword($data));
+        if (!$request->has('email')) {
+            return response()->json(['error' => 'Email is required'], 400);
         }
+    
+        $user = User::where('email', $request->get('email'))->first();
+    
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+    
+        $token = Password::createToken($user);
+    
+        Mail::to($user->email)->send(new ResetPassword($user, $token));
+    
+        return response()->json(['data' => 'Reset link sent']);
     }
 
     public function resetPassword($token, Request $request)
