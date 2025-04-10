@@ -434,7 +434,7 @@ class PostController extends Controller
             }
 
             if ($request->has('shippingPrice')) {
-                $request->merge(['shippingPrice' => (int)$request->get('shippingPrice') * 100]);
+                $request->merge(['shippingPrice' => (int)$request->get('shippingPrice')]);
             } else {
                 $request->merge(['shippingPrice' => 0]);
             }
@@ -468,7 +468,7 @@ class PostController extends Controller
                     );
                 } else {
                     $request->merge([
-                        'fixed_price' => $request->get('fixed_price') * 100,
+                        'fixed_price' => $request->get('fixed_price'),
                         'post_for_sale' => 1,
                     ]);
                 }
@@ -479,12 +479,12 @@ class PostController extends Controller
 
             if ($request->has('fixed_price') && $request->get('fixed_price') > 0) {
                 $request->merge(['post_for_sale' => 1]);
-                $request->merge(['fixed_price' => request()->get('fixed_price') * 100]);
+                $request->merge(['fixed_price' => request()->get('fixed_price')]);
             } else if ($request->has('fixed_price') && $request->get('fixed_price') == 0) {
                 $request->merge(['isFree' => 1]);
                 $request->merge(['post_for_sale' => 0]);
             } else {
-                $request->merge(['fixed_price' => (int)request()->get('fixed_price') * 100]);
+                $request->merge(['fixed_price' => (int)request()->get('fixed_price')]);
             }
             if ($request->has('isFree') && $request->get('isFree') == true) {
                 $request->merge(['post_for_sale' => 1]);
@@ -784,7 +784,7 @@ class PostController extends Controller
         }
 
         if ($request->has('fixed_price') && $request->get('fixed_price') > 0) {
-            $request->merge(['fixed_price' => (int)request()->get('fixed_price') * 100]);
+            $request->merge(['fixed_price' => (int)request()->get('fixed_price')]);
         }
 
         $post->update($request->all());

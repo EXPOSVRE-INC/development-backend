@@ -51,25 +51,20 @@ class PostResource extends JsonResource
             'limited_addition_number' => (int) $this->limited_addition_number,
             'physical_item' => (bool) $this->physical_item,
             'time_sale_from_date' => $this->time_sale_from_date
-                ? Carbon::createFromFormat(
-                    'Y-m-d H:i:s',
-                    $this->time_sale_from_date
-                )->timestamp
-                : 0,
-            'time_sale_to_date' => $this->time_sale_from_date
-                ? Carbon::createFromFormat(
-                    'Y-m-d H:i:s',
-                    $this->time_sale_to_date
-                )->timestamp
-                : 0,
-            'fixed_price' => (int) $this->fixed_price / 100,
+                ? Carbon::createFromFormat('Y-m-d H:i:s', $this->time_sale_from_date)->timestamp
+                : Carbon::now()->timestamp,
+
+            'time_sale_to_date' => $this->time_sale_to_date
+                ? Carbon::createFromFormat('Y-m-d H:i:s', $this->time_sale_to_date)->timestamp
+                : Carbon::now()->timestamp,
+            'fixed_price' => (int) $this->fixed_price,
             'totalPrice' => $this->isFree
-                ? (int) $this->shippingPrice / 100
-                : (int) ($this->fixed_price / 100 +
-                    $this->shippingPrice / 100 +
-                    ($this->fixed_price / 100) * 0.059 +
-                    ($this->fixed_price / 100) * 0.0825),
-            'tax' => $this->isFree ? 0 : ($this->fixed_price / 100) * 0.0825,
+                ? (int) $this->shippingPrice
+                : (int) ($this->fixed_price +
+                    $this->shippingPrice +
+                    ($this->fixed_price) * 0.059 +
+                    ($this->fixed_price) * 0.0825),
+            'tax' => $this->isFree ? 0 : ($this->fixed_price) * 0.0825,
             'royalties_percentage' => (int) $this->royalties_percentage,
             'allow_to_comment' => (bool) $this->allow_to_comment,
             'allow_views' => (bool) $this->allow_views,
@@ -98,8 +93,8 @@ class PostResource extends JsonResource
             'priceRequestStatus' =>
             $priceRequest != null ? $priceRequest->status : 'none',
             'shippingIncluded' => (bool) $this->isFree,
-            'shippingPrice' => (int) $this->shippingPrice / 100,
-            'transactionFees' => ((int) $this->fixed_price / 100) * 0.059,
+            'shippingPrice' => (int) $this->shippingPrice,
+            'transactionFees' => ((int) $this->fixed_price) * 0.059,
             'ad' => (bool) $this->ad,
             'publish_date' => $this->publish_date,
             'files' => ImageResource::collection($this->getMedia('files')),
