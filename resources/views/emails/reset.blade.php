@@ -8,14 +8,14 @@
 
 <body
     style="margin: 0; padding: 0; background-color: #f2f4f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-    <table width="100%" bgcolor="#f2f4f6" cellpadding="0" cellspacing="0">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f2f4f6">
         <tr>
-            <td align="center">
+            <td style="text-align: -webkit-center">
                 <table width="600" cellpadding="0" cellspacing="0"
                     style="margin-top: 30px; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                     <!-- Header -->
                     <tr style="background-color: black;">
-                        <td align="center" style="padding: 30px;">
+                        <td style="padding: 30px; text-align: -webkit-center">
                             <img src="https://240c3b.p3cdn1.secureserver.net/wp-content/uploads/2023/09/EXPOSURE-Logo-white-on-pink.png?time=1715872980"
                                 alt="EXPOSVRE Logo" style="display: block; height: 50px;">
                         </td>
