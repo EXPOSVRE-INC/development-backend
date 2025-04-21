@@ -110,20 +110,21 @@ class AuthController extends Controller
             );
         }
         if (
-            $user->profile != null &&
-            $user->profile->phone != null &&
+            $user->profile != null ||
+            $user->profile->phone != null ||
             $user->phoneIsActivated == 1
         ) {
             return $this->respondWithToken($token);
-        } else {
-            return response()->json(
-                [
-                    'error' => 'Unauthorized',
-                    'message' => 'Your phone number unverified',
-                ],
-                401
-            );
         }
+        //  else {
+        //     return response()->json(
+        //         [
+        //             'error' => 'Unauthorized',
+        //             'message' => 'Your phone number unverified',
+        //         ],
+        //         401
+        //     );
+        // }
     }
 
     /**
