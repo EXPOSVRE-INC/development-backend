@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use FFMpeg\FFMpeg;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Spatie\MediaLibrary\Support\ImageFactory;
+use Imagick;
 
 class PostResource extends JsonResource
 {
@@ -110,10 +111,18 @@ class PostResource extends JsonResource
 
         // Check if there is any media in 'files' collection
         if ($firstMedia = $this->getFirstMedia('files')) {
-            if (str_contains($firstMedia->mime_type, 'image')) {
-                $data['image'] = $this->getFirstMediaUrl('files');
+            $data['image'] = $this->getFirstMediaUrl('files');
 
-                if (str_contains($firstMedia->mime_type, 'webp')) {
+            if (str_contains($firstMedia->mime_type, 'image')) {
+
+                $thumbUrl = $this->getFirstMediaUrl('thumb');
+
+                if ($thumbUrl) {
+                    $image = new \Imagick($thumbUrl);
+                    $data['image'] = $thumbUrl;
+                    $data['image_width'] = $image->getImageWidth();;
+                    $data['image_height'] = $image->getImageHeight();
+                } elseif (str_contains($firstMedia->mime_type, 'webp')) {
                     $data['image_height'] = 160;
                     $data['image_width'] = 160;
                 } else {
@@ -161,12 +170,13 @@ class PostResource extends JsonResource
 
         if (count($files) === 1) {
             $data['thumb'] = $files[0]->getUrl('original');
-        } elseif (count($files) > 1) {
+        } elseif (count($files) > 1 && (bool)$this->ad == false) {
             $data['thumb'] = $files[0]->getUrl();
+        } elseif (count($files) > 1 && (bool)$this->ad == true) {
+            $data['thumb'] = $this->getFirstMediaUrl('thumb');
         } else {
             $data['thumb'] = $this->getFirstMediaUrl('thumb');
         }
-
         // Handle video media if 'ad' is set to 1
         if ($this->ad == 1) {
             $data['video'] = $this->getFirstMediaUrl('video');
