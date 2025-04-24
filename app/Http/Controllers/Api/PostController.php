@@ -350,53 +350,53 @@ class PostController extends Controller
     // }
 
     public function checkImage($imageUrl)
-{
-    $imageRoute = env('WEBPURIFY_IMAGE_ENDPOINT');
-    $imageToken = env('WEBPURIFY_IMAGE_TOKEN');
-    $checkMethod = 'webpurify.aim.imgcheck';
+    {
+        $imageRoute = env('WEBPURIFY_IMAGE_ENDPOINT');
+        $imageToken = env('WEBPURIFY_IMAGE_TOKEN');
+        $checkMethod = 'webpurify.aim.imgcheck';
 
-    $result = ['res' => true];
-    try {
-        $response = Http::get($imageRoute, [
-            'format' => 'json',
-            'api_key' => $imageToken,
-            'method' => $checkMethod,
-            'cats' => 'pornography,csam,weapons,drugs,gestures,underwear,extremism,gore,ocr',
-            'imgurl' => $imageUrl,
-        ]);
+        $result = ['res' => true];
+        try {
+            $response = Http::get($imageRoute, [
+                'format' => 'json',
+                'api_key' => $imageToken,
+                'method' => $checkMethod,
+                'cats' => 'pornography,csam,weapons,drugs,gestures,underwear,extremism,gore,ocr',
+                'imgurl' => $imageUrl,
+            ]);
 
-        $jsonBodyResp = json_decode($response->body());
+            $jsonBodyResp = json_decode($response->body());
 
-        if (!isset($jsonBodyResp->rsp)) {
-            throw new \Exception('Invalid API response structure.');
+            if (!isset($jsonBodyResp->rsp)) {
+                throw new \Exception('Invalid API response structure.');
+            }
+
+            $rsp = $jsonBodyResp->rsp;
+
+            if (isset($rsp->porn) && $rsp->porn > 25) {
+                $result = ['res' => false, 'message' => 'porn ' . $rsp->porn . '%'];
+            } elseif (isset($rsp->extremism) && $rsp->extremism > 25) {
+                $result = ['res' => false, 'message' => 'extremism ' . $rsp->extremism . '%'];
+            } elseif (isset($rsp->underwear) && $rsp->underwear > 25) {
+                $result = ['res' => false, 'message' => 'underwear ' . $rsp->underwear . '%'];
+            } elseif (isset($rsp->csam) && $rsp->csam > 25) {
+                $result = ['res' => false, 'message' => 'csam ' . $rsp->csam . '%'];
+            } elseif (isset($rsp->gesture) && $rsp->gesture > 25) {
+                $result = ['res' => false, 'message' => 'gesture ' . $rsp->gesture . '%'];
+            } elseif (isset($rsp->gore) && $rsp->gore > 25) {
+                $result = ['res' => false, 'message' => 'gore ' . $rsp->gore . '%'];
+            } elseif (isset($rsp->drugs) && $rsp->drugs > 25) {
+                $result = ['res' => false, 'message' => 'drugs ' . $rsp->drugs . '%'];
+            } elseif (isset($rsp->weapons) && $rsp->weapons > 25) {
+                $result = ['res' => false, 'message' => 'weapons ' . $rsp->weapons . '%'];
+            }
+        } catch (\Exception $e) {
+            Log::error('An error occurred while processing the file', ['error' => $e->getMessage()]);
+            $result = ['res' => false, 'message' => 'An error occurred while checking the image.'];
         }
 
-        $rsp = $jsonBodyResp->rsp;
-
-        if (isset($rsp->porn) && $rsp->porn > 25) {
-            $result = ['res' => false, 'message' => 'porn ' . $rsp->porn . '%'];
-        } elseif (isset($rsp->extremism) && $rsp->extremism > 25) {
-            $result = ['res' => false, 'message' => 'extremism ' . $rsp->extremism . '%'];
-        } elseif (isset($rsp->underwear) && $rsp->underwear > 25) {
-            $result = ['res' => false, 'message' => 'underwear ' . $rsp->underwear . '%'];
-        } elseif (isset($rsp->csam) && $rsp->csam > 25) {
-            $result = ['res' => false, 'message' => 'csam ' . $rsp->csam . '%'];
-        } elseif (isset($rsp->gesture) && $rsp->gesture > 25) {
-            $result = ['res' => false, 'message' => 'gesture ' . $rsp->gesture . '%'];
-        } elseif (isset($rsp->gore) && $rsp->gore > 25) {
-            $result = ['res' => false, 'message' => 'gore ' . $rsp->gore . '%'];
-        } elseif (isset($rsp->drugs) && $rsp->drugs > 25) {
-            $result = ['res' => false, 'message' => 'drugs ' . $rsp->drugs . '%'];
-        } elseif (isset($rsp->weapons) && $rsp->weapons > 25) {
-            $result = ['res' => false, 'message' => 'weapons ' . $rsp->weapons . '%'];
-        }
-    } catch (\Exception $e) {
-        Log::error('An error occurred while processing the file', ['error' => $e->getMessage()]);
-        $result = ['res' => false, 'message' => 'An error occurred while checking the image.'];
+        return $result;
     }
-
-    return $result;
-}
 
     public function createPost(CreatePostRequest $request)
     {
@@ -609,7 +609,7 @@ class PostController extends Controller
 
             $user->clearMediaCollection('temp');
 
-           $mediaIds = Media::where('model_id', $post->id)->pluck('uuid');
+            $mediaIds = Media::where('model_id', $post->id)->pluck('uuid');
             $songId = $request->get('song_id');
 
             if ($songId) {
@@ -776,11 +776,22 @@ class PostController extends Controller
             }
         }
 
-        if ($request->get('time_sale_from_date') == 0) {
+        $fromTimestamp = $request->get('time_sale_from_date');
+        if ($fromTimestamp == 0 || $fromTimestamp === null) {
             $request->merge(['time_sale_from_date' => null]);
+        } elseif (is_numeric($fromTimestamp)) {
+            $request->merge([
+                'time_sale_from_date' => date('Y-m-d H:i:s', (int)$fromTimestamp)
+            ]);
         }
-        if ($request->get('time_sale_to_date') == 0) {
+
+        $toTimestamp = $request->get('time_sale_to_date');
+        if ($toTimestamp == 0 || $toTimestamp === null) {
             $request->merge(['time_sale_to_date' => null]);
+        } elseif (is_numeric($toTimestamp)) {
+            $request->merge([
+                'time_sale_to_date' => date('Y-m-d H:i:s', (int)$toTimestamp)
+            ]);
         }
 
         if ($request->has('fixed_price') && $request->get('fixed_price') > 0) {
@@ -847,7 +858,7 @@ class PostController extends Controller
 
         return PostResource::collection(Post::withAnyTags([$tag])->where(function ($query) {
             $query->where('status', '!=', 'archive')
-                  ->orWhereNull('status');
+                ->orWhereNull('status');
         })->limit(100)->get());
     }
 
@@ -859,7 +870,7 @@ class PostController extends Controller
             return $query->where('slug', 'LIKE', $tag);
         })->where(function ($query) {
             $query->where('status', '!=', 'archive')
-                  ->orWhereNull('status');
+                ->orWhereNull('status');
         })->limit(100)->get();
 
         if ($posts->isEmpty()) {
@@ -1061,38 +1072,38 @@ class PostController extends Controller
 
         // Fetch most crowned posts
         $posts = Post::has('likers')
-        ->withCount([
-            'likers' => function ($query) {
-                $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
-            },
-        ])
-        ->orderBy('likers_count', 'DESC')
-        ->limit(50)
-        ->get();
+            ->withCount([
+                'likers' => function ($query) {
+                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
+                },
+            ])
+            ->orderBy('likers_count', 'DESC')
+            ->limit(50)
+            ->get();
 
-    $filteredPosts = $posts->filter(function ($post) {
-        return $post->reports->count() == 0;
-    })->filter(function ($post) use ($now, $user) {
-        // Exclude posts where the status is 'archive'
-        if ($post->status == 'archive') {
-            return false;
-        }
-
-        if ($post->publish_date == null || $post->publish_date <= $now) {
-            if ($user->isBlocking($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+        $filteredPosts = $posts->filter(function ($post) {
+            return $post->reports->count() == 0;
+        })->filter(function ($post) use ($now, $user) {
+            // Exclude posts where the status is 'archive'
+            if ($post->status == 'archive') {
                 return false;
             }
-            if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
-                return false;
+
+            if ($post->publish_date == null || $post->publish_date <= $now) {
+                if ($user->isBlocking($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                    return false;
+                }
+                if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                    return false;
+                } else {
+                    return true;
+                }
             } else {
-                return true;
+                return false;
             }
-        } else {
-            return false;
-        }
 
-        return true;
-    });
+            return true;
+        });
 
 
         // Fetch most crowned songs
@@ -1130,32 +1141,32 @@ class PostController extends Controller
 
         $sevenDaysAgo = $now->subDays(7);
 
-            $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
+        $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
             ->limit(50)
             ->get();
 
-            $filteredPosts = $posts->filter(function ($post) {
-                return $post->reports->count() == 0;
-            })->filter(function ($post) use ($now, $user) {
-                // Exclude posts where the status is 'archive'
-                if ($post->status == 'archive') {
-                    return false;
-                }
+        $filteredPosts = $posts->filter(function ($post) {
+            return $post->reports->count() == 0;
+        })->filter(function ($post) use ($now, $user) {
+            // Exclude posts where the status is 'archive'
+            if ($post->status == 'archive') {
+                return false;
+            }
 
-                if ($post->publish_date == null || $post->publish_date <= $now) {
-                    if ($user->isBlocking($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
-                        return false;
-                    }
-                    if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
-                        return false;
-                    } else {
-                        return true;
-                    }
-                } else {
+            if ($post->publish_date == null || $post->publish_date <= $now) {
+                if ($user->isBlocking($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
                     return false;
                 }
-                return true;
-            });
+                if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                    return false;
+                } else {
+                    return true;
+                }
+            } else {
+                return false;
+            }
+            return true;
+        });
 
         $songs = Song::where('updated_at', '>=', $sevenDaysAgo)
             ->where('views_by_last_day', '>', 0)
@@ -1185,7 +1196,7 @@ class PostController extends Controller
         $post = Post::where('id', $id)
             ->where(function ($query) {
                 $query->where('status', '!=', 'archive')
-                      ->orWhereNull('status');
+                    ->orWhereNull('status');
             })
             ->first();
         if (!$post) {
