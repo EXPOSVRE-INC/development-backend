@@ -109,7 +109,6 @@ class PostResource extends JsonResource
         ];
         //        dd($this->getMedia('files'));
 
-        // Check if there is any media in 'files' collection
         if ($firstMedia = $this->getFirstMedia('files')) {
             $data['image'] = $this->getFirstMediaUrl('files');
 
@@ -157,7 +156,6 @@ class PostResource extends JsonResource
                 }
             }
         } else {
-            // No media, set default values
             $data['image'] = null;
             $data['image_height'] = 0;
             $data['image_width'] = 0;
