@@ -917,19 +917,21 @@ class PostController extends Controller
             }
 
             $comment = $request->get('comment');
-            $deepLink = 'EXPOSVRE://postcomment/' . $post->id;
 
-            $notification = new \App\Models\Notification();
-            $notification->title = 'commented on your post';
-            $notification->description = 'commented on your post';
-            $notification->type = 'postcomment';
-            $notification->user_id = $post->owner_id;
-            $notification->sender_id = $user->id;
-            $notification->post_id = $post->id;
-            $notification->deep_link = $deepLink;
-            $notification->save();
-            $post->owner->notify(new NewCommentForPost($user, $comment, $post));
+            if ($user->id !== $post->owner_id) {
+                $deepLink = 'EXPOSVRE://postcomment/' . $post->id;
 
+                $notification = new \App\Models\Notification();
+                $notification->title = 'commented on your post';
+                $notification->description = 'commented on your post';
+                $notification->type = 'postcomment';
+                $notification->user_id = $post->owner_id;
+                $notification->sender_id = $user->id;
+                $notification->post_id = $post->id;
+                $notification->deep_link = $deepLink;
+                $notification->save();
+                $post->owner->notify(new NewCommentForPost($user, $comment, $post));
+            }
             $post->commentAs($user, $request->get('comment'));
             return response()->json(['data' => $post->comments]);
         } catch (\Exception $e) {
@@ -1012,20 +1014,21 @@ class PostController extends Controller
             return response()->json(['error' => 'You cannot like this post because the owner has blocked you.'], 403);
         }
 
-        $deepLink = 'EXPOSVRE://postlike/' . $post->id;
+        if ($user->id !== $post->owner_id) {
+            $deepLink = 'EXPOSVRE://postlike/' . $post->id;
 
-        $notification = new \App\Models\Notification();
-        $notification->title = 'loved your post';
-        $notification->description = 'like on your post';
-        $notification->type = 'like';
-        $notification->user_id = $post->owner_id;
-        $notification->sender_id = $user->id;
-        $notification->post_id = $post->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
+            $notification = new \App\Models\Notification();
+            $notification->title = 'loved your post';
+            $notification->description = 'like on your post';
+            $notification->type = 'like';
+            $notification->user_id = $post->owner_id;
+            $notification->sender_id = $user->id;
+            $notification->post_id = $post->id;
+            $notification->deep_link = $deepLink;
+            $notification->save();
 
-        //        dump($user);
-        $post->owner->notify(new LikeNotification($user, $post));
+            $post->owner->notify(new LikeNotification($user, $post));
+        }
         $user->like($post);
         $post->touch();
 
