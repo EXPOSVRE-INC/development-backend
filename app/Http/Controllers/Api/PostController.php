@@ -1051,6 +1051,12 @@ class PostController extends Controller
     public function unlikePost(Post $post)
     {
         $user = auth('api')->user();
+
+        \App\Models\Notification::where('type', 'like')
+            ->where('user_id', $post->owner_id)
+            ->where('sender_id', $user->id)
+            ->where('post_id', $post->id)
+            ->delete();
         $user->unlike($post);
         $post->touch();
 
