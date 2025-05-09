@@ -14,9 +14,10 @@ use Illuminate\Http\Request;
 
 class AdController extends Controller
 {
-    public function scheduled() {
+    public function scheduled()
+    {
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
-//        dump($now);
+        //        dump($now);
         $posts = Post::where('publish_date', '>', $now)
             ->where(['owner_id' => 1])
             ->where(['status' => null])
@@ -28,12 +29,13 @@ class AdController extends Controller
     }
 
 
-    public function published() {
+    public function published()
+    {
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
         $posts = Post::where(['owner_id' => 1])
             ->where(['status' => null])
             ->where('publish_date', '<', $now)->where(['ad' => 1])
-//            ->orderBy('id', 'DESC')
+            //            ->orderBy('id', 'DESC')
             ->orderBy('order_priority', 'ASC')
             ->get();
 
@@ -42,7 +44,8 @@ class AdController extends Controller
         ]);
     }
 
-    public function drafts() {
+    public function drafts()
+    {
         $posts = Post::where(['owner_id' => 1])
             ->where(['status' => 'draft'])
             ->where(['ad' => 1])
@@ -53,7 +56,8 @@ class AdController extends Controller
         ]);
     }
 
-    public function archive() {
+    public function archive()
+    {
         $posts = Post::where(['owner_id' => 1])
             ->where(['status' => 'archive'])
             ->where(['ad' => 1])
@@ -64,7 +68,8 @@ class AdController extends Controller
         ]);
     }
 
-    public function highestPriority($id) {
+    public function highestPriority($id)
+    {
 
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
 
@@ -74,7 +79,7 @@ class AdController extends Controller
             ->where('publish_date', '<', $now)->where(['ad' => 1])
             ->orderBy('order_priority', 'ASC')
             ->get();
-//        dd($posts);
+        //        dd($posts);
         $key = 2;
 
         foreach ($posts as $post) {
@@ -92,7 +97,8 @@ class AdController extends Controller
         return redirect()->route('ads-published');
     }
 
-    public function moveToArchive($id) {
+    public function moveToArchive($id)
+    {
         $post = Post::where(['id' => $id])->first();
         $post->status = 'archive';
         $post->is_archived = 1;
@@ -100,7 +106,8 @@ class AdController extends Controller
         return redirect()->route('ads-archive');
     }
 
-    public function moveFromArchive($id) {
+    public function moveFromArchive($id)
+    {
         $post = Post::where(['id' => $id])->first();
         $post->status = null;
         $post->is_archived = 0;
@@ -112,18 +119,19 @@ class AdController extends Controller
     {
         $users = User::with('profile')->get();
         $categories = InterestsCategory::orderBy('slug')->get()->toTree();
-//        dump($categories);
+        //        dump($categories);
         $tags = Tag::all();
         return view('admin.ads.create', [
             'users' => $users,
             'categories' => $categories,
-//            'tags' => TagsResource::collection($tags)
+            //            'tags' => TagsResource::collection($tags)
         ]);
     }
 
-    public function editAddForm($id) {
+    public function editAddForm($id)
+    {
         $post = Post::where(['id' => $id])->first();
-//        dump($post->interests);
+        //        dump($post->interests);
         $categories = InterestsCategory::all();
         return view('admin.ads.edit', [
             'post' => $post,
@@ -134,7 +142,7 @@ class AdController extends Controller
     public function editAddFormPost($id, Request $request)
     {
         if ($request->has('publish_date')) {
-            $request->merge(['publish_date' => Carbon::createFromFormat('d/m/Y H:i', $request->get('publish_date') , 'US/Eastern')]);
+            $request->merge(['publish_date' => Carbon::createFromFormat('d/m/Y H:i', $request->get('publish_date'), 'US/Eastern')]);
         }
 
 
@@ -142,7 +150,7 @@ class AdController extends Controller
 
         $input = $request->all();
 
-//        dd($input);
+        //        dd($input);
 
         $post->update($input);
 
@@ -157,14 +165,14 @@ class AdController extends Controller
                     $file->delete();
                 }
             }
-//            dd($request->file('file'));
-//            foreach ($request->get('file[]') as $file) {
-                $post->addMultipleMediaFromRequest(['file'])
-                    ->each(function ($fileAdder) {
-                        $fileAdder->toMediaCollection('files');
-                    });
-//                    ->toMediaCollection('files');
-//            }
+            //            dd($request->file('file'));
+            //            foreach ($request->get('file[]') as $file) {
+            $post->addMultipleMediaFromRequest(['file'])
+                ->each(function ($fileAdder) {
+                    $fileAdder->toMediaCollection('files');
+                });
+            //                    ->toMediaCollection('files');
+            //            }
         }
 
         if ($request->has('thumbnail')) {
@@ -173,6 +181,14 @@ class AdController extends Controller
                 $media->delete();
             }
             $post->addMediaFromRequest('thumbnail')->toMediaCollection('thumb');
+        }
+
+        if ($request->has('video_thumbnail')) {
+            $media = $post->getFirstMedia('video_thumbnail');
+            if ($media != null) {
+                $media->delete();
+            }
+            $post->addMediaFromRequest('video_thumbnail')->toMediaCollection('video_thumb');
         }
 
         if ($request->has('video')) {
@@ -184,10 +200,10 @@ class AdController extends Controller
         }
 
         return redirect()->route('ads-published');
-
     }
 
-    public function postAdForm(Request $request) {
+    public function postAdForm(Request $request)
+    {
         $request->merge([
             'link' => ($request->get('link') != null) ? $request->get('link') : '',
             'ad' => 1,
@@ -207,9 +223,8 @@ class AdController extends Controller
             }
         }
 
-        if ($request->hasFile('file'))
-        {
-//            $post->addMediaFromRequest('file')->toMediaCollection('files');
+        if ($request->hasFile('file')) {
+            //            $post->addMediaFromRequest('file')->toMediaCollection('files');
             $post->addMultipleMediaFromRequest(['file'])
                 ->each(function ($fileAdder) {
                     $fileAdder->toMediaCollection('files');
@@ -224,10 +239,15 @@ class AdController extends Controller
             $post->addMediaFromRequest('video')->toMediaCollection('video');
         }
 
+        if ($request->hasFile('video_thumbnail')) {
+            $post->addMediaFromRequest('video_thumbnail')->toMediaCollection('video_thumb');
+        }
+
         return redirect()->route('ads-scheduled');
     }
 
-    public function deletePost($id) {
+    public function deletePost($id)
+    {
         $post = Post::where(['id' => $id])->first();
         $post->delete();
 
