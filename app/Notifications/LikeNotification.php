@@ -31,8 +31,8 @@ class LikeNotification extends Notification
     public function via($notifiable)
     {
         return [
-//            'database',
-//            'mail',
+            //            'database',
+            //            'mail',
             ApnChannel::class
         ];
     }
@@ -40,20 +40,20 @@ class LikeNotification extends Notification
 
     public function toApn($notifiable)
     {
-//        dump($this);
-        $deepLink = 'EXPOSVRE://postlike/'. $this->post->id;
-//
-//        $notification = new \App\Models\Notification();
-//        $notification->title = 'liked your post';
-//        $notification->description = 'like on your post';
-//        $notification->type = 'like';
-//        $notification->user_id = $this->post->owner_id;
-//        $notification->sender_id = $this->user->id;
-//        $notification->post_id = $this->post->id;
-//        $notification->deep_link = $deepLink;
-//        $notification->save();
+        //        dump($this);
+        $deepLink = 'EXPOSVRE://postlike/' . $this->post->id;
+        //
+        //        $notification = new \App\Models\Notification();
+        //        $notification->title = 'liked your post';
+        //        $notification->description = 'like on your post';
+        //        $notification->type = 'like';
+        //        $notification->user_id = $this->post->owner_id;
+        //        $notification->sender_id = $this->user->id;
+        //        $notification->post_id = $this->post->id;
+        //        $notification->deep_link = $deepLink;
+        //        $notification->save();
 
-//        dump($notification);
+        //        dump($notification);
 
         $apnMessage = ApnMessage::create()
             ->badge(1)
@@ -68,12 +68,14 @@ class LikeNotification extends Notification
         dump($notifiable->token);
         Log::debug('MyNotification routeNotificationForApn called');
         return $notifiable->token;
+        // return $notifiable->pushToken;
+
     }
 
     public function toDatabase($notifiable)
     {
         dump($this);
-        $deepLink = 'EXPOSVRE://postlike/'. $this->post->id;
+        $deepLink = 'EXPOSVRE://postlike/' . $this->post->id;
 
         $notification = new \App\Models\Notification();
         $notification->title = 'loved your post';
@@ -91,7 +93,7 @@ class LikeNotification extends Notification
     public function toMail($notifiable)
     {
         dump($this);
-        $deepLink = 'EXPOSVRE://postlike/'. $this->post->id;
+        $deepLink = 'EXPOSVRE://postlike/' . $this->post->id;
 
         $notification = new \App\Models\Notification();
         $notification->title = 'loved your post';
@@ -104,7 +106,7 @@ class LikeNotification extends Notification
         $notification->save();
 
 
-//        return '';
+        //        return '';
         return (new MailMessage);
     }
 
