@@ -115,10 +115,10 @@ class PostResource extends JsonResource
             if (str_contains($firstMedia->mime_type, 'image')) {
 
                 $thumbUrl = $this->getFirstMediaUrl('thumb');
-
-                if ($thumbUrl) {
-                    $image = new \Imagick($thumbUrl);
-                    $data['image'] = $thumbUrl;
+                $thumbPath = $this->getFirstMediaPath('thumb');
+                if ($thumbPath && file_exists($thumbPath)) {
+                    $image = new Imagick($thumbPath);
+                    $data['image'] = $this->getFirstMediaUrl('thumb');
                     $data['image_width'] = $image->getImageWidth();;
                     $data['image_height'] = $image->getImageHeight();
                 } elseif (str_contains($firstMedia->mime_type, 'webp')) {
@@ -179,9 +179,8 @@ class PostResource extends JsonResource
         if ($this->ad == 1) {
             $data['video'] = $this->getFirstMediaUrl('video');
             $data['video_preview'] = $this->getFirstMediaUrl('video', 'original') ?? '';
+            $data['video_thumb'] = $this->getFirstMediaUrl('video_thumb');
         }
-
-
         return $data;
     }
 }
