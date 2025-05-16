@@ -88,21 +88,21 @@ class SongController extends Controller
         if ($request->hasFile('image_file')) {
             $originalFileName = $request->file('image_file')->getClientOriginalName();
             $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
-            $imagePath = $request->file('image_file')->storeAs( 'uploads/images', $fileNameWithoutSpaces, 'public');
+            $imagePath = $request->file('image_file')->storeAs('uploads/images', $fileNameWithoutSpaces, 'public');
             $imageUrl = url('storage/' . $imagePath) ?? null;
         }
 
         if ($request->hasFile('full_song_file')) {
             $originalFileName = $request->file('full_song_file')->getClientOriginalName();
             $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
-            $songPath = $request->file('full_song_file')->storeAs('uploads/songs', $fileNameWithoutSpaces , 'public');
+            $songPath = $request->file('full_song_file')->storeAs('uploads/songs', $fileNameWithoutSpaces, 'public');
             $songUrl = url('storage/' . $songPath) ?? null;
         }
 
-        if ($request->hasFile('clip_20_sec')) {
-            $originalFileName = $request->file('clip_20_sec')->getClientOriginalName();
+        if ($request->hasFile('clip_30_sec')) {
+            $originalFileName = $request->file('clip_30_sec')->getClientOriginalName();
             $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
-            $clipPath = $request->file('clip_20_sec')->storeAs('uploads/clips', $fileNameWithoutSpaces , 'public');
+            $clipPath = $request->file('clip_30_sec')->storeAs('uploads/clips', $fileNameWithoutSpaces, 'public');
             $clipUrl = url('storage/' . $clipPath) ?? null;
         }
 
@@ -154,7 +154,7 @@ class SongController extends Controller
         if ($request->hasFile('image_file')) {
             $originalFileName = $request->file('image_file')->getClientOriginalName();
             $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
-            $imagePath = $request->file('image_file')->storeAs( 'uploads/images', $fileNameWithoutSpaces, 'public');
+            $imagePath = $request->file('image_file')->storeAs('uploads/images', $fileNameWithoutSpaces, 'public');
             $imageUrl = url('storage/' . $imagePath);
             $song->image_file = $imageUrl;
         }
@@ -162,16 +162,15 @@ class SongController extends Controller
         if ($request->hasFile('full_song_file')) {
             $originalFileName = $request->file('full_song_file')->getClientOriginalName();
             $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
-            $songPath = $request->file('full_song_file')->storeAs('uploads/songs', $fileNameWithoutSpaces , 'public');
+            $songPath = $request->file('full_song_file')->storeAs('uploads/songs', $fileNameWithoutSpaces, 'public');
             $songUrl = url('storage/' . $songPath);
             $song->full_song_file = $songUrl;
-
         }
 
-        if ($request->hasFile('clip_20_sec')) {
-            $originalFileName = $request->file('clip_20_sec')->getClientOriginalName();
+        if ($request->hasFile('clip_30_sec')) {
+            $originalFileName = $request->file('clip_30_sec')->getClientOriginalName();
             $fileNameWithoutSpaces = str_replace(' ', '_', $originalFileName);
-            $clipPath = $request->file('clip_20_sec')->storeAs('uploads/clips', $fileNameWithoutSpaces , 'public');
+            $clipPath = $request->file('clip_30_sec')->storeAs('uploads/clips', $fileNameWithoutSpaces, 'public');
             $clipUrl = url('storage/' . $clipPath);
             $song->clip_15_sec = $clipUrl;
         }
@@ -211,6 +210,4 @@ class SongController extends Controller
             return redirect()->route('song-index')->with('error', 'Song not found');
         }
     }
-
-
 }

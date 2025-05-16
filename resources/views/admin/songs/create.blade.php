@@ -76,8 +76,8 @@
             </x-slot>
         </x-adminlte-input-file>
 
-        <x-adminlte-input-file name="clip_20_sec" label="Upload 20 second clip of song"
-            placeholder="Upload 20 second clip of song" label-class="text-lightblue">
+        <x-adminlte-input-file name="clip_30_sec" label="Upload 30 second clip of song"
+            placeholder="Upload 30 second clip of song" label-class="text-lightblue">
             <x-slot name="prependSlot">
                 <div class="input-group-text">
                     <i class="fas fa-music text-lightblue"></i>
@@ -160,7 +160,7 @@
 
 @push('js')
     {{-- <script type="text/javascript" src="//code.jquery.com/jquery-2.0.3.min.js"></script> --}}
-    <script type="text/javascript" src="{{asset('vendor/uploadPreview/jquery.uploadPreview.min.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('vendor/uploadPreview/jquery.uploadPreview.min.js') }}"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/getID3/0.8.0/getID3.min.js"></script>
     <script type="text/javascript">
         $(document).ready(function() {
@@ -175,7 +175,7 @@
         function validateClipDuration(event) {
             event.preventDefault(); // Prevent form submission
 
-            const clipFile = document.getElementById('clip_20_sec').files[0];
+            const clipFile = document.getElementById('clip_30_sec').files[0];
             const imageFile = document.getElementById('image-upload').files[0];
             const fullSongFile = document.getElementById('full_song_file').files[0];
             const title = document.querySelector('input[name="title"]').value.trim();
@@ -195,7 +195,7 @@
             }
 
             if (!clipFile) {
-                alert('Please upload a 20-second clip.');
+                alert('Please upload a 30-second clip.');
                 return false;
             }
 
@@ -219,8 +219,8 @@
             audio.onloadedmetadata = function() {
                 const duration = Math.round(audio.duration);
 
-                if (duration < 20 || duration >= 22) {
-                    alert('The audio file must be 20 seconds long.');
+                if (duration < 30 || duration >= 32) {
+                    alert('The audio file must be 30 seconds long.');
                 }
             };
         }
