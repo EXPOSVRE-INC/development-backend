@@ -42,6 +42,7 @@ class AuthController extends Controller
             'except' => [
                 'login',
                 'register',
+                'userRegistration',
                 'sendRecoveryPassword',
                 'resetPassword',
                 'confirmResetPassword',
@@ -76,7 +77,7 @@ class AuthController extends Controller
                 [
                     'error' => 'Account Deactivated',
                     'message' =>
-                        'Your account has been deleted. Please contact support for assistance.',
+                    'Your account has been deleted. Please contact support for assistance.',
                 ],
                 403
             );
@@ -87,7 +88,7 @@ class AuthController extends Controller
                 [
                     'error' => 'Account Banned',
                     'message' =>
-                        "Your account has been banned for violating EXPOSVRE's terms and conditions!",
+                    "Your account has been banned for violating EXPOSVRE's terms and conditions!",
                 ],
                 403
             );
@@ -116,7 +117,7 @@ class AuthController extends Controller
         ) {
             return $this->respondWithToken($token);
         }
-        
+
         //  else {
         //     return response()->json(
         //         [
@@ -267,12 +268,11 @@ class AuthController extends Controller
             $profile->save();
 
             return response()->json(['data' => true]);
-
         } catch (\Twilio\Exceptions\RestException $e) {
             return response()->json([
                 'data' => false,
                 'error' =>  $e->getMessage(),
-                'message'=>"The phone number is unverified"
+                'message' => "The phone number is unverified"
             ], 403);
         }
     }
@@ -323,7 +323,6 @@ class AuthController extends Controller
                     'error' => 'Invalid verification code.'
                 ], 400);
             }
-
         } catch (\Twilio\Exceptions\RestException $e) {
             // Handle specific Twilio errors (like wrong Service SID)
             return response()->json([
@@ -339,13 +338,9 @@ class AuthController extends Controller
         }
     }
 
-    public function verifyEmail(Request $request)
-    {
-    }
+    public function verifyEmail(Request $request) {}
 
-    public function verifyEmailCode(Request $request)
-    {
-    }
+    public function verifyEmailCode(Request $request) {}
 
     /**
      * Get the token array structure.
@@ -483,17 +478,17 @@ class AuthController extends Controller
         if (!$request->has('email')) {
             return response()->json(['error' => 'Email is required'], 400);
         }
-    
+
         $user = User::where('email', $request->get('email'))->first();
-    
+
         if (!$user) {
             return response()->json(['error' => 'User not found'], 404);
         }
-    
+
         $token = Password::createToken($user);
-    
+
         Mail::to($user->email)->send(new ResetPassword($user, $token));
-    
+
         return response()->json(['data' => 'Reset link sent']);
     }
 
@@ -540,8 +535,7 @@ class AuthController extends Controller
 
         return response()->json(['data' => $status]);
     }
-    public function publishMessage(){
-    }
+    public function publishMessage() {}
 
     protected function sendOtp($phoneNumber)
     {
@@ -630,7 +624,6 @@ class AuthController extends Controller
                     'error' => 'Invalid verification code.'
                 ], 400);
             }
-
         } catch (\Twilio\Exceptions\RestException $e) {
             return response()->json([
                 'data' => false,
@@ -644,4 +637,42 @@ class AuthController extends Controller
         }
     }
 
+
+    // --------------------------- For Hybrid Build code ------------------------------------
+
+    public function userRegistration(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'username' => 'required|string|unique:users,username|max:255',
+                'email' => 'required|email|unique:users,email',
+            ],
+            [
+                'email.unique' => 'This email has already been registered.',
+                'username.unique' => "Oops! Someone's already using that username."
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation errors',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $user = new User();
+        $user->username = $request->get('username');
+        $user->email = $request->get('email');
+        $user->password = $request->get('password');
+        $user->save();
+
+        $exposureUser = User::find(1);
+        if ($exposureUser) {
+            $user->subscribe($exposureUser);
+        }
+
+        return new UserResource($user);
+    }
 }

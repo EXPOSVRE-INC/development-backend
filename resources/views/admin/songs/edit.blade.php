@@ -67,16 +67,16 @@
 
 @section('content')
 
-<form action="{{route('song-edit', $song->id)}}" method="post" enctype="multipart/form-data" id="uploadForm"
+    <form action="{{ route('song-edit', $song->id) }}" method="post" enctype="multipart/form-data" id="uploadForm"
         onsubmit="validateClipDuration(event)">
-    {{csrf_field()}}
+        {{ csrf_field() }}
 
         <!-- Image Upload Field with Preview -->
         <div id="image-preview">
             <label for="image-upload" id="image-label">Choose Image File</label>
             <input type="file" name="image_file" id="image-upload" />
             <!-- Show the existing image if available -->
-        @if($song->image_file)
+            @if ($song->image_file)
                 <img src="{{ $song->image_file }}" alt="Song Image" id="song-preview-image">
             @else
                 <img id="song-preview-image" src="" alt="Song Image" style="display: none;">
@@ -85,8 +85,8 @@
 
         @php
             $config = [
-    "placeholder" => "Select option...",
-    "allowClear" => true,
+                'placeholder' => 'Select option...',
+                'allowClear' => true,
             ];
         @endphp
 
@@ -101,7 +101,7 @@
         </x-adminlte-input-file>
 
         <!-- Display currently uploaded full song file -->
-    @if(isset($song->full_song_file))
+        @if (isset($song->full_song_file))
             <div class="mt-3 fileContainer mb-3">
                 <strong class="clipText">Uploaded Song:</strong>
                 <audio controls class="audioSong">
@@ -111,8 +111,8 @@
             </div>
         @endif
 
-        <x-adminlte-input-file name="clip_20_sec" label="Upload 20 second clip of song"
-            placeholder="Upload 20 second clip of song" label-class="text-lightblue">
+        <x-adminlte-input-file name="clip_30_sec" label="Upload 30 second clip of song"
+            placeholder="Upload 30 second clip of song" label-class="text-lightblue">
             <x-slot name="prependSlot">
                 <div class="input-group-text">
                     <i class="fas fa-play text-lightblue"></i>
@@ -121,14 +121,14 @@
         </x-adminlte-input-file>
 
         <!-- Display currently uploaded 15-second clip -->
-    @if(isset($song->clip_15_sec))
+        @if (isset($song->clip_15_sec))
             <div class="mt-3 fileContainer mb-3">
                 <strong class="clipText">Uploaded Clip:</strong>
                 <audio controls class="audioSong">
                     <source src="{{ $song->clip_15_sec }}" type="audio/mpeg">
                     Your browser does not support the audio tag.
                 </audio>
-                <input type="hidden" id="existing_clip_duration" value="20">
+                <input type="hidden" id="existing_clip_duration" value="30">
             </div>
         @endif
 
@@ -144,9 +144,9 @@
             <x-slot name="appendSlot">
                 <x-adminlte-button theme="outline-dark" label="Clear" icon="fas fa-lg fa-ban text-danger" />
             </x-slot>
-        @foreach($artists as $artist)
-        <option value="{{$artist->id}}" {{ $song->artist_id == $artist->id ? 'selected' : '' }}>
-            {{$artist->name}}
+            @foreach ($artists as $artist)
+                <option value="{{ $artist->id }}" {{ $song->artist_id == $artist->id ? 'selected' : '' }}>
+                    {{ $artist->name }}
                 </option>
             @endforeach
         </x-adminlte-select2>
@@ -184,9 +184,9 @@
             <x-slot name="appendSlot">
                 <x-adminlte-button theme="outline-dark" label="Clear" icon="fas fa-lg fa-ban text-danger" />
             </x-slot>
-        @foreach($genres as $genre)
-        <option value="{{$genre->id}}" {{ $song->genre_id == $genre->id ? 'selected' : '' }}>
-            {{$genre->name}}
+            @foreach ($genres as $genre)
+                <option value="{{ $genre->id }}" {{ $song->genre_id == $genre->id ? 'selected' : '' }}>
+                    {{ $genre->name }}
                 </option>
             @endforeach
         </x-adminlte-select2>
@@ -202,22 +202,23 @@
             <x-slot name="appendSlot">
                 <x-adminlte-button theme="outline-dark" label="Clear" icon="fas fa-lg fa-ban text-danger" />
             </x-slot>
-        @foreach($moods as $mood)
-        <option value="{{$mood->id}}" {{ $song->mood_id == $mood->id ? 'selected' : '' }}>
-            {{$mood->name}}
+            @foreach ($moods as $mood)
+                <option value="{{ $mood->id }}" {{ $song->mood_id == $mood->id ? 'selected' : '' }}>
+                    {{ $mood->name }}
                 </option>
             @endforeach
         </x-adminlte-select2>
 
         <!-- Submit Button -->
-    <x-adminlte-button class="btn-flat" type="submit" label="Update Song" theme="success" icon="fas fa-lg fa-save" />
+        <x-adminlte-button class="btn-flat" type="submit" label="Update Song" theme="success"
+            icon="fas fa-lg fa-save" />
 
     </form>
 
 @endsection
 
 @push('js')
-<script type="text/javascript" src="{{asset('vendor/uploadPreview/jquery.uploadPreview.min.js')}}"></script>
+    <script type="text/javascript" src="{{ asset('vendor/uploadPreview/jquery.uploadPreview.min.js') }}"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/getID3/0.8.0/getID3.min.js"></script>
     <script type="text/javascript">
         $(document).ready(function() {
@@ -251,31 +252,26 @@
         function validateClipDuration(event) {
             event.preventDefault();
 
-            const clipFile = document.getElementById('clip_20_sec').files[0];
+            const clipFile = document.getElementById('clip_30_sec').files[0];
             const existingDuration = parseInt(document.getElementById('existing_clip_duration').value);
 
             if (!clipFile) {
-                if (existingDuration >= 20 && existingDuration < 22) {
+                if (existingDuration >= 30 && existingDuration < 32) {
                     document.getElementById('uploadForm').submit();
                 } else {
-                    alert('The existing audio file must be 20 seconds long.');
+                    alert('The existing audio file must be 30 seconds long.');
                 }
             }
 
             const audio = new Audio();
             audio.src = URL.createObjectURL(clipFile);
-            console.log(clipFile, "======c");
-            
-            console.log(audio, "=====audio");
-            
             audio.onloadedmetadata = function() {
                 const duration = Math.round(audio.duration);
-                console.log(duration, "===dusr");
-                
-                if (duration >= 20 && duration < 22) {
+
+                if (duration >= 30 && duration < 32) {
                     document.getElementById('uploadForm').submit();
                 } else {
-                    alert('The audio file must be 20 seconds long.');
+                    alert('The audio file must be 30 seconds long.');
                 }
             };
         }

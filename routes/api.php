@@ -37,6 +37,7 @@ Route::group([
         ], function ($router) {
             Route::post('login', 'AuthController@login');
             Route::post('register', 'AuthController@register');
+            Route::post('user-register', 'AuthController@userRegistration');
             Route::post('update-user', 'AuthController@updateUser');
 
             Route::post('recovery-password', 'AuthController@sendRecoveryPassword');
@@ -67,7 +68,7 @@ Route::group([
             Route::post('refresh', 'AuthController@refresh');
         });
 
-//        Route::post('address-autocomplete', 'UserController@getAddress');
+        //        Route::post('address-autocomplete', 'UserController@getAddress');
 
         Route::group([
             'prefix' => 'search',
@@ -113,7 +114,6 @@ Route::group([
             Route::get('/list-purchases', 'PaymentController@listPurchases');
             Route::get('/list-sales', 'PaymentController@listSales');
             Route::get('/list-transactions', 'PaymentController@listTransactions');
-
         });
 
         Route::group([
@@ -155,7 +155,6 @@ Route::group([
 
             Route::post('comment/{id}', 'PostController@commentCollection');
             Route::get('comments-list/{id}', 'PostController@collectionListComments');
-
         });
 
         Route::group([
@@ -181,6 +180,8 @@ Route::group([
             Route::post('/search-interest', 'PostController@searchPostsByInterest');
 
             Route::post('upload', 'PostController@fileUploader');
+            Route::post('multiple-file-upload', 'PostController@multipleFileUploader');
+            Route::get('get-files', 'PostController@getAllPostImages');
             Route::post('drop-file-by-uuid', 'PostController@dropFileByUuid');
             Route::get('drop-files', 'PostController@dropFiles');
 
@@ -213,7 +214,6 @@ Route::group([
             ], function ($router) {
                 Route::get('/index', 'CategoryInterestsController@index');
             });
-
         });
 
         Route::get('/test-push', 'UserController@test');
@@ -224,7 +224,6 @@ Route::group([
         ], function ($router) {
             Route::get('/', 'UserController@getNotificationsList');
             Route::post('action', 'UserController@notificationAction');
-
         });
 
         Route::get('subscriptions', 'UserController@subscriptions');
@@ -310,7 +309,6 @@ Route::group([
             Route::put('/chat/read-message/{chatId}', [ChatController::class, 'readMessage']);
             Route::put('/chat/edit-message/{chatId}', [ChatController::class, 'editMessage']);
             Route::delete('/chat/delete-message/{chatId}', [ChatController::class, 'deleteMessage']);
-
         });
 
 
@@ -332,6 +330,5 @@ Route::group([
 
             Route::get('/download/{id}', [MusicController::class, 'download']);
         });
-
     });
 });
