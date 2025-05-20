@@ -64,6 +64,7 @@ Route::group([
             Route::get('get-card-list', 'AuthController@getCardList');
 
             Route::get('finish', 'AuthController@getFinishRegistration');
+            Route::get('/user-me', 'AuthController@getUserDetail');
 
             Route::post('refresh', 'AuthController@refresh');
         });
