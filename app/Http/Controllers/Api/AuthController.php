@@ -216,9 +216,7 @@ class AuthController extends Controller
         $user->save();
         $profile->firstName = $request->get('firstName');
         $profile->lastName = $request->get('lastName');
-        $profile->birthDate = Carbon::createFromTimestamp(
-            $request->get('birthDate')
-        );
+        $profile->birthDate = Carbon::createFromFormat('d/m/Y', $request->get('birthDate'))->toDateString();
         if (
             $profile->phone == null ||
             $profile->phone == '' ||
@@ -470,6 +468,11 @@ class AuthController extends Controller
         $user->isConfirmed = true;
         $user->save();
 
+        return response()->json(['data' => new UserResource($user)]);
+    }
+    public function getUserDetail()
+    {
+        $user = auth('api')->user();
         return response()->json(['data' => new UserResource($user)]);
     }
 
