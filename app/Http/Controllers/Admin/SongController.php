@@ -65,7 +65,7 @@ class SongController extends Controller
             'description' => 'nullable|string|max:1000',
             'image_file' => 'required|file|max:10240',
             'full_song_file' => 'required|file',
-            'clip_15_sec' => 'required|file',
+            'clip_30_sec' => 'required|file',
         ]);
 
         $validator->after(function ($validator) use ($request) {
@@ -128,6 +128,7 @@ class SongController extends Controller
 
         return redirect()->route('song-index');
     }
+
 
     public function editSongForm($song_id)
     {
