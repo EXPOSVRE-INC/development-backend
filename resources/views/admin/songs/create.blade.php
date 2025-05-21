@@ -188,7 +188,6 @@
                 alert('Please upload an image!');
                 return false;
             }
-
             if (!fullSongFile) {
                 alert('Please upload the full song file.');
                 return false;
@@ -219,10 +218,20 @@
             audio.onloadedmetadata = function() {
                 const duration = Math.round(audio.duration);
 
-                if (duration < 30 || duration >= 32) {
-                    alert('The audio file must be 30 seconds long.');
+                if (duration < 30 || duration >= 34) {
+                    alert('The clip file must be exactly 30 seconds (30–34s accepted).');
+                    return false;
                 }
+
             };
+            document.getElementById('uploadForm').submit();
+
+            // audio.onerror = function() {
+            //     alert('Invalid audio file.');
+            //     return false;
+            // };
+
+            // return false;
         }
     </script>
 @endpush

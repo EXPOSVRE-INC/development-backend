@@ -268,10 +268,10 @@
             audio.onloadedmetadata = function() {
                 const duration = Math.round(audio.duration);
 
-                if (duration >= 30 && duration < 32) {
+                if (duration >= 30 && duration < 35) {
                     document.getElementById('uploadForm').submit();
                 } else {
-                    alert('The audio file must be 30 seconds long.');
+                    alert('The clip file must be exactly 30 seconds (30–34s accepted).');
                 }
             };
         }
