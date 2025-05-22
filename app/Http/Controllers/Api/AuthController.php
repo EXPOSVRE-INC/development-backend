@@ -216,7 +216,16 @@ class AuthController extends Controller
         $user->save();
         $profile->firstName = $request->get('firstName');
         $profile->lastName = $request->get('lastName');
-        $profile->birthDate = Carbon::createFromFormat('d/m/Y', $request->get('birthDate'))->toDateString();
+        $birthDateInput = $request->get('birthDate');
+        if (!empty($birthDateInput)) {
+            try {
+                $profile->birthDate = Carbon::createFromFormat('d/m/Y', $birthDateInput)->toDateString();
+            } catch (\Carbon\Exceptions\InvalidFormatException $e) {
+                $profile->birthDate = null; // or ''
+            }
+        } else {
+            $profile->birthDate = null; // or ''
+        }
         if (
             $profile->phone == null ||
             $profile->phone == '' ||
