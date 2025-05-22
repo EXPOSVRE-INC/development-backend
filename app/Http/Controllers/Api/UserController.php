@@ -24,7 +24,7 @@ use App\Models\UserSettings;
 use App\Models\UserShippingAddress;
 use App\Notifications\NewSubscription;
 use App\Notifications\TestNotificationWithDeepLink;
-use AWS\CRT\Log;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -535,7 +535,7 @@ class UserController extends Controller
 
     public function test()
     {
-        $user = auth()->user(); // Cleaner and avoids unnecessary query
+        $user = auth('api')->user();
 
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
