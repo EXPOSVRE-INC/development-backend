@@ -144,7 +144,7 @@ class UserController extends Controller
             return response()->json(
                 [
                     'error' =>
-                        'You do not have access to this user’s profile because they have blocked you.',
+                    'You do not have access to this user’s profile because they have blocked you.',
                 ],
                 403
             );
@@ -328,8 +328,8 @@ class UserController extends Controller
 
         $postsInterested =
             count($postsInterested) > 0
-                ? array_values($postsInterested->diff($posts)->toArray())
-                : [];
+            ? array_values($postsInterested->diff($posts)->toArray())
+            : [];
 
         rsort($postsInterested);
 
@@ -535,25 +535,17 @@ class UserController extends Controller
 
     public function test()
     {
-        $user = User::where(['id' => 316])->first();
+        $user = auth()->user(); // Cleaner and avoids unnecessary query
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         $user->notify(new TestNotificationWithDeepLink());
-        return response()->json(['data' => 'success']);
-        //        $options = [
-        //            'key_id' => '243Y27KXL3', // The Key ID obtained from Apple developer account
-        //            'team_id' => 'Y82G5S669P', // The Team ID obtained from Apple developer account
-        //            'app_bundle_id' => 'com.viaduct.exposure.dev', // The bundle ID for app obtained from Apple developer account
-        //            'private_key_path' => base_path() . '/AuthKey_243Y27KXL3.p8', // Path to private key
-        ////                'private_key_secret' => null // Private key secret
-        //        ];
-        //        $customClient = new Client(Token::create($options), true);
-        //
-        //        $message = ApnMessage::create()
-        //            ->title('Account approved')
-        //            ->body("Your account was approved!")
-        //            ->via($customClient);
-        //
-        //        dump($message);
+
+        return response()->json(['data' => 'Notification sent successfully']);
     }
+
 
     public function getNotificationsList(Request $request)
     {
@@ -565,11 +557,11 @@ class UserController extends Controller
             $offset = ($page - 1) * $limit;
 
             $notificationsQuery = $user->notifications()->whereDoesntHave('sender', function ($query) use ($user) {
-                    $query->whereIn(
-                        'id',
-                        $user->blocks()->pluck('blocking_id')
-                    );
-                })
+                $query->whereIn(
+                    'id',
+                    $user->blocks()->pluck('blocking_id')
+                );
+            })
                 ->orderBy('updated_at', 'desc');
 
             if ($request->has('page') && $request->has('limit')) {
@@ -647,13 +639,13 @@ class UserController extends Controller
 
         Conversation::where(function ($query) use ($blockUserID, $userWhoBlock) {
             $query->where('sender', $userWhoBlock->id)
-                  ->where('receiver', $blockUserID);
+                ->where('receiver', $blockUserID);
         })
-        ->orWhere(function ($query) use ($blockUserID, $userWhoBlock) {
-            $query->where('sender', $blockUserID)
-                  ->where('receiver', $userWhoBlock->id);
-        })
-        ->update(['status' => 'inactive']);
+            ->orWhere(function ($query) use ($blockUserID, $userWhoBlock) {
+                $query->where('sender', $blockUserID)
+                    ->where('receiver', $userWhoBlock->id);
+            })
+            ->update(['status' => 'inactive']);
 
         $userWhoBlock->unsubscribe($blockUser);
 
@@ -688,13 +680,13 @@ class UserController extends Controller
 
         Conversation::where(function ($query) use ($blockUserID, $userWhoBlock) {
             $query->where('sender', $userWhoBlock->id)
-                  ->where('receiver', $blockUserID);
+                ->where('receiver', $blockUserID);
         })
-        ->orWhere(function ($query) use ($blockUserID, $userWhoBlock) {
-            $query->where('sender', $blockUserID)
-                  ->where('receiver', $userWhoBlock->id);
-        })
-        ->update(['status' => 'active']);
+            ->orWhere(function ($query) use ($blockUserID, $userWhoBlock) {
+                $query->where('sender', $blockUserID)
+                    ->where('receiver', $userWhoBlock->id);
+            })
+            ->update(['status' => 'active']);
 
         $userWhoBlock->unblock($blockUser->id);
 
