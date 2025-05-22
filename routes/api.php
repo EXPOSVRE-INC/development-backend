@@ -67,6 +67,7 @@ Route::group([
             Route::get('/user-me', 'AuthController@getUserDetail');
 
             Route::post('refresh', 'AuthController@refresh');
+            Route::get('/test-push', 'UserController@test');
         });
 
         //        Route::post('address-autocomplete', 'UserController@getAddress');
@@ -216,8 +217,6 @@ Route::group([
                 Route::get('/index', 'CategoryInterestsController@index');
             });
         });
-
-        Route::get('/test-push', 'UserController@test');
 
         Route::group([
             'prefix' => 'notifications',
