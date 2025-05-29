@@ -253,6 +253,9 @@ Route::group([
             Route::get('/unblock/{id}', 'UserController@unblockUser');
 
             Route::post('/feed', 'UserController@feed');
+            Route::get('/feeds/main', 'UserController@mainFeed');
+            Route::get('/feeds/editorial', 'UserController@editorial');
+            Route::get('/feeds/market', 'UserController@market');
 
             Route::post('/set-push-token', 'UserController@setToken');
 

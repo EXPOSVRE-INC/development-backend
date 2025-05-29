@@ -139,7 +139,6 @@ class UserController extends Controller
     {
         $user = User::where(['id' => $id])->first();
         $currentUser = auth()->user();
-
         if ($user->hasBlocked($currentUser->id)) {
             return response()->json(
                 [
@@ -692,6 +691,165 @@ class UserController extends Controller
 
         return response()->json([
             'data' => 'You are unblocked user ' . $blockUser->username,
+        ]);
+    }
+
+
+
+    //-------------------------- API for Hybrid Build ----------------------------//
+    public function mainFeed(Request $request)
+    {
+        $page = (int) $request->input('page', 1);
+        $limit = (int) $request->input('limit', 10);
+        $offset = ($page - 1) * $limit;
+        $fromDate = Carbon::createFromTimestamp($request->get('last_update_date'))
+            ->setTimezone('US/Eastern')->toDateTimeString();
+        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
+
+        $user = auth('api')->user();
+        $userInterestsArray = $user->interests()->pluck('slug')->toArray();
+
+        $interestedPosts = Post::with('interests')
+            ->whereHas('interests', fn($q) => $q->whereIn('slug', $userInterestsArray))
+            ->where('status', '!=', 'archive')
+            ->where('updated_at', '>=', $fromDate)
+            ->get()
+            ->filter(fn($p) => !$user->isBlocking($p->owner) && !$user->isBlockedBy($p->owner) && $p->reports->count() == 0);
+
+        $ownPosts = $user->posts()
+            ->whereNull('status')
+            ->where('updated_at', '>=', $fromDate)
+            ->get()
+            ->filter(fn($p) => $p->status != 'archive' && $p->reports->count() == 0);
+
+        $subscriptionPosts = collect();
+        foreach ($user->subscriptions as $subUser) {
+            $subscriptionPosts = $subscriptionPosts->merge(
+                $subUser->posts()
+                    ->whereNull('status')
+                    ->where('publish_date', '<', $now)
+                    ->get()
+                    ->filter(
+                        fn($p) =>
+                        $p->status != 'archive' &&
+                            $p->reports->count() == 0 &&
+                            !$user->isBlocking($p->owner) &&
+                            !$user->isBlockedBy($p->owner)
+                    )
+            );
+        }
+
+        $allPosts = $interestedPosts->merge($ownPosts)->merge($subscriptionPosts)->unique('id');
+        $sortedPosts = $allPosts->sortByDesc('updated_at')->values();
+        $paginated = $sortedPosts->slice($offset, $limit)->values();
+
+        return response()->json([
+            'data' => PostResource::collection($paginated),
+            'meta' => [
+                'total' => $sortedPosts->count(),
+                'page' => $page,
+                'limit' => $limit,
+                'count' => $paginated->count()
+            ]
+        ]);
+    }
+
+    public function editorial(Request $request)
+    {
+        $page = (int) $request->input('page', 1);
+        $limit = (int) $request->input('limit', 10);
+        $offset = ($page - 1) * $limit;
+
+        $fromDate = Carbon::createFromTimestamp($request->get('last_update_date'))
+            ->setTimezone('US/Eastern')->toDateTimeString();
+
+        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
+
+        $baseQuery = Post::where(['owner_id' => 1])
+            ->where(function ($query) {
+                $query->where('status', '!=', 'archive')
+                    ->orWhere('status', '')
+                    ->orWhereNull('status');
+            })
+            ->where('publish_date', '<', $now)
+            ->where(['ad' => 1]);
+
+        $allMatchedPosts = $baseQuery->get();
+        $filteredPosts = $allMatchedPosts
+            ->filter(function ($post) use ($fromDate) {
+                return $post->updated_at >= $fromDate;
+            });
+
+        $total = $filteredPosts->count();
+
+        $sortedPosts = $filteredPosts->sortByDesc('updated_at');
+
+        $paginatedPosts = $sortedPosts->slice($offset, $limit)->values();
+
+        return response()->json([
+            'data' => PostResource::collection($paginatedPosts),
+            'meta' => [
+                'total' => $total,
+                'page' => $page,
+                'limit' => $limit,
+                'count' => $paginatedPosts->count()
+            ]
+        ]);
+    }
+
+    public function market(Request $request)
+    {
+        $page = (int) $request->input('page', 1);
+        $limit = (int) $request->input('limit', 10);
+        $offset = ($page - 1) * $limit;
+
+        $fromDate = $request->has('last_update_date')
+            ? Carbon::createFromTimestamp($request->get('last_update_date'))
+            ->setTimezone('US/Eastern')->toDateTimeString()
+            : null;
+
+        $user = auth('api')->user();
+
+        $marketPosts = Post::where('post_for_sale', 1)
+            ->where(function ($query) {
+                $query->where('status', '!=', 'archive')
+                    ->orWhere('status', '')
+                    ->orWhereNull('status');
+            })->get();
+        $filteredPosts = $marketPosts->filter(function ($post) use ($user, $fromDate) {
+            if ($post->reports->count() > 0) {
+                return false;
+            }
+
+            if ($user->isBlocking($post->owner)) {
+
+                return false;
+            }
+
+            if ($user->isBlockedBy($post->owner)) {
+
+                return false;
+            }
+
+            // if ($fromDate && $post->updated_at < $fromDate) {
+            //     return false;
+            // }
+
+            return true;
+        });
+
+        $total = $filteredPosts->count();
+
+        $paginatedPosts = $filteredPosts->slice($offset, $limit)->values();
+
+        return response()->json([
+            'data' => PostResource::collection($paginatedPosts),
+            'meta' => [
+                'total' => $total,
+                'page' => $page,
+                'limit' => $limit,
+                'count' => $paginatedPosts->count(),
+            ],
         ]);
     }
 }
