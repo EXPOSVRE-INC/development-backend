@@ -202,148 +202,116 @@ class UserController extends Controller
 
         $user = auth('api')->user();
 
-        $userInterests = $user->interests()->get();
-        $userInterestsArray = $userInterests
-            ->map(function ($interest) {
-                return $interest->slug;
-            })
-            ->toArray();
+        // Get user interests more efficiently
+        $userInterestsArray = $user->interests()->pluck('slug')->toArray();
 
         $posts = [];
 
-        $postsInterested = Post::with('interests')
-            ->whereHas('interests', function ($query) use ($userInterestsArray) {
-                $query->whereIn('slug', $userInterestsArray);
-            })
-            ->where('status', '!=', 'archive') // Exclude archived posts
-            ->get()
-            ->filter(function ($post) use ($user) {
-                return !$user->isBlocking($post->owner);
-            })
-            ->filter(function ($post) use ($user) {
-                return !$user->isBlockedBy($post->owner);
-            })
-            ->map(function (Post $post) {
-                return $post->id;
-            });
-
-        $posts = array_merge(
-            $posts,
-            $user->posts
-                ->filter(function ($post) {
-                    return $post->status == null && $post->status != 'archive'; // Exclude archived posts
+        // 1. Posts based on user interests - optimized query
+        if (!empty($userInterestsArray)) {
+            $postsInterested = Post::with('interests')
+                ->whereHas('interests', function ($query) use ($userInterestsArray) {
+                    $query->whereIn('slug', $userInterestsArray);
                 })
-                ->filter(function ($post) {
-                    return $post->reports->count() == 0;
-                })
-                ->filter(function ($post) use ($fromDate) {
-                    return $post->updated_at >= $fromDate;
-                })
-                ->map(function (Post $post) {
-                    return $post->id;
-                })
-                ->toArray()
-        );
-
-        foreach ($user->subscriptions as $subscriptionUser) {
-            $newPosts = $subscriptionUser->posts
-                ->filter(function ($post) {
-                    return $post->reports->count() == 0;
-                })
-                ->filter(function ($post) use ($now) {
-                    if ($post->publish_date != null) {
-                        return $post->publish_date < $now;
-                    } else {
-                        return true;
-                    }
-                })
+                ->where('status', '!=', 'archive')
+                ->get()
                 ->filter(function ($post) use ($user) {
                     return !$user->isBlocking($post->owner);
                 })
                 ->filter(function ($post) use ($user) {
                     return !$user->isBlockedBy($post->owner);
                 })
-                ->filter(function ($post) {
-                    return $post->status == null && $post->status != 'archive'; // Exclude archived posts
-                })
-                ->map(function (Post $post) {
-                    return $post->id;
-                })
+                ->pluck('id')
                 ->toArray();
-            $posts = array_merge($posts, $newPosts);
+
+            $posts = array_merge($posts, $postsInterested);
         }
 
-        $postsAdditorials = Post::where(['owner_id' => 1])
-            ->where('status', '!=', 'archive') // Exclude archived posts
-            ->where('publish_date', '<', $now)
-            ->where(['ad' => 1])
-            ->get()
-            ->filter(function ($post) use ($fromDate) {
-                return $post->updated_at >= $fromDate;
+        // 2. User's own posts - fixed the status condition
+        $userPosts = $user->posts()
+            ->where(function ($query) {
+                $query->whereNull('status')
+                    ->orWhere('status', '!=', 'archive');
             })
-            ->filter(function ($post) {
-                return $post->status == null && $post->status != 'archive'; // Exclude archived posts
-            })
-            ->map(function (Post $post) {
-                return $post->id;
-            })
+            ->whereDoesntHave('reports')
+            ->where('updated_at', '>=', $fromDate)
+            ->pluck('id')
             ->toArray();
 
-        $marketPosts = Post::where(['post_for_sale' => 1])
-            ->where('status', '!=', 'archive') // Exclude archived posts
-            ->get()
-            ->filter(function ($post) {
-                return $post->reports->count() == 0;
+        $posts = array_merge($posts, $userPosts);
+
+        // 3. Posts from subscriptions - optimized
+        $subscriptionUserIds = $user->subscriptions->pluck('id')->toArray();
+
+        if (!empty($subscriptionUserIds)) {
+            $subscriptionPosts = Post::whereIn('owner_id', $subscriptionUserIds)
+                ->whereDoesntHave('reports')
+                ->where(function ($query) use ($now) {
+                    $query->whereNull('publish_date')
+                        ->orWhere('publish_date', '<', $now);
+                })
+                ->where(function ($query) {
+                    $query->whereNull('status')
+                        ->orWhere('status', '!=', 'archive');
+                })
+                ->get()
+                ->filter(function ($post) use ($user) {
+                    return !$user->isBlocking($post->owner);
+                })
+                ->filter(function ($post) use ($user) {
+                    return !$user->isBlockedBy($post->owner);
+                })
+                ->pluck('id')
+                ->toArray();
+
+            $posts = array_merge($posts, $subscriptionPosts);
+        }
+
+        // 4. Editorial posts (ads) - optimized
+        $postsAdditorials = Post::where('owner_id', 1)
+            ->where('status', '!=', 'archive')
+            ->where('publish_date', '<', $now)
+            ->where('ad', 1)
+            ->where('updated_at', '>=', $fromDate)
+            ->where(function ($query) {
+                $query->whereNull('status')
+                    ->orWhere('status', '!=', 'archive');
             })
-            ->filter(function (Post $post) use ($user) {
+            ->pluck('id')
+            ->toArray();
+
+        $posts = array_merge($posts, $postsAdditorials);
+
+        // 5. Market posts - optimized
+        $marketPosts = Post::where('post_for_sale', 1)
+            ->where('status', '!=', 'archive')
+            ->whereDoesntHave('reports')
+            ->where('updated_at', '>=', $fromDate)
+            ->get()
+            ->filter(function ($post) use ($user) {
                 return !$user->isBlocking($post->owner);
             })
             ->filter(function ($post) use ($user) {
                 return !$user->isBlockedBy($post->owner);
             })
-            ->filter(function ($post) use ($fromDate) {
-                return $post->updated_at >= $fromDate;
-            })
-            ->map(function (Post $post) {
-                return $post->id;
-            })
+            ->pluck('id')
             ->toArray();
 
-        $posts = array_merge($posts, $postsAdditorials);
         $posts = array_merge($posts, $marketPosts);
 
-        // Modify sorting logic to prioritize the most recent date
-        $uniquePosts = Post::whereIn('id', array_unique($posts))
-            ->orderByRaw("
-                GREATEST(
-                    COALESCE(publish_date, '1970-01-01'), 
-                    COALESCE(created_at, '1970-01-01')
-                ) DESC
-            ")
+        // Get unique post IDs and fetch sorted posts
+        $uniquePostIds = array_unique($posts);
+
+        $sortedPosts = Post::whereIn('id', $uniquePostIds)
+            ->orderByRaw("GREATEST(
+                COALESCE(publish_date, '1970-01-01'),
+                COALESCE(created_at, '1970-01-01')
+            ) DESC")
             ->get();
 
-        $newArray = [];
-        $posts = $uniquePosts->pluck('id');
-
-        $postsInterested =
-            count($postsInterested) > 0
-            ? array_values($postsInterested->diff($posts)->toArray())
-            : [];
-
-        rsort($postsInterested);
-
-        $newArray = $posts
-            ->chunk(2)
-            ->map(function ($items, $key) use ($postsInterested) {
-                if (array_key_exists($key, $postsInterested)) {
-                    return $items->push($postsInterested[$key]);
-                } else {
-                    return $items;
-                }
-            })
-            ->collapse();
-
-        return response()->json(['data' => $newArray]);
+        return response()->json([
+            'data' => $sortedPosts->pluck('id')->values()
+        ]);
     }
 
 
