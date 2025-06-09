@@ -65,7 +65,10 @@ class User extends Authenticatable implements JWTSubject, HasMedia
         return $this->pushToken;
     }
 
-    protected function getDefaultGuardName(): string { return 'web'; }
+    protected function getDefaultGuardName(): string
+    {
+        return 'web';
+    }
 
     public function isAdmin(): bool
     {
@@ -171,15 +174,15 @@ class User extends Authenticatable implements JWTSubject, HasMedia
         if ($assignment) {
             $assignment->delete();
         }
-//        foreach ($assignments as $i => $assignment) {
-//            if ($assignment->isForInterest($id)) {
-//                unset($assignments[$i]);
-//                isset($assignments[$i]) ?? $assignments[$i]->delete();
-//                $this->interestAssignments = $assignments;
-//                return;
-//            }
-//        }
-//        throw new \DomainException('Interest is not found.');
+        //        foreach ($assignments as $i => $assignment) {
+        //            if ($assignment->isForInterest($id)) {
+        //                unset($assignments[$i]);
+        //                isset($assignments[$i]) ?? $assignments[$i]->delete();
+        //                $this->interestAssignments = $assignments;
+        //                return;
+        //            }
+        //        }
+        //        throw new \DomainException('Interest is not found.');
     }
 
     public function revokeNotInterest($id): void
@@ -189,14 +192,14 @@ class User extends Authenticatable implements JWTSubject, HasMedia
         if ($assignment) {
             $assignment->delete();
         }
-//        foreach ($assignments as $i => $assignment) {
-//            if ($assignment->isForInterest($id)) {
-//                unset($assignments[$i]);
-//                $this->notInterestAssignments = $assignments;
-//                return;
-//            }
-//        }
-//        throw new \DomainException('Interest is not found.');
+        //        foreach ($assignments as $i => $assignment) {
+        //            if ($assignment->isForInterest($id)) {
+        //                unset($assignments[$i]);
+        //                $this->notInterestAssignments = $assignments;
+        //                return;
+        //            }
+        //        }
+        //        throw new \DomainException('Interest is not found.');
     }
 
     public function revokeInterests(): void
@@ -206,7 +209,6 @@ class User extends Authenticatable implements JWTSubject, HasMedia
         foreach ($interests as $interest) {
             $interest->delete();
         }
-
     }
 
     public function revokeNotInterests(): void
@@ -336,11 +338,16 @@ class User extends Authenticatable implements JWTSubject, HasMedia
     // Users that have blocked this user
     public function blockedBy()
     {
-        return $this->hasMany(Block::class, 'blocking_id' , 'id');
+        return $this->hasMany(Block::class, 'blocking_id', 'id');
     }
 
     public function hasBlocked($userId)
     {
         return $this->blocks()->where('blocking_id', $userId)->exists();
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('temp')->useDisk('s3');
     }
 }
