@@ -1283,6 +1283,8 @@ class PostController extends Controller
 
     // ----------------------------For Hybrid Build-------------------------------------
 
+
+
     public function multipleFileUploader(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -1291,14 +1293,11 @@ class PostController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Validation errors occurred.',
-                    'errors' => $validator->errors(),
-                ],
-                422
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation errors occurred.',
+                'errors' => $validator->errors(),
+            ], 422);
         }
 
         $files = $request->file('file');
@@ -1308,71 +1307,69 @@ class PostController extends Controller
         $uploadedMedia = [];
 
         foreach ($files as $file) {
-            $uploadedExtension = strtolower($file->getClientOriginalExtension());
-            $uploadedMimeType = $file->getMimeType();
-            $originalFileName = $file->getClientOriginalName();
+            $extension = strtolower($file->getClientOriginalExtension());
+            $mimeType = $file->getMimeType();
+            $originalName = $file->getClientOriginalName();
 
-            if (str_contains($uploadedMimeType, 'image')) {
-                if (!in_array($uploadedExtension, $allowedImageExtensions)) {
-                    $imagick = new Imagick($file->getPathname());
-                    $imagick->setImageFormat('jpeg');
+            try {
+                if (str_starts_with($mimeType, 'image/')) {
+                    if (!in_array($extension, $allowedImageExtensions)) {
+                        // Convert to JPEG
+                        $image = new \Imagick($file->getRealPath());
+                        $image->setImageFormat('jpeg');
+                        $tempPath = storage_path('app/temp/' . uniqid() . '.jpeg');
+                        $image->writeImage($tempPath);
+                        $file = new UploadedFile($tempPath, basename($tempPath), 'image/jpeg', null, true);
+                    }
 
-                    $convertedFileName = pathinfo($originalFileName, PATHINFO_FILENAME) . '.jpeg';
-                    $tempFilePath = storage_path($convertedFileName);
-                    $imagick->writeImage($tempFilePath);
-
-                    $file = new UploadedFile(
-                        $tempFilePath,
-                        $convertedFileName,
-                        'image/jpeg',
-                        null,
-                        true
-                    );
-
-                    $media = $user
-                        ->addMedia($file->getPathname())
-                        ->usingFileName($file->getClientOriginalName())
-                        ->toMediaCollection('temp');
-
-                    $uploadedMedia[] = $media;
-                } else {
                     $media = $user->addMedia($file->getRealPath())
-                        ->usingFileName($originalFileName)
+                        ->usingFileName($originalName)
+                        ->toMediaCollection('temp');
+
+                    $uploadedMedia[] = $media;
+                } elseif (str_starts_with($mimeType, 'video/')) {
+                    $needsConversion = !in_array($extension, $allowedVideoExtensions);
+
+                    if ($needsConversion) {
+                        $inputPath = $file->getRealPath();
+                        $convertedFileName = pathinfo($originalName, PATHINFO_FILENAME) . '-' . uniqid() . '.mp4';
+                        $outputPath = storage_path('app/temp/' . $convertedFileName);
+
+                        if (!file_exists(dirname($outputPath))) {
+                            mkdir(dirname($outputPath), 0777, true);
+                        }
+
+                        $command = "ffmpeg -i " . escapeshellarg($inputPath) .
+                            " -vcodec libx264 -acodec aac -strict -2 " . escapeshellarg($outputPath) . " 2>&1";
+                        exec($command, $output, $returnCode);
+
+                        if ($returnCode !== 0) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Video conversion failed',
+                                'error_output' => $output
+                            ], 500);
+                        }
+
+                        $file = new UploadedFile($outputPath, $convertedFileName, 'video/mp4', null, true);
+                    }
+
+                    $media = $user->addMedia($file->getRealPath())
+                        ->usingFileName($originalName)
                         ->toMediaCollection('temp');
 
                     $uploadedMedia[] = $media;
                 }
-            } elseif (str_contains($uploadedMimeType, 'video')) {
-                if (!in_array($uploadedExtension, $allowedVideoExtensions)) {
-                    // Convert to mp4 (Note: Imagick is not ideal for videos — use ffmpeg instead)
-                    $imagick = new Imagick($file->getPathname());
-                    $imagick->setImageFormat('mp4');
-
-                    $convertedFileName = pathinfo($originalFileName, PATHINFO_FILENAME) . '.mp4';
-                    $tempFilePath = storage_path($convertedFileName);
-                    $imagick->writeImage($tempFilePath);
-
-                    $file = new UploadedFile(
-                        $tempFilePath,
-                        $convertedFileName,
-                        'video/mp4',
-                        null,
-                        true
-                    );
-                }
-
-                $media = $user
-                    ->addMedia($file->getPathname())
-                    ->usingFileName($file->getClientOriginalName())
-                    ->toMediaCollection('temp');
-
-                $uploadedMedia[] = $media;
+            } catch (\Exception $e) {
+                continue;
             }
         }
+
         return response()->json([
             'data' => PostImagePreviewResource::collection(collect($uploadedMedia)),
         ]);
     }
+
 
     public function getAllPostImages()
     {
