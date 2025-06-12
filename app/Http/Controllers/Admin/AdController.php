@@ -175,13 +175,11 @@ class AdController extends Controller
             //            }
         }
 
-        if ($request->has('thumbnail')) {
-            $media = $post->getFirstMedia('thumb');
-            if ($media != null) {
-                $media->delete();
-            }
-            $post->addMediaFromRequest('thumbnail')->toMediaCollection('thumb');
+        $media = $post->getFirstMedia('header_video');
+        if ($media != null) {
+            $media->delete();
         }
+        $post->addMediaFromRequest('header_video')->toMediaCollection('header_video');
 
         if ($request->has('video_thumbnail')) {
             $media = $post->getFirstMedia('video_thumbnail');
@@ -204,6 +202,10 @@ class AdController extends Controller
 
     public function postAdForm(Request $request)
     {
+        $request->validate([
+            'header_video' => 'nullable|mimetypes:video/mp4,video/avi,video/mov|max:10240'
+        ]);
+
         $request->merge([
             'link' => ($request->get('link') != null) ? $request->get('link') : '',
             'ad' => 1,
@@ -231,8 +233,12 @@ class AdController extends Controller
                 });
         }
 
-        if ($request->hasFile('thumbnail')) {
-            $post->addMediaFromRequest('thumbnail')->toMediaCollection('thumb');
+        // if ($request->hasFile('thumbnail')) {
+        //     $post->addMediaFromRequest('thumbnail')->toMediaCollection('thumb');
+        // }
+
+        if ($request->hasFile('header_video')) {
+            $post->addMediaFromRequest('header_video')->toMediaCollection('header_video');
         }
 
         if ($request->hasFile('video')) {
