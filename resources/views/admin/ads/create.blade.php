@@ -52,12 +52,20 @@
 
     <form action="{{ route('ads-post') }}" method="post" enctype="multipart/form-data">
         {{ csrf_field() }}
-        <label for="thumbnail" class="text-lightblue">
-            Header
+        <label for="header_video" class="text-lightblue">
+            Header Video
         </label>
-        <div id="thumbnail-preview">
-            <label for="thumbnail-upload" id="thumbnail-label">Choose File</label>
-            <input type="file" name="thumbnail" id="thumbnail-upload" />
+        <div id="header-video-preview">
+            <label for="header_video_upload" class="text-white" id="header-video-label">
+                Choose Video
+            </label>
+            <input type="file" name="header_video" id="header_video_upload" accept="video/*" />
+
+            <video id="preview-header-video" width="100%" height="300" controls
+                style="margin-top: 10px; display: none;">
+                <source id="header-video-source" src="" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
         </div>
         <label for="file" class="text-lightblue">
             Story
@@ -176,23 +184,6 @@
             @endforeach
         </x-adminlte-select2>
 
-        {{-- <x-adminlte-select2 name="owner_id" label="Creator" label-class="text-lightblue" --}} {{-- igroup-size="md"
-        data-placeholder="Select an option..."> --}}
-        {{-- <x-slot name="prependSlot"> --}}
-        {{-- <div class="input-group-text bg-gradient-info"> --}}
-        {{-- <i class="fas fa-user"></i> --}}
-        {{-- </div> --}}
-        {{-- </x-slot> --}}
-        {{--
-        <option /> --}}
-        {{-- @foreach ($users as $user) --}}
-        {{-- <option value="{{$user->id}}"><img height="25" src="{{$user->getFirstMediaUrl('preview')}}">
-            {{$user->profile ? $user->profile->firstName . ' ' . $user->profile->lastName : ''}} {{'<' . $user->email .
-                '>'}}</option> --}}
-        {{-- @endforeach --}}
-        {{--
-    </x-adminlte-select2> --}}
-
         @php
             $config = ['format' => 'DD/MM/YYYY HH:mm'];
 
@@ -207,19 +198,10 @@
         </x-adminlte-input-date>
 
         <x-adminlte-button class="btn-flat" type="submit" label="Submit" theme="success" icon="fas fa-lg fa-save" />
-        {{-- <x-adminlte-select2 name="owner"> --}}
-        {{-- <option>-</option> --}}
-        {{-- @foreach ($users as $user) --}}
-        {{-- <option value="{{$user->id}}"><img height="25" src="{{$user->getFirstMediaUrl('preview')}}">
-            {{$user->profile ? $user->profile->firstName . ' ' . $user->profile->lastName : ''}} {{'<' . $user->email .
-                '>'}}</option> --}}
-        {{-- @endforeach --}}
-        {{-- </x-adminlte-select2> --}}
     </form>
 @endsection
 
 @push('js')
-    {{-- <script type="text/javascript" src="//code.jquery.com/jquery-2.0.3.min.js"></script> --}}
     <script type="text/javascript" src="{{ asset('vendor/uploadPreview/jquery.uploadPreview.min.js') }}"></script>
     <script type="text/javascript">
         $(document).ready(function() {
@@ -229,13 +211,35 @@
                 label_field: "#image-label"
             });
         });
-        $(document).ready(function() {
-            $.uploadPreview({
-                input_field: "#thumbnail-upload",
-                preview_box: "#thumbnail-preview",
-                label_field: "#thumbnail-label"
-            });
-        });
+
+        document.getElementById("header_video_upload").onchange = function(event) {
+            let file = event.target.files[0];
+            if (file) {
+                const maxSize = 10 * 1024 * 1024;
+
+                if (file.size > maxSize) {
+                    alert("Header video must be less than 10MB.");
+                    event.target.value = "";
+                    return;
+                }
+
+                if (!file.type.startsWith("video/")) {
+                    alert("Please upload a valid video file.");
+                    event.target.value = "";
+                    return;
+                }
+                if (file && file.type.startsWith("video/")) {
+                    let blobURL = URL.createObjectURL(file);
+                    let videoElement = document.getElementById("preview-header-video");
+                    let videoSource = document.getElementById("header-video-source");
+
+                    videoSource.src = blobURL;
+                    videoElement.style.display = "block";
+                    videoElement.load();
+                }
+            }
+        };
+
         $(document).ready(function() {
             $.uploadPreview({
                 input_field: "#video_thumbnail_upload",
@@ -249,13 +253,6 @@
                 let blobURL = URL.createObjectURL(file);
                 document.querySelector("video").src = blobURL;
             };
-        // $(document).ready(function() {
-        //     $.uploadPreview({
-        //         input_field: "#video-upload",
-        //         preview_box: "#video-preview",
-        //         label_field: "#video-label"
-        //     });
-        // });
     </script>
 @endpush
 

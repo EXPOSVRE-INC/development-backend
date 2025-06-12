@@ -52,16 +52,16 @@ class ImageResource extends JsonResource
                 }
 
                 // Always set the thumb URL
-                $data['thumb'] = $this->hasGeneratedConversion('thumb')
-                    ? $this->getUrl('thumb')
+                $data['thumb'] = $this->hasGeneratedConversion('header_video')
+                    ? $this->getUrl('header_video')
                     : $this->getUrl('original');
             } else {
                 // If song_id is not null, return the video URL directly
                 if ($this->type == 'video') {
                     $data['isVideo'] = true;
                     $data['link'] = $this->getUrl();
-                    $data['thumb'] = $this->hasGeneratedConversion('thumb')
-                        ? $this->getUrl('thumb')
+                    $data['thumb'] = $this->hasGeneratedConversion('header_video')
+                        ? $this->getUrl('header_video')
                         : $this->getUrl('original');
                 }
             }
@@ -106,5 +106,4 @@ class ImageResource extends JsonResource
 
         return $data;
     }
-
 }
