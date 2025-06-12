@@ -114,11 +114,11 @@ class PostResource extends JsonResource
 
             if (str_contains($firstMedia->mime_type, 'image')) {
 
-                $thumbUrl = $this->getFirstMediaUrl('thumb');
-                $thumbPath = $this->getFirstMediaPath('thumb');
+                $thumbUrl = $this->getFirstMediaUrl('header_video');
+                $thumbPath = $this->getFirstMediaPath('header_video');
                 if ($thumbPath && file_exists($thumbPath)) {
                     $image = new Imagick($thumbPath);
-                    $data['image'] = $this->getFirstMediaUrl('thumb');
+                    $data['image'] = $this->getFirstMediaUrl('header_video');
                     $data['image_width'] = $image->getImageWidth();;
                     $data['image_height'] = $image->getImageHeight();
                 } elseif (str_contains($firstMedia->mime_type, 'webp')) {
@@ -171,9 +171,9 @@ class PostResource extends JsonResource
         } elseif (count($files) > 1 && (bool)$this->ad == false) {
             $data['thumb'] = $files[0]->getUrl();
         } elseif (count($files) > 1 && (bool)$this->ad == true) {
-            $data['thumb'] = $this->getFirstMediaUrl('thumb');
+            $data['thumb'] = $this->getFirstMediaUrl('header_video') ?? $this->getFirstMediaUrl('thumb');
         } else {
-            $data['thumb'] = $this->getFirstMediaUrl('thumb');
+            $data['thumb'] = $this->getFirstMediaUrl('header_video') ?? $this->getFirstMediaUrl('thumb');
         }
         // Handle video media if 'ad' is set to 1
         if ($this->ad == 1) {

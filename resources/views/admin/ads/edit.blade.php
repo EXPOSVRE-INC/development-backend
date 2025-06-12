@@ -55,18 +55,14 @@
         <label for="thumbnail" class="text-lightblue">
             Header
         </label>
-        <div id="thumbnail-preview"
-            style="background-size: cover; background-position: center center; background-image: url('{{ $post->getFirstMediaUrl('thumb') }}')">
-            <label for="thumbnail-upload" id="thumbnail-label">Choose File</label>
-            <input type="file" name="thumbnail" id="thumbnail-upload" />
-        </div>
+        <label for="header_video" class="text-lightblue">Header Video</label>
+        <input type="file" name="header_video" id="headerVideoUpload" accept="video/*" />
+        <video width="100%" height="300" controls src="{{ $post->getFirstMediaUrl('header_video') }}">
+            Your browser does not support the video tag.
+        </video>
         <label for="file" class="text-lightblue">
             Story
         </label>
-        {{--        <div id="image-preview" style="background-size: cover; background-position: center center; background-image: url('{{$post->getFirstMediaUrl('files')}}')"> --}}
-        {{--            <label for="image-upload" id="image-label">Choose File</label> --}}
-        {{--            <input type="file" name="file" id="image-upload" /> --}}
-        {{--        </div> --}}
         @php
             $files = $post->getMedia('files');
             $initialPreview = [];
@@ -172,33 +168,6 @@
             <label for="video_thumbnail_upload" id="video-thumbnail-label">Choose thumbnail</label>
             <input type="file" name="video_thumbnail" id="video_thumbnail_upload" />
         </div>
-
-        {{--        <x-adminlte-select2 name="interest" label="Category" label-class="text-lightblue" --}}
-        {{--                            igroup-size="md" data-placeholder="Select a category..."> --}}
-        {{--            <x-slot name="prependSlot"> --}}
-        {{--                <div class="input-group-text bg-gradient-info"> --}}
-        {{--                    <i class="fas fa-car-side"></i> --}}
-        {{--                </div> --}}
-        {{--            </x-slot> --}}
-        {{--            <option/> --}}
-        {{--            @foreach ($categories as $category) --}}
-        {{--                <option {{($category->id == $post->interests->first()->id)}} value="{{$category->id}}"> {{$category->name}}</option> --}}
-        {{--            @endforeach --}}
-        {{--        </x-adminlte-select2> --}}
-
-        {{--        <x-adminlte-select2 name="owner_id" label="Creator" label-class="text-lightblue" --}}
-        {{--                            igroup-size="md" data-placeholder="Select an option..."> --}}
-        {{--            <x-slot name="prependSlot"> --}}
-        {{--                <div class="input-group-text bg-gradient-info"> --}}
-        {{--                    <i class="fas fa-user"></i> --}}
-        {{--                </div> --}}
-        {{--            </x-slot> --}}
-        {{--            <option/> --}}
-        {{--            @foreach ($users as $user) --}}
-        {{--                <option value="{{$user->id}}"><img height="25" src="{{$user->getFirstMediaUrl('preview')}}"> {{$user->profile ? $user->profile->firstName . ' ' . $user->profile->lastName : ''}} {{'<' . $user->email . '>'}}</option> --}}
-        {{--            @endforeach --}}
-        {{--        </x-adminlte-select2> --}}
-
         @php
             $config = ['format' => 'DD/MM/YYYY HH:mm'];
             if ($post->publish_date) {
@@ -259,13 +228,12 @@
                 let blobURL = URL.createObjectURL(file);
                 document.querySelector("video").src = blobURL;
             };
-        // $(document).ready(function() {
-        //     $.uploadPreview({
-        //         input_field: "#video-upload",
-        //         preview_box: "#video-preview",
-        //         label_field: "#video-label"
-        //     });
-        // });
+
+        document.getElementById("headerVideoUpload").onchange = function(event) {
+            let file = event.target.files[0];
+            let blobURL = URL.createObjectURL(file);
+            document.querySelector("video").src = blobURL;
+        };
     </script>
 @endpush
 
