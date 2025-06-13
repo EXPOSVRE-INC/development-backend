@@ -162,53 +162,57 @@ Route::group([
         Route::group([
             'prefix' => 'posts',
             'middleware' => ['auth:api']
-        ], function ($router) {
-            Route::get('/', 'PostController@index');
+        ], function () {
+
+            // 🔹 Basic Retrieval
+            Route::get('/saved-posts', 'PostController@getSavedPosts');
+            Route::get('/archived-posts', 'PostController@getArchivedPosts');
             Route::get('/most-crowned', 'PostController@mostCrowned');
             Route::get('/most-viewed', 'PostController@mostViewed');
 
+            Route::get('/', 'PostController@index');
             Route::get('/view/{id}', 'PostController@viewPost');
 
-            Route::get('/', 'PostController@index');
+            // 🔹 Post Creation & Updates
+            Route::post('/create', 'PostController@createPost');
+            Route::post('/{post}', 'PostController@updatePost');
 
-            Route::get('/send-price-request/{id}', 'PaymentController@sendPriceRequest');
+            Route::get('/{post}', 'PostController@getPost');
+            // 🔹 Deletion
+            Route::get('/delete/{post}', 'PostController@deletePost');
 
-            Route::get('/accept-price-request/{id}', 'PaymentController@acceptRequest');
-            Route::get('/decline-price-request/{id}', 'PaymentController@declineRequest');
+            // 🔹 Media Uploads
+            Route::post('/upload', 'PostController@fileUploader');
+            Route::post('/multiple-file-upload', 'PostController@multipleFileUploader');
+            Route::get('/get-files', 'PostController@getAllPostImages');
+            Route::post('/drop-file-by-uuid', 'PostController@dropFileByUuid');
+            Route::get('/drop-files', 'PostController@dropFiles');
 
-
+            // 🔹 Search & Filters
             Route::post('/search', 'PostController@search');
             Route::post('/search-tag', 'PostController@searchPostsByTag');
             Route::post('/search-interest', 'PostController@searchPostsByInterest');
 
-            Route::post('upload', 'PostController@fileUploader');
-            Route::post('multiple-file-upload', 'PostController@multipleFileUploader');
-            Route::get('get-files', 'PostController@getAllPostImages');
-            Route::post('drop-file-by-uuid', 'PostController@dropFileByUuid');
-            Route::get('drop-files', 'PostController@dropFiles');
-
-            Route::get('/{post}', 'PostController@getPost');
-
-            Route::get('/{post}/comments', 'PostController@getComments');
-            Route::post('/{post}/comment', 'PostController@setComment');
-
-            Route::post('/create', 'PostController@createPost');
-
-            Route::post('/{post}', 'PostController@updatePost');
-
-            Route::get('/delete/{post}', 'PostController@deletePost');
-
+            // 🔹 Interactions: Likes, Favorites, Comments
             Route::get('/like/{post}', 'PostController@likePost');
             Route::get('/unlike/{post}', 'PostController@unlikePost');
 
             Route::get('/add-favorite/{post}', 'PostController@favoritePost');
             Route::get('/remove-favorite/{post}', 'PostController@unfavoritePost');
 
+            Route::get('/{post}/comments', 'PostController@getComments');
+            Route::post('/{post}/comment', 'PostController@setComment');
+
+            // 🔹 Post State: Archive, Repost, Saved
             Route::get('/archive/{post}', 'PostController@addToArchive');
             Route::get('/remove-archive/{post}', 'PostController@removeFromArchive');
-
-
             Route::get('/repost/{post}', 'PostController@repost');
+
+
+            // 🔹 Price Request Handling
+            Route::get('/send-price-request/{id}', 'PaymentController@sendPriceRequest');
+            Route::get('/accept-price-request/{id}', 'PaymentController@acceptRequest');
+            Route::get('/decline-price-request/{id}', 'PaymentController@declineRequest');
 
             Route::group([
                 'prefix' => 'interestsCategory',
