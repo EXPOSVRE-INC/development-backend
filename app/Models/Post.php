@@ -72,7 +72,8 @@ class Post extends Model implements HasMedia
     {
         return $this->belongsTo(PostCollection::class);
     }
-    public function song(){
+    public function song()
+    {
         return $this->belongsTo(Song::class);
     }
 
@@ -81,7 +82,7 @@ class Post extends Model implements HasMedia
         $this
             ->addMediaConversion('preview')
             ->extractVideoFrameAtSecond(1)
-//            ->fit(Manipulations::FIT_CROP, 300, 300)
+            //            ->fit(Manipulations::FIT_CROP, 300, 300)
             ->width(300)
             ->quality(100)
             ->sharpen(10)
@@ -89,7 +90,7 @@ class Post extends Model implements HasMedia
         $this
             ->addMediaConversion('small')
             ->extractVideoFrameAtSecond(1)
-//            ->fit(Manipulations::FIT_CROP, 48, 48)
+            //            ->fit(Manipulations::FIT_CROP, 48, 48)
             ->width(48)
             ->quality(100)
             ->sharpen(10)
@@ -98,7 +99,7 @@ class Post extends Model implements HasMedia
         $this
             ->addMediaConversion('original')
             ->extractVideoFrameAtSecond(1)
-//            ->fit(Manipulations::FIT_CROP, 640, 640)
+            //            ->fit(Manipulations::FIT_CROP, 640, 640)
             ->width(640)
             ->quality(100)
             ->sharpen(10)
@@ -120,7 +121,7 @@ class Post extends Model implements HasMedia
             }
         }
         $assignments[] = InterestsPostAssigment::create(['interest_id' => $id, 'post_id' => $this->id]);
-//        $this->interestAssignments = $assignments;
+        //        $this->interestAssignments = $assignments;
     }
 
     public function revokeInterest($id): void
@@ -160,15 +161,18 @@ class Post extends Model implements HasMedia
         return $this->belongsTo(Post::class, 'parent_id');
     }
 
-    public function intervals() {
+    public function intervals()
+    {
         return $this->hasMany(LiveExpirience::class, 'post_id', 'id');
     }
 
-    public function orders() {
+    public function orders()
+    {
         return $this->hasMany(Order::class, 'post_id', 'id');
     }
 
-    public function requests() {
+    public function requests()
+    {
         return $this->hasMany(PriceRequest::class, 'post_id', 'id');
     }
 
@@ -187,5 +191,10 @@ class Post extends Model implements HasMedia
         )
             ->where('likeable_type', $this->getMorphClass())
             ->whereDate('likes.created_at', '>=', Carbon::today()->subDays(1));
+    }
+
+    public function favoriters()
+    {
+        return $this->morphToMany(User::class, 'favoriteable', 'favorites', 'favoriteable_id', 'user_id');
     }
 }
