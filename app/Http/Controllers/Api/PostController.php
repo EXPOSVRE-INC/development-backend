@@ -1382,4 +1382,28 @@ class PostController extends Controller
             'data' => PostImagePreviewResource::collection($media),
         ]);
     }
+
+    public function getArchivedPosts()
+    {
+        $posts = Post::where('is_archived', true)->latest()->get();
+
+        if ($posts->isEmpty()) {
+            return response()->json(['data' => []], 404);
+        }
+
+        return response()->json(['data' => PostResource::collection($posts)], 200);
+    }
+
+    public function getSavedPosts()
+    {
+        $user = auth('api')->user();
+
+        $favoritedPosts = $user->favoritePosts()->latest()->get();
+
+        if ($favoritedPosts->isEmpty()) {
+            return response()->json(['data' => []], 404);
+        }
+
+        return response()->json(['data' => PostResource::collection($favoritedPosts)], 200);
+    }
 }
