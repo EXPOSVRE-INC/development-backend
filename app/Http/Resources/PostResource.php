@@ -109,61 +109,74 @@ class PostResource extends JsonResource
         ];
         //        dd($this->getMedia('files'));
 
-        if ($firstMedia = $this->getFirstMedia('files')) {
-            $data['image'] = $this->getFirstMediaUrl('files');
 
-            if (str_contains($firstMedia->mime_type, 'image')) {
 
-                $thumbUrl = $this->getFirstMediaUrl('header_video');
-                $thumbPath = $this->getFirstMediaPath('header_video');
-                if ($thumbPath && file_exists($thumbPath)) {
+        $headerVideoMedia = $this->getFirstMedia('header_video');
+        if ($headerVideoMedia) {
+            $data['header_video'] = $this->getFirstMediaUrl('header_video');
+            // Get thumbnail URL and path
+            $thumbUrl = $headerVideoMedia->getUrl('original'); // or 'header_small'
+            $thumbPath = $headerVideoMedia->getPath('original');
+
+            if ($thumbPath && file_exists($thumbPath)) {
+                try {
                     $image = new Imagick($thumbPath);
-                    $data['image'] = $this->getFirstMediaUrl('header_video');
-                    $data['image_width'] = $image->getImageWidth();;
+                    $data['image'] = $thumbUrl;
+                    $data['image_width'] = $image->getImageWidth();
                     $data['image_height'] = $image->getImageHeight();
-                } elseif (str_contains($firstMedia->mime_type, 'webp')) {
-                    $data['image_height'] = 160;
-                    $data['image_width'] = 160;
-                } else {
-                    $mediaPath = $firstMedia->getPath('original');
-                    if (!empty($mediaPath) && file_exists($mediaPath)) {
-                        $image = ImageFactory::load($mediaPath);
-                        $data['image_height'] = $image->getHeight();
-                        $data['image_width'] = $image->getWidth();
-                    } else {
-                        $data['image_height'] = 0;
-                        $data['image_width'] = 0;
-                    }
-                }
-            } elseif (str_contains($firstMedia->mime_type, 'video')) {
-                $data['image'] = $this->getFirstMediaUrl('files', 'original');
-                $mediaPath = $firstMedia->getPath('original');
-
-                if (!empty($mediaPath) && file_exists($mediaPath)) {
-                    $ffmpeg = FFMpeg::create();
-                    $video = $ffmpeg->open($mediaPath);
-
-                    $dimension = $video
-                        ->getStreams()
-                        ->videos()
-                        ->first()
-                        ->getDimensions();
-                    $data['image_height'] = $dimension->getHeight();
-                    $data['image_width'] = $dimension->getWidth();
-                } else {
-                    $data['image_height'] = 0;
+                } catch (\Exception $e) {
+                    $data['image'] = $thumbUrl;
                     $data['image_width'] = 0;
+                    $data['image_height'] = 0;
                 }
+            } else {
+                // Thumbnail path does not exist
+                $data['image'] = $thumbUrl;
+                $data['image_width'] = 0;
+                $data['image_height'] = 0;
             }
         } else {
-            $data['image'] = null;
-            $data['image_height'] = 0;
-            $data['image_width'] = 0;
+            // Fallback: use first media from files collection
+            $files = $this->getMedia('files');
+            if (count($files) > 0) {
+                $data['image'] = $files[0]->getUrl('original');
+
+                $mediaPath = $files[0]->getPath('original');
+                if (!empty($mediaPath) && file_exists($mediaPath)) {
+                    if (str_contains($files[0]->mime_type, 'image')) {
+                        try {
+                            $image = new Imagick($mediaPath);
+                            $data['image_width'] = $image->getImageWidth();
+                            $data['image_height'] = $image->getImageHeight();
+                        } catch (\Exception $e) {
+                            $data['image_width'] = 0;
+                            $data['image_height'] = 0;
+                        }
+                    } elseif (str_contains($files[0]->mime_type, 'video')) {
+                        try {
+                            $ffmpeg = FFMpeg::create();
+                            $video = $ffmpeg->open($mediaPath);
+                            $dimension = $video->getStreams()->videos()->first()->getDimensions();
+                            $data['image_width'] = $dimension->getWidth();
+                            $data['image_height'] = $dimension->getHeight();
+                        } catch (\Exception $e) {
+                            $data['image_width'] = 0;
+                            $data['image_height'] = 0;
+                        }
+                    } else {
+                        $data['image_width'] = 0;
+                        $data['image_height'] = 0;
+                    }
+                } else {
+                    $data['image_width'] = 0;
+                    $data['image_height'] = 0;
+                }
+            } else {
+                $data['image'] = null;
+                $data['image_width'] = 0;
+                $data['image_height'] = 0;
+            }
         }
-
-        // $thumbUrl = $this->getFirstMediaUrl('thumb');
-        // $data['thumb'] = !empty($thumbUrl) ? $thumbUrl : $this->getFirstMediaUrl('files', 'original');
-
         $files = $this->getMedia('files');
 
         if (count($files) === 1) {
@@ -171,9 +184,9 @@ class PostResource extends JsonResource
         } elseif (count($files) > 1 && (bool)$this->ad == false) {
             $data['thumb'] = $files[0]->getUrl();
         } elseif (count($files) > 1 && (bool)$this->ad == true) {
-            $data['thumb'] = $this->getFirstMediaUrl('header_video') ?? $this->getFirstMediaUrl('thumb');
+            $data['thumb'] = $headerVideoMedia->getUrl('original')  ?? $this->getFirstMediaUrl('thumb');
         } else {
-            $data['thumb'] = $this->getFirstMediaUrl('header_video') ?? $this->getFirstMediaUrl('thumb');
+            $data['thumb'] = $headerVideoMedia->getUrl('original')  ?? $this->getFirstMediaUrl('thumb');
         }
         // Handle video media if 'ad' is set to 1
         if ($this->ad == 1) {

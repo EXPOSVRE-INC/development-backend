@@ -164,8 +164,9 @@ Route::group([
             'middleware' => ['auth:api']
         ], function () {
 
-            // 🔹 Basic Retrieval
+            Route::get('/{post}', 'PostController@getPost');
             Route::get('/saved-posts', 'PostController@getSavedPosts');
+            // 🔹 Basic Retrieval
             Route::get('/archived-posts', 'PostController@getArchivedPosts');
             Route::get('/most-crowned', 'PostController@mostCrowned');
             Route::get('/most-viewed', 'PostController@mostViewed');
@@ -177,7 +178,6 @@ Route::group([
             Route::post('/create', 'PostController@createPost');
             Route::post('/{post}', 'PostController@updatePost');
 
-            Route::get('/{post}', 'PostController@getPost');
             // 🔹 Deletion
             Route::get('/delete/{post}', 'PostController@deletePost');
 
