@@ -687,4 +687,79 @@ class AuthController extends Controller
 
         return new UserResource($user);
     }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth('api')->user();
+        $profile = UserProfile::firstOrNew(['user_id' => $user->id]);
+
+        if ($request->has('username')) {
+            $requestedUsername = $request->get('username');
+            $usernameExists = \App\Models\User::where('username', $requestedUsername)
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            if ($usernameExists) {
+                return response()->json(['error' => 'Username is already taken'], 422);
+            }
+
+            $user->username = $requestedUsername;
+        }
+
+        // Save user fields
+        if ($request->has('twoFactorEnabled')) {
+            $user->twoFactorEnabled = (bool) $request->get('twoFactorEnabled');
+        }
+        $user->save();
+
+        // Update profile fields
+        if ($request->has('firstName')) {
+            $profile->firstName = $request->get('firstName');
+        }
+
+        if ($request->has('lastName')) {
+            $profile->lastName = $request->get('lastName');
+        }
+        $birthDateInput = $request->get('birthDate');
+        if ($birthDateInput) {
+            if (!empty($birthDateInput)) {
+                try {
+                    $profile->birthDate = Carbon::createFromFormat('d/m/Y', $birthDateInput)->toDateString();
+                } catch (\Carbon\Exceptions\InvalidFormatException $e) {
+                    $profile->birthDate = null; // or ''
+                }
+            } else {
+                $profile->birthDate = null; // or ''
+            }
+        }
+
+        if ($request->has('phone')) {
+            $profile->phone = $request->get('phone');
+        }
+
+        if ($request->has('jobTitle')) {
+            $profile->jobTitle = $request->get('jobTitle');
+        }
+
+        if ($request->has('jobDescription')) {
+            $profile->jobDescription = $request->get('jobDescription');
+        }
+
+        if ($request->has('website')) {
+            $profile->website = $request->get('website');
+        }
+
+        if ($request->has('instagram')) {
+            $profile->instagram = $request->get('instagram');
+        }
+
+        if ($request->has('twitter')) {
+            $profile->twitter = $request->get('twitter');
+        }
+
+        $profile->user_id = $user->id;
+        $profile->save();
+
+        return response()->json(['data' => new UserResource($user)]);
+    }
 }
