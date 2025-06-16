@@ -820,4 +820,15 @@ class UserController extends Controller
             ],
         ]);
     }
+
+    public function deleteAvatar(Request $request)
+    {
+        $user = auth('api')->user();
+
+        $user->clearMediaCollection('preview');
+
+        return response()->json([
+            'message' => 'Avatar deleted successfully',
+        ]);
+    }
 }
