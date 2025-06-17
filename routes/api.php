@@ -224,42 +224,30 @@ Route::group([
 
         Route::get('remove-user', 'UserController@delete')->middleware(['auth:api']);
 
+
         Route::group([
             'prefix' => 'user',
             'middleware' => ['auth:api']
         ], function ($router) {
-            Route::get('/{id}', 'UserController@userInfo');
-            Route::get('/by-username/{username}', 'UserController@userInfoByUsername');
 
-            Route::get('/market-like/{id}', 'UserController@marketLike');
-
-            Route::get('/market-unlike/{id}', 'UserController@marketUnlike');
-
-            Route::get('/{id}/subscribe', 'UserController@subscribe');
-            Route::get('/{id}/unsubscribe', 'UserController@unsubscribe');
-
-
-            Route::get('/block/{id}', 'UserController@blockUser');
+            // 🔹 SPECIFIC ROUTES FIRST (no parameters)
             Route::get('/blocked/list', 'UserController@blockedList');
-            Route::get('/unblock/{id}', 'UserController@unblockUser');
-
-            Route::post('/feed', 'UserController@feed');
             Route::get('/feeds/main', 'UserController@mainFeed');
             Route::get('/feeds/editorial', 'UserController@editorial');
             Route::get('/feeds/market', 'UserController@market');
 
+            // 🔹 POST ROUTES (specific endpoints)
+            Route::post('/feed', 'UserController@feed');
             Route::post('/set-push-token', 'UserController@setToken');
-
             Route::post('/avatar-upload', 'UserController@avatarUpload');
+            Route::post('/tag/assign', 'UserController@assignTag');
+            Route::post('/tag/remove', 'UserController@removeTag');
+            Route::post('/sort-posts', 'PostController@sortPostsOrderForDashboard');
+
+            // 🔹 DELETE ROUTES
             Route::delete('/avatar-delete', 'UserController@deleteAvatar');
 
-            Route::get('/{id}/posts', 'UserController@userPosts');
-
-            Route::post('/tag/assign', 'UserController@assignTag');
-
-            Route::post('/tag/remove', 'UserController@removeTag');
-
-            Route::post('/sort-posts', 'PostController@sortPostsOrderForDashboard');
+            // 🔹 NESTED ROUTE GROUPS
             Route::group([
                 'prefix' => 'interests',
             ], function ($router) {
@@ -267,63 +255,81 @@ Route::group([
                 Route::post('/assign', 'UserController@assignInterest');
                 Route::post('/assign/array', 'UserController@assignInterestArray');
             });
-            Route::group([
-                'prefix' => 'not-interests',
-            ], function ($router) {
-                Route::post('/assign', 'UserController@assignNotInterest');
-                Route::post('/assign/array', 'UserController@assignNotInterestArray');
-            });
+
+            // 🔹 SPECIFIC PARAMETERIZED ROUTES (more specific patterns)
+            Route::get('/by-username/{username}', 'UserController@userInfoByUsername');
+
+            // 🔹 SINGLE PARAMETER ROUTES (less specific)
+            Route::get('/market-like/{id}', 'UserController@marketLike');
+            Route::get('/market-unlike/{id}', 'UserController@marketUnlike');
+            Route::get('/block/{id}', 'UserController@blockUser');
+            Route::get('/unblock/{id}', 'UserController@unblockUser');
+
+            // 🔹 ROUTES WITH PATH SEGMENTS AFTER PARAMETERS
+            Route::get('/{id}/subscribe', 'UserController@subscribe');
+            Route::get('/{id}/unsubscribe', 'UserController@unsubscribe');
+            Route::get('/{id}/posts', 'UserController@userPosts');
+
+            // 🔹 MOST GENERIC ROUTE LAST
+            Route::get('/{id}', 'UserController@userInfo');
         });
-
-        Route::get('/test-video-stream', 'VideoController@streamVideo');
-
-        Route::get('/test-text', 'VideoController@testText');
-
-        Route::get('/test-image', 'VideoController@testImage');
-
-        Route::get('/test-image-1', 'VideoController@testImage1');
-
-        Route::get('/test-image-2', 'VideoController@testImage2');
-
-        Route::get('/get-video-stream/{uuid}', 'VideoController@streamVideoByUuid')->name('video-stream');
-
         Route::group([
-            'prefix' => 'interests',
-            'middleware' => ['auth:api']
+            'prefix' => 'not-interests',
         ], function ($router) {
-            Route::get('/', 'CategoryInterestsController@index');
-        });
-
-        Route::group([
-            'prefix' => 'conversations',
-            'middleware' => ['auth:api']
-        ], function ($router) {
-            Route::get('/', [ChatController::class, 'index']); // List all conversations
-            Route::get('/chat/fetch-message', [ChatController::class, 'getMessage']);
-            Route::post('/chat/send-message', [ChatController::class, 'sendMessage']);
-            Route::put('/chat/read-message/{chatId}', [ChatController::class, 'readMessage']);
-            Route::put('/chat/edit-message/{chatId}', [ChatController::class, 'editMessage']);
-            Route::delete('/chat/delete-message/{chatId}', [ChatController::class, 'deleteMessage']);
-        });
-
-
-        Route::group([
-            'prefix' => 'songs',
-            'middleware' => ['auth:api']
-        ], function ($router) {
-            Route::get('/genres', [MusicController::class, 'getGenres']); // List all conversations
-            Route::get('/moods', [MusicController::class, 'getMoods']);
-            Route::get('/list', [MusicController::class, 'songList']);
-            Route::get('/unlike/{id}', [MusicController::class, 'unlikeSong']);
-            Route::get('/detail/{id}', [MusicController::class, 'songDetail']);
-            Route::get('/like/{id}', [MusicController::class, 'likeSong']);
-            Route::get('/view/{id}', [MusicController::class, 'viewSong']);
-            Route::get('/add-favorite/{song}', [MusicController::class, 'favoriteSong']);
-            Route::get('/remove-favorite/{song}', [MusicController::class, 'unfavoriteSong']);
-            Route::post('comment/{id}', [MusicController::class, 'commentSong']);
-            Route::get('comments-list/{id}', [MusicController::class, 'songListComments']);
-
-            Route::get('/download/{id}', [MusicController::class, 'download']);
+            Route::post('/assign', 'UserController@assignNotInterest');
+            Route::post('/assign/array', 'UserController@assignNotInterestArray');
         });
     });
+
+    Route::get('/test-video-stream', 'VideoController@streamVideo');
+
+    Route::get('/test-text', 'VideoController@testText');
+
+    Route::get('/test-image', 'VideoController@testImage');
+
+    Route::get('/test-image-1', 'VideoController@testImage1');
+
+    Route::get('/test-image-2', 'VideoController@testImage2');
+
+    Route::get('/get-video-stream/{uuid}', 'VideoController@streamVideoByUuid')->name('video-stream');
+
+    Route::group([
+        'prefix' => 'interests',
+        'middleware' => ['auth:api']
+    ], function ($router) {
+        Route::get('/', 'CategoryInterestsController@index');
+    });
+
+    Route::group([
+        'prefix' => 'conversations',
+        'middleware' => ['auth:api']
+    ], function ($router) {
+        Route::get('/', [ChatController::class, 'index']); // List all conversations
+        Route::get('/chat/fetch-message', [ChatController::class, 'getMessage']);
+        Route::post('/chat/send-message', [ChatController::class, 'sendMessage']);
+        Route::put('/chat/read-message/{chatId}', [ChatController::class, 'readMessage']);
+        Route::put('/chat/edit-message/{chatId}', [ChatController::class, 'editMessage']);
+        Route::delete('/chat/delete-message/{chatId}', [ChatController::class, 'deleteMessage']);
+    });
+
+
+    Route::group([
+        'prefix' => 'songs',
+        'middleware' => ['auth:api']
+    ], function ($router) {
+        Route::get('/genres', [MusicController::class, 'getGenres']); // List all conversations
+        Route::get('/moods', [MusicController::class, 'getMoods']);
+        Route::get('/list', [MusicController::class, 'songList']);
+        Route::get('/unlike/{id}', [MusicController::class, 'unlikeSong']);
+        Route::get('/detail/{id}', [MusicController::class, 'songDetail']);
+        Route::get('/like/{id}', [MusicController::class, 'likeSong']);
+        Route::get('/view/{id}', [MusicController::class, 'viewSong']);
+        Route::get('/add-favorite/{song}', [MusicController::class, 'favoriteSong']);
+        Route::get('/remove-favorite/{song}', [MusicController::class, 'unfavoriteSong']);
+        Route::post('comment/{id}', [MusicController::class, 'commentSong']);
+        Route::get('comments-list/{id}', [MusicController::class, 'songListComments']);
+
+        Route::get('/download/{id}', [MusicController::class, 'download']);
+    });
 });
+// });
