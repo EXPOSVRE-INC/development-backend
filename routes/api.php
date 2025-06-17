@@ -273,63 +273,65 @@ Route::group([
             // 🔹 MOST GENERIC ROUTE LAST
             Route::get('/{id}', 'UserController@userInfo');
         });
+
         Route::group([
             'prefix' => 'not-interests',
         ], function ($router) {
             Route::post('/assign', 'UserController@assignNotInterest');
             Route::post('/assign/array', 'UserController@assignNotInterestArray');
         });
-    });
-
-    Route::get('/test-video-stream', 'VideoController@streamVideo');
-
-    Route::get('/test-text', 'VideoController@testText');
-
-    Route::get('/test-image', 'VideoController@testImage');
-
-    Route::get('/test-image-1', 'VideoController@testImage1');
-
-    Route::get('/test-image-2', 'VideoController@testImage2');
-
-    Route::get('/get-video-stream/{uuid}', 'VideoController@streamVideoByUuid')->name('video-stream');
-
-    Route::group([
-        'prefix' => 'interests',
-        'middleware' => ['auth:api']
-    ], function ($router) {
-        Route::get('/', 'CategoryInterestsController@index');
-    });
-
-    Route::group([
-        'prefix' => 'conversations',
-        'middleware' => ['auth:api']
-    ], function ($router) {
-        Route::get('/', [ChatController::class, 'index']); // List all conversations
-        Route::get('/chat/fetch-message', [ChatController::class, 'getMessage']);
-        Route::post('/chat/send-message', [ChatController::class, 'sendMessage']);
-        Route::put('/chat/read-message/{chatId}', [ChatController::class, 'readMessage']);
-        Route::put('/chat/edit-message/{chatId}', [ChatController::class, 'editMessage']);
-        Route::delete('/chat/delete-message/{chatId}', [ChatController::class, 'deleteMessage']);
-    });
 
 
-    Route::group([
-        'prefix' => 'songs',
-        'middleware' => ['auth:api']
-    ], function ($router) {
-        Route::get('/genres', [MusicController::class, 'getGenres']); // List all conversations
-        Route::get('/moods', [MusicController::class, 'getMoods']);
-        Route::get('/list', [MusicController::class, 'songList']);
-        Route::get('/unlike/{id}', [MusicController::class, 'unlikeSong']);
-        Route::get('/detail/{id}', [MusicController::class, 'songDetail']);
-        Route::get('/like/{id}', [MusicController::class, 'likeSong']);
-        Route::get('/view/{id}', [MusicController::class, 'viewSong']);
-        Route::get('/add-favorite/{song}', [MusicController::class, 'favoriteSong']);
-        Route::get('/remove-favorite/{song}', [MusicController::class, 'unfavoriteSong']);
-        Route::post('comment/{id}', [MusicController::class, 'commentSong']);
-        Route::get('comments-list/{id}', [MusicController::class, 'songListComments']);
+        Route::get('/test-video-stream', 'VideoController@streamVideo');
 
-        Route::get('/download/{id}', [MusicController::class, 'download']);
+        Route::get('/test-text', 'VideoController@testText');
+
+        Route::get('/test-image', 'VideoController@testImage');
+
+        Route::get('/test-image-1', 'VideoController@testImage1');
+
+        Route::get('/test-image-2', 'VideoController@testImage2');
+
+        Route::get('/get-video-stream/{uuid}', 'VideoController@streamVideoByUuid')->name('video-stream');
+
+        Route::group([
+            'prefix' => 'interests',
+            'middleware' => ['auth:api']
+        ], function ($router) {
+            Route::get('/', 'CategoryInterestsController@index');
+        });
+
+        Route::group([
+            'prefix' => 'conversations',
+            'middleware' => ['auth:api']
+        ], function ($router) {
+            Route::get('/', [ChatController::class, 'index']); // List all conversations
+            Route::get('/chat/fetch-message', [ChatController::class, 'getMessage']);
+            Route::post('/chat/send-message', [ChatController::class, 'sendMessage']);
+            Route::put('/chat/read-message/{chatId}', [ChatController::class, 'readMessage']);
+            Route::put('/chat/edit-message/{chatId}', [ChatController::class, 'editMessage']);
+            Route::delete('/chat/delete-message/{chatId}', [ChatController::class, 'deleteMessage']);
+        });
+
+
+        Route::group([
+            'prefix' => 'songs',
+            'middleware' => ['auth:api']
+        ], function ($router) {
+            Route::get('/genres', [MusicController::class, 'getGenres']); // List all conversations
+            Route::get('/moods', [MusicController::class, 'getMoods']);
+            Route::get('/list', [MusicController::class, 'songList']);
+            Route::get('/unlike/{id}', [MusicController::class, 'unlikeSong']);
+            Route::get('/detail/{id}', [MusicController::class, 'songDetail']);
+            Route::get('/like/{id}', [MusicController::class, 'likeSong']);
+            Route::get('/view/{id}', [MusicController::class, 'viewSong']);
+            Route::get('/add-favorite/{song}', [MusicController::class, 'favoriteSong']);
+            Route::get('/remove-favorite/{song}', [MusicController::class, 'unfavoriteSong']);
+            Route::post('comment/{id}', [MusicController::class, 'commentSong']);
+            Route::get('comments-list/{id}', [MusicController::class, 'songListComments']);
+
+            Route::get('/download/{id}', [MusicController::class, 'download']);
+        });
     });
 });
 // });
