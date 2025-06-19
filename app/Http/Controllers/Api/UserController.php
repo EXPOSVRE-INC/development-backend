@@ -840,4 +840,13 @@ class UserController extends Controller
             'message' => 'Avatar deleted successfully',
         ]);
     }
+
+    public function notifictionPreferenceSetting(Request $request)
+    {
+        $user = auth('api')->user();
+
+        $userSetting = UserSettings::where('user_id', $user->id)->first();
+
+        return response()->json(['data' => $userSetting]);
+    }
 }
