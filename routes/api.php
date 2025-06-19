@@ -52,8 +52,8 @@ Route::group([
             Route::post('two-fa-verify-phone-code', 'AuthController@twoFaVerifyPhoneCode');
 
 
-            Route::post('email-send-code', 'AuthController@verifyEmail');
-            Route::post('verify-email-code', 'AuthController@verifyEmailCode');
+            Route::post('email-send-code', 'AuthController@sendEmailOTP');
+            Route::post('verify-email-code', 'AuthController@verifyEmailOTP');
 
             Route::post('logout', 'AuthController@logout');
             Route::post('change-password', 'AuthController@changePassword');

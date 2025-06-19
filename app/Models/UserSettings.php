@@ -15,7 +15,14 @@ class UserSettings extends Model
         'id',
         'user_id',
         'followersHidden',
-        'followedHidden'
+        'followedHidden',
+        'notify_phone_verification',
+        'notify_new_message',
+        'notify_new_comment',
+        'notify_new_crowned_post',
+        'notify_new_follow',
+        'notify_new_sale',
+        'notify_price_request'
     ];
 
     public function user()

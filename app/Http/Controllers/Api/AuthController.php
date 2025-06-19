@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Requests\RegisterProfileRequest;
-use App\Http\Requests\RegisterUserRequest;
 use App\Http\Resources\PaymentCardResource;
 use App\Http\Resources\UserAddressResource;
-use App\Http\Resources\UserProfileResource;
 use App\Http\Resources\UserResource;
 use App\Http\Service\StripeService;
 use App\Mail\ResetPassword;
@@ -21,11 +18,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
-use Stripe\Customer;
-use Stripe\StripeClient;
 use Twilio\Rest\Client;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\Cache;
+use App\Mail\EmailVerificationOTP;
 
 class AuthController extends Controller
 {
@@ -345,9 +341,43 @@ class AuthController extends Controller
         }
     }
 
-    public function verifyEmail(Request $request) {}
+    public function sendEmailOTP(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
 
-    public function verifyEmailCode(Request $request) {}
+        $user = auth('api')->user();
+
+        $otp = rand(1000, 9999);
+
+        Cache::put('email_otp_' . $user->id, $otp, now()->addMinutes(10));
+
+        Mail::to($request->email)->send(new EmailVerificationOTP($otp));
+
+        return response()->json(['message' => 'Verification code has been sent to your email. Please check your inbox.']);
+    }
+
+    public function verifyEmailOTP(Request $request)
+    {
+        $request->validate([
+            'otp' => 'required|numeric',
+        ]);
+
+        $user = auth('api')->user();
+        $cachedOtp = Cache::get('email_otp_' . $user->id);
+
+        if ($cachedOtp && $request->otp == $cachedOtp) {
+            Cache::forget('email_otp_' . $user->id);
+
+            $user->email_verified_at = now();
+            $user->save();
+
+            return response()->json(['message' => 'Your email has been verified successfully! Welcome EXPOSVRE.']);
+        }
+
+        return response()->json(['message' => 'Invalid or expired OTP'], 403);
+    }
 
     /**
      * Get the token array structure.

@@ -573,16 +573,25 @@ class UserController extends Controller
     public function setupSettings(Request $request)
     {
         $user = auth('api')->user();
+        $data = $request->only([
+            'followersHidden',
+            'followedHidden',
+            'notify_phone_verification',
+            'notify_new_message',
+            'notify_new_comment',
+            'notify_new_crowned_post',
+            'notify_new_follow',
+            'notify_new_sale',
+            'notify_price_request'
+        ]);
+
         if ($user->setting) {
-            $user->setting->update(
-                $request->only('followersHidden', 'followedHidden')
-            );
+            $user->setting->update($data);
             $setting = $user->setting;
         } else {
             $setting = new UserSettings();
+            $setting->fill($data);
             $setting->user_id = $user->id;
-            $setting->followersHidden = $request->get('followersHidden');
-            $setting->followedHidden = $request->get('followedHidden');
             $setting->save();
         }
 
