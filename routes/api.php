@@ -124,6 +124,7 @@ Route::group([
         ], function ($router) {
             Route::get('/milestones', 'UserController@milestones');
             Route::post('/setup', 'UserController@setupSettings');
+            Route::get('/notification-preference', 'UserController@notifictionPreferenceSetting');
         });
 
         Route::group([
