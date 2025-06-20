@@ -20,6 +20,7 @@ use App\Models\Conversation;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Block;
+use App\Models\InterestsUserAssigment;
 use App\Models\UserSettings;
 use App\Models\UserShippingAddress;
 use App\Notifications\NewSubscription;
@@ -94,28 +95,36 @@ class UserController extends Controller
 
     public function assignNotInterestArray(Request $request)
     {
-        $interests = $request->get('interests');
-        auth('api')
-            ->user()
-            ->revokeNotInterests();
+        $interests = $request->get('interests'); // array of names
+        $user = auth('api')->user();
+
+        // Remove all current "not interested" assignments
+        $user->revokeNotInterests();
+
+        $invalidInterests = [];
 
         if (is_array($interests)) {
-            foreach ($interests as $interest) {
+            foreach ($interests as $interestName) {
+                if (!$interestName) {
+                    continue;
+                }
+
+                // Search interest by name
+                $interest = InterestsCategory::where('name', $interestName)->first();
+
                 if ($interest) {
-                    $findInterest = InterestsCategory::where([
-                        'name' => $interest,
-                    ])->first();
-                    auth('api')
-                        ->user()
-                        ->assignNotInterest($findInterest->id);
+                    $user->assignNotInterest($interest->id);
+                } else {
+                    $invalidInterests[] = $interestName;
                 }
             }
         }
-        auth('api')
-            ->user()
-            ->refresh();
+
+        $user->refresh();
+
         return InterestsResource::collection(auth('api')->user()->notInterests);
     }
+
 
     public function assignTag(Request $request)
     {
@@ -848,5 +857,47 @@ class UserController extends Controller
         $userSetting = UserSettings::where('user_id', $user->id)->first();
 
         return response()->json(['data' => $userSetting]);
+    }
+
+    public function removeNotInterestArray(Request $request)
+    {
+        $interests = $request->get('interests');
+        $user = auth('api')->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        // Convert comma-separated string to array if needed
+        if (is_string($interests)) {
+            $interests = array_map('trim', explode(',', $interests));
+        }
+
+        if (!is_array($interests) || empty($interests)) {
+            return response()->json(['error' => 'Invalid input. Provide a list of interest names.'], 422);
+        }
+
+        $removedIds = [];
+
+        foreach ($interests as $interestName) {
+            if (!$interestName) continue;
+
+            $interest = InterestsCategory::whereRaw('LOWER(name) = ?', [strtolower($interestName)])->first();
+
+            if ($interest) {
+                $deleted = InterestsUserAssigment::where('user_id', $user->id)
+                    ->where('interest_id', $interest->id)
+                    ->where('type', 'interest') // or 'not-interest' if needed
+                    ->delete();
+
+                if ($deleted) {
+                    $removedIds[] = $interest->id;
+                }
+            }
+        }
+
+        return response()->json([
+            'data' => $removedIds
+        ]);
     }
 }

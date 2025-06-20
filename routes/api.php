@@ -273,13 +273,14 @@ Route::group([
 
             // 🔹 MOST GENERIC ROUTE LAST
             Route::get('/{id}', 'UserController@userInfo');
-        });
 
-        Route::group([
-            'prefix' => 'not-interests',
-        ], function ($router) {
-            Route::post('/assign', 'UserController@assignNotInterest');
-            Route::post('/assign/array', 'UserController@assignNotInterestArray');
+            Route::group([
+                'prefix' => 'not-interests',
+            ], function ($router) {
+                Route::post('/assign', 'UserController@assignNotInterest');
+                Route::post('/assign/array', 'UserController@assignNotInterestArray');
+                Route::post('/remove/array', 'UserController@removeNotInterestArray');
+            });
         });
 
 
