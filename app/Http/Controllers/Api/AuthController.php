@@ -349,6 +349,13 @@ class AuthController extends Controller
 
         $user = auth('api')->user();
 
+        if ($request->email !== $user->email) {
+            return response()->json([
+                'message' => 'This email does not match the logged-in user. Please enter your registered email address.'
+            ], 403);
+        }
+
+
         $otp = rand(1000, 9999);
 
         Cache::put('email_otp_' . $user->id, $otp, now()->addMinutes(10));
