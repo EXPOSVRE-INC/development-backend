@@ -31,6 +31,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
 use function Aws\filter;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -688,6 +689,7 @@ class UserController extends Controller
         $page = (int) $request->input('page', 1);
         $limit = (int) $request->input('limit', 10);
         $offset = ($page - 1) * $limit;
+
         $fromDate = Carbon::createFromTimestamp($request->get('last_update_date'))
             ->setTimezone('US/Eastern')->toDateTimeString();
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
@@ -695,50 +697,74 @@ class UserController extends Controller
         $user = auth('api')->user();
         $userInterestsArray = $user->interests()->pluck('slug')->toArray();
 
-        $interestedPosts = Post::with('interests')
+
+        $blockedOwnerIds = $user->blocks()->pluck('blocking_id')
+            ->merge($user->blockedBy()->pluck('user_id'))
+            ->unique();
+
+        $interestedPosts = Post::query()
             ->whereHas('interests', fn($q) => $q->whereIn('slug', $userInterestsArray))
-            ->where('status', '!=', 'archive')
+            ->where(function ($query) {
+                $query->where('status', '!=', 'archive')
+                    ->orWhere('status', '')
+                    ->orWhereNull('status');
+            })
             ->where('updated_at', '>=', $fromDate)
-            ->get()
-            ->filter(fn($p) => !$user->isBlocking($p->owner) && !$user->isBlockedBy($p->owner) && $p->reports->count() == 0);
+            ->whereNotIn('owner_id', $blockedOwnerIds)
+            ->whereDoesntHave('reports')
+            ->select('posts.*');
 
-        $ownPosts = $user->posts()
-            ->whereNull('status')
+        $ownPosts = Post::query()
+            ->where('owner_id', $user->id)
             ->where('updated_at', '>=', $fromDate)
-            ->get()
-            ->filter(fn($p) => $p->status != 'archive' && $p->reports->count() == 0);
+            ->where(function ($query) {
+                $query->where('status', '!=', 'archive')
+                    ->orWhere('status', '')
+                    ->orWhereNull('status');
+            })
+            ->whereDoesntHave('reports')
+            ->select('posts.*');
 
-        $subscriptionPosts = collect();
-        foreach ($user->subscriptions as $subUser) {
-            $subscriptionPosts = $subscriptionPosts->merge(
-                $subUser->posts()
-                    ->whereNull('status')
-                    ->where('publish_date', '<', $now)
-                    ->get()
-                    ->filter(
-                        fn($p) =>
-                        $p->status != 'archive' &&
-                            $p->reports->count() == 0 &&
-                            !$user->isBlocking($p->owner) &&
-                            !$user->isBlockedBy($p->owner)
-                    )
-            );
-        }
+        $subscribedOwnerIds = $user->subscriptions()->pluck('id');
+        $subscriptionPosts = Post::query()
+            ->whereIn('owner_id', $subscribedOwnerIds)
+            ->where('publish_date', '<', $now)
+            ->where(function ($query) {
+                $query->where('status', '!=', 'archive')
+                    ->orWhere('status', '')
+                    ->orWhereNull('status');
+            })
+            ->whereNotIn('owner_id', $blockedOwnerIds)
+            ->whereDoesntHave('reports')
+            ->select('posts.*');
 
-        $allPosts = $interestedPosts->merge($ownPosts)->merge($subscriptionPosts)->unique('id');
-        $sortedPosts = $allPosts->sortByDesc('updated_at')->values();
-        $paginated = $sortedPosts->slice($offset, $limit)->values();
+        $combined = $interestedPosts
+            ->union($ownPosts)
+            ->union($subscriptionPosts);
+
+        $paginatedPosts = DB::table(DB::raw("({$combined->toSql()}) as sub"))
+            ->mergeBindings($combined->getQuery())
+            ->orderByDesc('updated_at')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
+
+        $postModels = Post::with(['interests', 'owner'])
+            ->whereIn('id', $paginatedPosts->pluck('id'))
+            ->orderByDesc('updated_at')
+            ->get();
 
         return response()->json([
-            'data' => PostResource::collection($paginated),
+            'data' => PostResource::collection($postModels),
             'meta' => [
-                'total' => $sortedPosts->count(),
+                'total' => $combined->count(),
                 'page' => $page,
                 'limit' => $limit,
-                'count' => $paginated->count()
+                'count' => $postModels->count()
             ]
         ]);
     }
+
 
     public function editorial(Request $request)
     {
@@ -751,37 +777,35 @@ class UserController extends Controller
 
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
 
-        $baseQuery = Post::where(['owner_id' => 1])
+        $baseQuery = Post::where('owner_id', 1)
             ->where(function ($query) {
                 $query->where('status', '!=', 'archive')
-                    ->orWhere('status', '')
-                    ->orWhereNull('status');
+                    ->orWhereNull('status')
+                    ->orWhere('status', '');
             })
             ->where('publish_date', '<', $now)
-            ->where(['ad' => 1]);
+            ->where('ad', 1)
+            ->where('updated_at', '>=', $fromDate);
 
-        $allMatchedPosts = $baseQuery->get();
-        $filteredPosts = $allMatchedPosts
-            ->filter(function ($post) use ($fromDate) {
-                return $post->updated_at >= $fromDate;
-            });
+        $total = (clone $baseQuery)->count();
 
-        $total = $filteredPosts->count();
-
-        $sortedPosts = $filteredPosts->sortByDesc('updated_at');
-
-        $paginatedPosts = $sortedPosts->slice($offset, $limit)->values();
+        $posts = $baseQuery
+            ->orderBy('updated_at', 'desc')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
 
         return response()->json([
-            'data' => PostResource::collection($paginatedPosts),
+            'data' => PostResource::collection($posts),
             'meta' => [
                 'total' => $total,
                 'page' => $page,
                 'limit' => $limit,
-                'count' => $paginatedPosts->count()
+                'count' => $posts->count()
             ]
         ]);
     }
+
 
     public function market(Request $request)
     {
@@ -796,30 +820,29 @@ class UserController extends Controller
 
         $user = auth('api')->user();
 
-        $marketPosts = Post::where('post_for_sale', 1)
+        $baseQuery = Post::where('post_for_sale', 1)
             ->where(function ($query) {
                 $query->where('status', '!=', 'archive')
-                    ->orWhere('status', '')
-                    ->orWhereNull('status');
-            })->get();
-        $filteredPosts = $marketPosts->filter(function ($post) use ($user, $fromDate) {
-            if ($post->reports->count() > 0) {
+                    ->orWhereNull('status')
+                    ->orWhere('status', '');
+            });
+
+        // if ($fromDate) {
+        //     $baseQuery->where('updated_at', '>=', $fromDate);
+        // }
+
+        $baseQuery->with(['reports', 'owner']);
+
+        $allPosts = $baseQuery->latest()->get();
+
+        $filteredPosts = $allPosts->filter(function ($post) use ($user) {
+            if ($post->reports->isNotEmpty()) {
                 return false;
             }
 
-            if ($user->isBlocking($post->owner)) {
-
+            if ($user->isBlocking($post->owner) || $user->isBlockedBy($post->owner)) {
                 return false;
             }
-
-            if ($user->isBlockedBy($post->owner)) {
-
-                return false;
-            }
-
-            // if ($fromDate && $post->updated_at < $fromDate) {
-            //     return false;
-            // }
 
             return true;
         });
