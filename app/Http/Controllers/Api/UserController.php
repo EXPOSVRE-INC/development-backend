@@ -736,7 +736,8 @@ class UserController extends Controller
 
         $posts = Post::with(['interests', 'owner'])
             ->whereIn('id', $postIds)
-            ->orderByDesc('updated_at')
+            ->orderByDesc('created_at')
+            ->latest()
             ->get();
 
         return response()->json([
@@ -775,7 +776,7 @@ class UserController extends Controller
         $total = (clone $baseQuery)->count();
 
         $posts = $baseQuery
-            ->orderBy('updated_at', 'desc')
+            ->orderBy('created_at', 'desc')
             ->offset($offset)
             ->limit($limit)
             ->get();
