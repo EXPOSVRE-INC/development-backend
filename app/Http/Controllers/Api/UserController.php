@@ -684,9 +684,10 @@ class UserController extends Controller
 
 
     //-------------------------- API for Hybrid Build ----------------------------//
+
     public function mainFeed(Request $request)
     {
-        $page = (int) $request->input('page', 1);
+        $page = max((int) $request->input('page', 1), 1);
         $limit = (int) $request->input('limit', 10);
         $offset = ($page - 1) * $limit;
 
@@ -695,72 +696,56 @@ class UserController extends Controller
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
 
         $user = auth('api')->user();
-        $userInterestsArray = $user->interests()->pluck('slug')->toArray();
 
-
+        $userInterestSlugs = $user->interests()->pluck('slug')->toArray();
         $blockedOwnerIds = $user->blocks()->pluck('blocking_id')
             ->merge($user->blockedBy()->pluck('user_id'))
-            ->unique();
+            ->unique()
+            ->toArray();
+        $subscribedOwnerIds = $user->subscriptions()->pluck('id')->toArray();
 
-        $interestedPosts = Post::query()
-            ->whereHas('interests', fn($q) => $q->whereIn('slug', $userInterestsArray))
-            ->where(function ($query) {
-                $query->where('status', '!=', 'archive')
-                    ->orWhere('status', '')
-                    ->orWhereNull('status');
+        $baseQuery = Post::query()
+            ->select('posts.*')
+            ->where(function ($q) use ($user, $userInterestSlugs, $subscribedOwnerIds, $fromDate, $now, $blockedOwnerIds) {
+                $q->where(function ($q1) use ($userInterestSlugs, $fromDate) {
+                    $q1->whereHas('interests', fn($q2) => $q2->whereIn('slug', $userInterestSlugs))
+                        ->where('updated_at', '>=', $fromDate);
+                })
+                    ->orWhere(function ($q1) use ($user, $fromDate) {
+                        $q1->where('owner_id', $user->id)
+                            ->where('updated_at', '>=', $fromDate);
+                    })
+                    ->orWhere(function ($q1) use ($subscribedOwnerIds, $now) {
+                        $q1->whereIn('owner_id', $subscribedOwnerIds)
+                            ->where('publish_date', '<', $now);
+                    });
             })
-            ->where('updated_at', '>=', $fromDate)
-            ->whereNotIn('owner_id', $blockedOwnerIds)
-            ->whereDoesntHave('reports')
-            ->select('posts.*');
-
-        $ownPosts = Post::query()
-            ->where('owner_id', $user->id)
-            ->where('updated_at', '>=', $fromDate)
-            ->where(function ($query) {
-                $query->where('status', '!=', 'archive')
-                    ->orWhere('status', '')
-                    ->orWhereNull('status');
-            })
-            ->whereDoesntHave('reports')
-            ->select('posts.*');
-
-        $subscribedOwnerIds = $user->subscriptions()->pluck('id');
-        $subscriptionPosts = Post::query()
-            ->whereIn('owner_id', $subscribedOwnerIds)
-            ->where('publish_date', '<', $now)
-            ->where(function ($query) {
-                $query->where('status', '!=', 'archive')
-                    ->orWhere('status', '')
-                    ->orWhereNull('status');
+            ->where(function ($q) {
+                $q->where('status', '!=', 'archive')
+                    ->orWhereNull('status')
+                    ->orWhere('status', '');
             })
             ->whereNotIn('owner_id', $blockedOwnerIds)
             ->whereDoesntHave('reports')
-            ->select('posts.*');
-
-        $combined = $interestedPosts
-            ->union($ownPosts)
-            ->union($subscriptionPosts);
-
-        $paginatedPosts = DB::table(DB::raw("({$combined->toSql()}) as sub"))
-            ->mergeBindings($combined->getQuery())
             ->orderByDesc('updated_at')
-            ->offset($offset)
-            ->limit($limit)
-            ->get();
+            ->skip($offset)
+            ->take($limit);
 
-        $postModels = Post::with(['interests', 'owner'])
-            ->whereIn('id', $paginatedPosts->pluck('id'))
+        // Get post IDs only
+        $postIds = $baseQuery->pluck('id');
+
+        $posts = Post::with(['interests', 'owner'])
+            ->whereIn('id', $postIds)
             ->orderByDesc('updated_at')
             ->get();
 
         return response()->json([
-            'data' => PostResource::collection($postModels),
+            'data' => PostResource::collection($posts),
             'meta' => [
-                'total' => $combined->count(),
+                'total' => $baseQuery->toBase()->getCountForPagination(),
                 'page' => $page,
                 'limit' => $limit,
-                'count' => $postModels->count()
+                'count' => $posts->count()
             ]
         ]);
     }
