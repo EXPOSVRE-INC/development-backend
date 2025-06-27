@@ -75,7 +75,7 @@ class PostController extends Controller
     public function fileUploader(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'file' => 'required|file',
+            'file' => 'required|array|max:10',
         ]);
 
         if ($validator->fails()) {
@@ -847,6 +847,25 @@ class PostController extends Controller
             }
         }
 
+        $liveExperiences = $request->get('liveExperience');
+
+        if (is_array($liveExperiences)) {
+
+            foreach ($liveExperiences as $exp) {
+                $fromDate = !empty($exp['startUnixTime']) ? \Carbon\Carbon::createFromTimestamp($exp['startUnixTime'])->toDateTime() : null;
+                $toDate = !empty($exp['finalUnixTime']) ? \Carbon\Carbon::createFromTimestamp($exp['finalUnixTime'])->toDateTime() : null;
+
+                if (!empty($exp['checkId'])) {
+                    $existing = LiveExpirience::where('id', $exp['checkId'])->where('post_id', $post->id)->first();
+                    if ($existing) {
+                        $existing->name = $exp['content'];
+                        $existing->startUnixTime = $fromDate;
+                        $existing->finalUnixTime = $toDate;
+                        $existing->save();
+                    }
+                }
+            }
+        }
         $post->refresh();
 
         return new PostResource($post);
