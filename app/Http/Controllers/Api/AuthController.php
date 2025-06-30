@@ -405,7 +405,6 @@ class AuthController extends Controller
 
     public function changePassword(Request $request)
     {
-        #Match The Old Password
         if (
             !Hash::check($request->old_password, auth('api')->user()->password)
         ) {
@@ -416,7 +415,6 @@ class AuthController extends Controller
             ]);
         }
 
-        #Update the new Password
         if ($request->new_password == $request->confirm_password) {
             User::whereId(auth('api')->user()->id)->update([
                 'password' => Hash::make($request->new_password),
@@ -430,6 +428,43 @@ class AuthController extends Controller
                 'message' => "New password and Confirm password Doesn't match!",
             ]);
         }
+    }
+
+
+    public function passwordChange(Request $request)
+    {
+        $user = auth('api')->user();
+
+        // Check if old password is correct
+        if (!Hash::check($request->old_password, $user->password)) {
+            return response()->json([
+                'error' => true,
+                'status' => 'error',
+                'message' => "Old password doesn't match!",
+            ], 400);
+        }
+
+        if ($request->old_password === $request->new_password) {
+            return response()->json([
+                'error' => true,
+                'status' => 'error',
+                'message' => "New password must be different from the old password!",
+            ], 400);
+        }
+
+        if ($request->new_password !== $request->confirm_password) {
+            return response()->json([
+                'error' => true,
+                'status' => 'error',
+                'message' => "New password and confirm password don't match!",
+            ], 400);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->new_password),
+        ]);
+
+        return response()->json(['data' => []]);
     }
 
     public function setAddress(Request $request)

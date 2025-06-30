@@ -57,6 +57,7 @@ Route::group([
 
             Route::post('logout', 'AuthController@logout');
             Route::post('change-password', 'AuthController@changePassword');
+            Route::post('password-change', 'AuthController@passwordChange');
             Route::post('set-address', 'AuthController@setAddress');
             Route::get('get-my-address', 'AuthController@getAddress');
 
