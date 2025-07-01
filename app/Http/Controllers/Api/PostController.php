@@ -75,7 +75,7 @@ class PostController extends Controller
     public function fileUploader(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'file' => 'required|array|max:10',
+            'file' => 'required|file',
         ]);
 
         if ($validator->fails()) {
