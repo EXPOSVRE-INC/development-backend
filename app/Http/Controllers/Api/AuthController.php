@@ -459,12 +459,12 @@ class AuthController extends Controller
                 'message' => "New password and confirm password don't match!",
             ], 400);
         }
-
-        $user->update([
-            'password' => Hash::make($request->new_password),
-        ]);
-
-        return response()->json(['data' => []]);
+        if ($request->new_password == $request->confirm_password) {
+            User::whereId(auth('api')->user()->id)->update([
+                'password' => Hash::make($request->new_password),
+            ]);
+            return response()->json(['data' => []]);
+        }
     }
 
     public function setAddress(Request $request)
