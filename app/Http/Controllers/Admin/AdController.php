@@ -175,17 +175,16 @@ class AdController extends Controller
             //            }
         }
 
-        $media = $post->getFirstMedia('header_video');
-        if ($media != null) {
-            $media->delete();
-        }
-        $post->addMediaFromRequest('header_video')->toMediaCollection('header_video');
-
-        if ($request->has('video_thumbnail')) {
-            $media = $post->getFirstMedia('video_thumbnail');
+        if ($request->has('thumbnail')) {
+            $media = $post->getFirstMedia('thumb');
             if ($media != null) {
                 $media->delete();
             }
+            $post->addMediaFromRequest('thumbnail')->toMediaCollection('thumb');
+        }
+
+        if ($request->hasFile('video_thumbnail')) {
+            $post->clearMediaCollection('video_thumb');
             $post->addMediaFromRequest('video_thumbnail')->toMediaCollection('video_thumb');
         }
 
@@ -233,13 +232,11 @@ class AdController extends Controller
                 });
         }
 
-        // if ($request->hasFile('thumbnail')) {
-        //     $post->addMediaFromRequest('thumbnail')->toMediaCollection('thumb');
-        // }
-
-        if ($request->hasFile('header_video')) {
-            $post->addMediaFromRequest('header_video')->toMediaCollection('header_video');
+        if ($request->hasFile('thumbnail')) {
+            $post->addMediaFromRequest('thumbnail')->toMediaCollection('thumb');
         }
+
+
 
         if ($request->hasFile('video')) {
             $post->addMediaFromRequest('video')->toMediaCollection('video');

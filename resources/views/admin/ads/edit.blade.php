@@ -55,11 +55,11 @@
         <label for="thumbnail" class="text-lightblue">
             Header
         </label>
-        <label for="header_video" class="text-lightblue">Header Video</label>
-        <input type="file" name="header_video" id="headerVideoUpload" accept="video/*" />
-        <video width="100%" height="300" controls src="{{ $post->getFirstMediaUrl('header_video') }}">
-            Your browser does not support the video tag.
-        </video>
+        <div id="thumbnail-preview"
+            style="background-size: cover; background-position: center center; background-image: url('{{ $post->getFirstMediaUrl('thumb') }}')">
+            <label for="thumbnail-upload" id="thumbnail-label">Choose File</label>
+            <input type="file" name="thumbnail" id="thumbnail-upload" />
+        </div>
         <label for="file" class="text-lightblue">
             Story
         </label>
@@ -229,11 +229,18 @@
                 document.querySelector("video").src = blobURL;
             };
 
-        document.getElementById("headerVideoUpload").onchange = function(event) {
-            let file = event.target.files[0];
-            let blobURL = URL.createObjectURL(file);
-            document.querySelector("video").src = blobURL;
-        };
+        // document.getElementById("headerVideoUpload").onchange = function(event) {
+        //     let file = event.target.files[0];
+        //     let blobURL = URL.createObjectURL(file);
+        //     document.querySelector("video").src = blobURL;
+        // };
+        $(document).ready(function() {
+            $.uploadPreview({
+                input_field: "#video-upload",
+                preview_box: "#video-preview",
+                label_field: "#video-label"
+            });
+        });
     </script>
 @endpush
 
