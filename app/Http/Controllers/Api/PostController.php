@@ -1425,4 +1425,145 @@ class PostController extends Controller
 
         return response()->json(['data' => PostResource::collection($favoritedPosts)], 200);
     }
+
+    public function mostliked(Request $request)
+    {
+        $user = auth('api')->user();
+        $now = Carbon::now();
+
+        $page = max((int) $request->input('page', 1), 1);
+        $limit = (int) $request->input('limit', 10);
+
+        $posts = Post::has('likers')
+            ->withCount([
+                'likers' => function ($query) {
+                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
+                },
+            ])
+            ->orderBy('likers_count', 'DESC')
+            ->get();
+
+        $filteredPosts = $posts->filter(function ($post) {
+            return $post->reports->count() == 0;
+        })->filter(function ($post) use ($now, $user) {
+            if ($post->status == 'archive') {
+                return false;
+            }
+
+            if ($post->publish_date == null || $post->publish_date <= $now) {
+                if ($user->isBlocking($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                    return false;
+                }
+                if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                    return false;
+                } else {
+                    return true;
+                }
+            } else {
+                return false;
+            }
+
+            return true;
+        });
+
+        $postTotal = $filteredPosts->count();
+        $paginatedPosts = $filteredPosts->forPage($page, $limit);
+        $formattedPosts = $paginatedPosts->map(fn($post) => new PostResource($post))->values();
+        $songs = Song::has('likers')
+            ->where('status', 'active')
+            ->withCount([
+                'likers' => function ($query) {
+                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
+                },
+            ])
+            ->orderBy('likers_count', 'DESC')
+            ->get();
+
+        $songTotal = $songs->count();
+        $paginatedSongs = $songs->forPage($page, $limit);
+        $formattedSongs = $paginatedSongs->map(fn($song) => new SongResource($song))->values();
+
+        return response()->json([
+            'data' => [
+                'posts' => $formattedPosts,
+                'songs' => $formattedSongs,
+            ],
+            'meta' => [
+                'page' => $page,
+                'limit' => $limit,
+                'posts_total' => $postTotal,
+                'posts_count' => $formattedPosts->count(),
+                'songs_total' => $songTotal,
+                'songs_count' => $formattedSongs->count(),
+            ]
+        ]);
+    }
+
+    public function mostPostViewed(Request $request)
+    {
+        $user = auth('api')->user();
+        $now = Carbon::now();
+
+        $sevenDaysAgo = $now->subDays(7);
+
+        $page = max((int) $request->input('page', 1), 1);
+        $limit = (int) $request->input('limit', 10);
+
+        $posts = Post::where('updated_at', '>=', $sevenDaysAgo)->where('views_by_last_day', '>', 0)->orderBy('views_by_last_day', 'DESC')
+            ->get();
+
+        $filteredPosts = $posts->filter(function ($post) {
+            return $post->reports->count() == 0;
+        })->filter(function ($post) use ($now, $user) {
+            // Exclude posts where the status is 'archive'
+            if ($post->status == 'archive') {
+                return false;
+            }
+
+            if ($post->publish_date == null || $post->publish_date <= $now) {
+                if ($user->isBlocking($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                    return false;
+                }
+                if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+                    return false;
+                } else {
+                    return true;
+                }
+            } else {
+                return false;
+            }
+            return true;
+        });
+
+        $postTotal = $filteredPosts->count();
+        $paginatedPosts = $filteredPosts->forPage($page, $limit);
+        $formattedPosts = $paginatedPosts->map(fn($post) => new PostResource($post))->values();
+
+        $songs = Song::where('updated_at', '>=', $sevenDaysAgo)
+            ->where('views_by_last_day', '>', 0)
+            ->where('status', 'active')
+            ->orderBy('views_by_last_day', 'DESC')
+            ->limit(50)
+            ->get();
+
+        $songTotal = $songs->count();
+        $paginatedSongs = $songs->forPage($page, $limit);
+        $formattedSongs = $paginatedSongs->map(fn($song) => new SongResource($song))->values();
+
+
+        return response()->json([
+            'data' => [
+                'posts' => $formattedPosts,
+                'songs' => $formattedSongs,
+            ],
+            'meta' => [
+                'page' => $page,
+                'limit' => $limit,
+                'posts_total' => $postTotal,
+                'posts_count' => $formattedPosts->count(),
+                'songs_total' => $songTotal,
+                'songs_count' => $formattedSongs->count(),
+            ]
+        ]);
+    }
 }
