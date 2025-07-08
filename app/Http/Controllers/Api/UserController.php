@@ -279,16 +279,18 @@ class UserController extends Controller
 
         // 4. Editorial posts (ads) - optimized
         $postsAdditorials = Post::where('owner_id', 1)
-            ->where('status', '!=', 'archive')
             ->where('publish_date', '<', $now)
             ->where('ad', 1)
-            ->where('updated_at', '>=', $fromDate)
-            ->where(function ($query) {
+            ->where(function ($query) use ($fromDate) {
                 $query->whereNull('status')
-                    ->orWhere('status', '!=', 'archive');
+                    ->orWhere(function ($q) use ($fromDate) {
+                        $q->where('status', '!=', 'archive')
+                            ->where('updated_at', '>=', $fromDate);
+                    });
             })
             ->pluck('id')
             ->toArray();
+
 
         $posts = array_merge($posts, $postsAdditorials);
 
@@ -726,24 +728,37 @@ class UserController extends Controller
                     ->orWhere('status', '');
             })
             ->whereNotIn('owner_id', $blockedOwnerIds)
-            ->whereDoesntHave('reports')
-            ->orderByDesc('updated_at')
-            ->skip($offset)
-            ->take($limit);
+            ->whereDoesntHave('reports');
 
-        // Get post IDs only
-        $postIds = $baseQuery->pluck('id');
+        $editorialQuery = Post::query()
+            ->where('owner_id', 1)
+            ->where('publish_date', '<', $now)
+            ->where('ad', 1)
+            ->where(function ($query) use ($fromDate) {
+                $query->whereNull('status')
+                    ->orWhere(function ($q) use ($fromDate) {
+                        $q->where('status', '!=', 'archive')
+                            ->where('updated_at', '>=', $fromDate);
+                    });
+            });
+        $basePostIds = $baseQuery->pluck('id');
+        $editorialPostIds = $editorialQuery->pluck('id');
+
+        $mergedPostIds = $basePostIds->merge($editorialPostIds)->unique();
+
+        $total = $mergedPostIds->count();
+
+        $paginatedIds = $mergedPostIds->slice($offset, $limit)->values();
 
         $posts = Post::with(['interests', 'owner'])
-            ->whereIn('id', $postIds)
+            ->whereIn('id', $paginatedIds)
             ->orderByDesc('created_at')
-            ->latest()
             ->get();
 
         return response()->json([
             'data' => PostResource::collection($posts),
             'meta' => [
-                'total' => $baseQuery->toBase()->getCountForPagination(),
+                'total' => $total,
                 'page' => $page,
                 'limit' => $limit,
                 'count' => $posts->count()

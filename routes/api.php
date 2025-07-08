@@ -171,6 +171,8 @@ Route::group([
             Route::get('/archived-posts', 'PostController@getArchivedPosts');
             Route::get('/most-crowned', 'PostController@mostCrowned');
             Route::get('/most-viewed', 'PostController@mostViewed');
+            Route::get('/most-post-crowned', 'PostController@mostliked');
+            Route::get('/most-post-viewed', 'PostController@mostPostViewed');
             Route::get('/get-files', 'PostController@getAllPostImages');
             Route::get('/drop-files', 'PostController@dropFiles');
 
