@@ -25,18 +25,18 @@
 @endphp
 @push('css')
     <style type="text/css">
-        /* .video-icon-overlay {
-                                    position: absolute;
-                                    top: 50%;
-                                    left: 50%;
-                                    transform: translate(-50%, -50%);
-                                    font-size: 17px;
-                                    color: white;
-                                    background: rgba(0, 0, 0, 0.6);
-                                    border-radius: 50%;
-                                    padding: 4px 10px;
-                                    pointer-events: none;
-                                } */
+        .video-icon-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 17px;
+            color: white;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            padding: 4px 10px;
+            pointer-events: none;
+        }
     </style>
 @endpush
 @section('content')
@@ -48,33 +48,26 @@
                 <td>
                     {{ $post->id }}
                 </td>
-                <td>
+                <td style="position: relative;">
                     @php
-                        if (
-                            $post->getFirstMedia('thumb') &&
-                            str_contains($post->getFirstMedia('thumb')->mime_type, 'image')
-                        ) {
-                            $image = $post->getFirstMediaUrl('thumb');
-                        } elseif (
-                            $post->getFirstMedia('thumb') &&
-                            str_contains($post->getFirstMedia('thumb')->mime_type, 'video')
-                        ) {
-                            $image = $post->getFirstMediaUrl('thumb', 'original');
-                        } else {
-                            if (
-                                $post->getFirstMedia('files') &&
-                                str_contains($post->getFirstMedia('files')->mime_type, 'image')
-                            ) {
-                                $image = $post->getFirstMediaUrl('files');
-                            } elseif (
-                                $post->getFirstMedia('files') &&
-                                str_contains($post->getFirstMedia('files')->mime_type, 'video')
-                            ) {
-                                $image = $post->getFirstMediaUrl('files', 'original');
-                            }
+                        $media = $post->getFirstMedia('header_video') ?? $post->getFirstMedia('files');
+
+                        $image = '';
+                        $isVideo = false;
+
+                        if ($media) {
+                            $mime = $media->mime_type ?? '';
+                            $isVideo = str_contains($mime, 'video');
+                            $image = $media->getUrl($isVideo ? 'original' : '');
                         }
                     @endphp
-                    <img height="64" src="{{ $image ?? '' }}">
+
+                    <a href="{{ $isVideo ? $image : '#' }}" target="_blank" style="display: inline-block; position: relative;">
+                        <img height="65" src="{{ $image }}" style="display: block; border-radius: 4px;">
+                        @if ($isVideo)
+                            <span class="video-icon-overlay">&#11208;</span> {{-- Unicode play symbol --}}
+                        @endif
+                    </a>
                 </td>
                 <td>
                     {{ $post->title }}

@@ -205,19 +205,21 @@ class UserController extends Controller
      */
     public function feed(FeedRequest $request)
     {
-        $fromDate = Carbon::createFromTimestamp(
-            $request->get('last_update_date')
-        )->setTimezone('US/Eastern')->toDateTimeString();
+        $timestamp = $request->get('last_update_date');
+
+        $fromDateEastern = Carbon::createFromTimestamp($timestamp)->setTimezone('US/Eastern');
+
+        $fromDateUTC = $fromDateEastern->copy()->setTimezone('UTC')->toDateTimeString();
+
+
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
 
         $user = auth('api')->user();
 
-        // Get user interests more efficiently
         $userInterestsArray = $user->interests()->pluck('slug')->toArray();
 
         $posts = [];
 
-        // 1. Posts based on user interests - optimized query
         if (!empty($userInterestsArray)) {
             $postsInterested = Post::with('interests')
                 ->whereHas('interests', function ($query) use ($userInterestsArray) {
@@ -237,20 +239,18 @@ class UserController extends Controller
             $posts = array_merge($posts, $postsInterested);
         }
 
-        // 2. User's own posts - fixed the status condition
         $userPosts = $user->posts()
             ->where(function ($query) {
                 $query->whereNull('status')
                     ->orWhere('status', '!=', 'archive');
             })
             ->whereDoesntHave('reports')
-            ->where('updated_at', '>=', $fromDate)
+            ->where('updated_at', '<=', $fromDateUTC)
             ->pluck('id')
             ->toArray();
 
         $posts = array_merge($posts, $userPosts);
 
-        // 3. Posts from subscriptions - optimized
         $subscriptionUserIds = $user->subscriptions->pluck('id')->toArray();
 
         if (!empty($subscriptionUserIds)) {
@@ -277,15 +277,14 @@ class UserController extends Controller
             $posts = array_merge($posts, $subscriptionPosts);
         }
 
-        // 4. Editorial posts (ads) - optimized
         $postsAdditorials = Post::where('owner_id', 1)
             ->where('publish_date', '<', $now)
             ->where('ad', 1)
-            ->where(function ($query) use ($fromDate) {
+            ->where(function ($query) use ($fromDateUTC) {
                 $query->whereNull('status')
-                    ->orWhere(function ($q) use ($fromDate) {
+                    ->orWhere(function ($q) use ($fromDateUTC) {
                         $q->where('status', '!=', 'archive')
-                            ->where('updated_at', '>=', $fromDate);
+                            ->where('updated_at', '<=', $fromDateUTC);
                     });
             })
             ->pluck('id')
@@ -298,7 +297,7 @@ class UserController extends Controller
         $marketPosts = Post::where('post_for_sale', 1)
             ->where('status', '!=', 'archive')
             ->whereDoesntHave('reports')
-            ->where('updated_at', '>=', $fromDate)
+            ->where('updated_at', '<=', $fromDateUTC)
             ->get()
             ->filter(function ($post) use ($user) {
                 return !$user->isBlocking($post->owner);
@@ -311,7 +310,6 @@ class UserController extends Controller
 
         $posts = array_merge($posts, $marketPosts);
 
-        // Get unique post IDs and fetch sorted posts
         $uniquePostIds = array_unique($posts);
 
         $sortedPosts = Post::whereIn('id', $uniquePostIds)
