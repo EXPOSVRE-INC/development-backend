@@ -46,19 +46,163 @@
             margin: auto;
             text-align: center;
         }
+
+        .header-type-container {
+            margin-bottom: 20px;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            color: #ecf0f1;
+        }
+
+        .header-type-container label {
+            margin-right: 20px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .upload-preview-box {
+            width: 100%;
+            max-height: 400px;
+            position: relative;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            border: 1px dashed #34495e;
+            border-radius: 10px;
+            padding: 10px;
+            color: #ecf0f1;
+            margin-top: 10px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .upload-preview-box video,
+        .upload-preview-box img {
+            width: 100%;
+            max-height: 360px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .custom-file-input {
+            margin-top: 10px;
+        }
+
+        .remove-media {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .remove-media input {
+            margin-right: 5px;
+        }
+
+        .section-label {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        .form-section {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .custom-upload-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #EC008C;
+            color: #fff;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        .file-name {
+            display: inline-block;
+            margin-left: 10px;
+            color: #ecf0f1;
+            font-style: italic;
+        }
+
+        input[type="checkbox"] {
+            transform: scale(1.5);
+            margin-right: 8px;
+        }
+
+        input[type="radio"] {
+            transform: scale(1.5);
+            margin-right: 8px;
+        }
     </style>
 @endpush
 @section('content')
 
-    <form action="{{ route('ads-edit-post', ['id' => $post->id]) }}" method="post" enctype="multipart/form-data">
+    <form action="{{ route('ads-edit-post', ['id' => $post->id]) }}" method="post" enctype="multipart/form-data"
+        id="edit-ad-form">
         {{ csrf_field() }}
-        <label for="thumbnail" class="text-lightblue">
-            Header
-        </label>
-        <div id="thumbnail-preview"
-            style="background-size: cover; background-position: center center; background-image: url('{{ $post->getFirstMediaUrl('thumb') }}')">
-            <label for="thumbnail-upload" id="thumbnail-label">Choose File</label>
-            <input type="file" name="thumbnail" id="thumbnail-upload" />
+        @php
+            $headerType = old('header_type');
+
+            if (!$headerType && isset($post)) {
+                if ($post->getFirstMediaUrl('header_video')) {
+                    $headerType = 'video';
+                } elseif ($post->getFirstMediaUrl('thumb')) {
+                    $headerType = 'image';
+                }
+            }
+        @endphp
+
+        <div class="header-type-container">
+            <label class="text-lightblue">Select Header Type:</label><br>
+
+            <input type="radio" name="header_type" value="image" id="header_type_image"
+                {{ $headerType === 'image' ? 'checked' : '' }}>
+            <label for="header_type_image">Image</label>
+
+            <input type="radio" name="header_type" value="video" id="header_type_video"
+                {{ $headerType === 'video' ? 'checked' : '' }}>
+            <label for="header_type_video">Video</label>
+        </div>
+
+        <div id="image-upload-section" class="form-section"
+            style="{{ old('header_type', isset($post) && $post->getFirstMediaUrl('thumb') ? 'image' : '') == 'image' ? '' : 'display:none;' }}">
+            <div class="section-label">Image Preview</div>
+            @if (isset($post) && $post->getFirstMediaUrl('thumb'))
+                <div class="upload-preview-box">
+                    <img src="{{ $post->getFirstMediaUrl('thumb') }}">
+                </div>
+                <div class="remove-media">
+                    <label><input type="checkbox" name="remove_thumb" value="1"> Remove Image</label>
+                </div>
+            @endif
+            <label for="thumbnail-upload" class="custom-upload-btn">Choose Image</label>
+            <input type="file" name="thumbnail" id="thumbnail-upload" accept="image/*" style="display: none;">
+            <span id="thumbnail-name" class="file-name"></span>
+        </div>
+
+        <div id="video-upload-section" class="form-section"
+            style="{{ old('header_type', isset($post) && $post->getFirstMediaUrl('header_video') ? 'video' : '') == 'video' ? '' : 'display:none;' }}">
+            <div class="section-label">Video Preview</div>
+            @if (isset($post) && $post->getFirstMediaUrl('header_video'))
+                <div class="upload-preview-box">
+                    <video controls src="{{ $post->getFirstMediaUrl('header_video') }}" type="video/mp4">
+                        {{-- <source src="{{ $post->getFirstMediaUrl('header_video') }}" type="video/mp4"> --}}
+                    </video>
+                </div>
+                <div class="remove-media">
+                    <label><input type="checkbox" name="remove_header_video" value="1"> Remove Video</label>
+                </div>
+            @endif
+            <label for="headerVideoUpload" class="custom-upload-btn">Choose Video</label>
+            <input type="file" name="header_video" id="headerVideoUpload" accept="video/*" style="display: none;">
+            <span id="video-name" class="file-name"></span>
+
         </div>
         <label for="file" class="text-lightblue">
             Story
@@ -184,12 +328,6 @@
 
         <x-adminlte-button class="btn-flat btn-sm" type="submit" label="Submit" theme="success"
             icon="fas fa-lg fa-save" />
-        {{--        <x-adminlte-select2 name="owner"> --}}
-        {{--            <option>-</option> --}}
-        {{--            @foreach ($users as $user) --}}
-        {{--                <option value="{{$user->id}}"><img height="25" src="{{$user->getFirstMediaUrl('preview')}}"> {{$user->profile ? $user->profile->firstName . ' ' . $user->profile->lastName : ''}} {{'<' . $user->email . '>'}}</option> --}}
-        {{--            @endforeach --}}
-        {{--        </x-adminlte-select2> --}}
         <a class="btn btn-sm btn-danger shadow float-right" title="Remove"
             href="{{ route('post-delete', ['id' => $post->id]) }}">
             <i class="fa fa-lg fa-fw fa-trash"></i>Remove
@@ -229,17 +367,56 @@
                 document.querySelector("video").src = blobURL;
             };
 
-        // document.getElementById("headerVideoUpload").onchange = function(event) {
-        //     let file = event.target.files[0];
-        //     let blobURL = URL.createObjectURL(file);
-        //     document.querySelector("video").src = blobURL;
-        // };
-        $(document).ready(function() {
-            $.uploadPreview({
-                input_field: "#video-upload",
-                preview_box: "#video-preview",
-                label_field: "#video-label"
+        document.getElementById("headerVideoUpload").onchange = function(event) {
+            let file = event.target.files[0];
+            let blobURL = URL.createObjectURL(file);
+            document.querySelector("video").src = blobURL;
+        };
+
+        document.getElementById("edit-ad-form").addEventListener("submit", function(e) {
+            const imageInput = document.getElementById("thumbnail-upload");
+            const videoInput = document.getElementById("headerVideoUpload");
+
+            if (imageInput.files.length > 0 && videoInput.files.length > 0) {
+                e.preventDefault();
+                alert("You can only upload either a header image or a header video, not both.");
+                imageInput.value = "";
+                videoInput.value = "";
+
+                // Optional: hide preview
+                if (document.getElementById("preview-header-video")) {
+                    document.getElementById("preview-header-video").style.display = "none";
+                }
+
+                return false;
+            }
+        });
+        document.addEventListener("DOMContentLoaded", function() {
+            function toggleHeaderInputs() {
+                const selectedType = document.querySelector('input[name="header_type"]:checked')?.value;
+                if (selectedType === "image") {
+                    document.getElementById("image-upload-section").style.display = "block";
+                    document.getElementById("video-upload-section").style.display = "none";
+                } else if (selectedType === "video") {
+                    document.getElementById("image-upload-section").style.display = "none";
+                    document.getElementById("video-upload-section").style.display = "block";
+                }
+            }
+
+            document.querySelectorAll('input[name="header_type"]').forEach(radio => {
+                radio.addEventListener("change", toggleHeaderInputs);
             });
+
+            toggleHeaderInputs();
+        });
+        document.getElementById("thumbnail-upload").addEventListener("change", function() {
+            const fileName = this.files[0]?.name || '';
+            document.getElementById("thumbnail-name").textContent = fileName;
+        });
+
+        document.getElementById("headerVideoUpload").addEventListener("change", function() {
+            const fileName = this.files[0]?.name || '';
+            document.getElementById("video-name").textContent = fileName;
         });
     </script>
 @endpush

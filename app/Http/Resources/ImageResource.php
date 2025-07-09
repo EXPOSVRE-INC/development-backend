@@ -30,12 +30,10 @@ class ImageResource extends JsonResource
         $post = Post::where('id', $media->model_id)->first();
 
         if ($post) {
-            // Check for video and the absence of a song_id
             if (is_null($post->song_id) && $this->type == 'video') {
                 $files = Storage::disk('public')->files($this->id);
                 $originalFile = null;
 
-                // Look for the original video file
                 foreach ($files as $file) {
                     if (strpos(basename($file), 'original') === 0) {
                         $originalFile = $file;
@@ -43,7 +41,6 @@ class ImageResource extends JsonResource
                     }
                 }
 
-                // Always include isVideo and thumb, and update the link based on the file presence
                 $data['isVideo'] = true;
                 if ($originalFile) {
                     $data['link'] = url('storage/' . $originalFile);
@@ -51,17 +48,15 @@ class ImageResource extends JsonResource
                     $data['link'] = $this->getUrl();
                 }
 
-                // Always set the thumb URL
-                $data['thumb'] = $this->hasGeneratedConversion('thumb')
-                    ? $this->getUrl('thumb')
+                $data['thumb'] = $this->hasGeneratedConversion('header_video')
+                    ? $this->getUrl('header_video')
                     : $this->getUrl('original');
             } else {
-                // If song_id is not null, return the video URL directly
                 if ($this->type == 'video') {
                     $data['isVideo'] = true;
                     $data['link'] = $this->getUrl();
-                    $data['thumb'] = $this->hasGeneratedConversion('thumb')
-                        ? $this->getUrl('thumb')
+                    $data['thumb'] = $this->hasGeneratedConversion('header_video')
+                        ? $this->getUrl('header_video')
                         : $this->getUrl('original');
                 }
             }
