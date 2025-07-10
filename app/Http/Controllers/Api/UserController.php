@@ -922,4 +922,135 @@ class UserController extends Controller
             'data' => $removedIds
         ]);
     }
+
+    public function userProfilePost(FeedRequest $request)
+    {
+        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
+        $limit = (int) $request->get('limit', 10); // default limit
+        $page = (int) $request->get('page', 1);
+        $type = $request->get('type', 'all');
+
+
+        $user = auth('api')->user();
+        $posts = [];
+
+        if ($type == 'market') {
+            $marketPosts = Post::with(['owner', 'interests'])
+                ->where('post_for_sale', 1)
+                ->where(function ($query) {
+                    $query->where('status', '!=', 'archive')
+                        ->orWhereNull('status')
+                        ->orWhere('status', '');
+                })
+                ->whereDoesntHave('reports')
+                ->latest()
+                ->get()
+                ->filter(function ($post) use ($user) {
+                    return !$user->isBlocking($post->owner) && !$user->isBlockedBy($post->owner);
+                });
+
+            $total = $marketPosts->count();
+            $paginated = $marketPosts->forPage($page, $limit)->values();
+
+            return response()->json([
+                'data' => PostResource::collection($paginated),
+                'meta' => [
+                    'page' => $page,
+                    'limit' => $limit,
+                    'total' => $total,
+                ]
+            ]);
+        }
+
+        $userInterestsArray = $user->interests()->pluck('slug')->toArray();
+
+        if (!empty($userInterestsArray)) {
+            $postsInterested = Post::with(['interests', 'owner'])
+                ->whereHas('interests', function ($query) use ($userInterestsArray) {
+                    $query->whereIn('slug', $userInterestsArray);
+                })
+                ->where(function ($query) {
+                    $query->where('status', '!=', 'archive')
+                        ->orWhereNull('status')
+                        ->orWhere('status', '');
+                })
+                ->get()
+                ->filter(function ($post) use ($user) {
+                    return !$user->isBlocking($post->owner) && !$user->isBlockedBy($post->owner);
+                })
+                ->pluck('id')
+                ->toArray();
+
+            $posts = array_merge($posts, $postsInterested);
+        }
+
+        $userPosts = $user->posts()
+            ->where(function ($query) {
+                $query->whereNull('status')->orWhere('status', '!=', 'archive');
+            })
+            ->whereDoesntHave('reports')
+            ->pluck('id')
+            ->toArray();
+
+        $posts = array_merge($posts, $userPosts);
+
+        $subscriptionUserIds = $user->subscriptions->pluck('id')->toArray();
+
+        if (!empty($subscriptionUserIds)) {
+            $subscriptionPosts = Post::whereIn('owner_id', $subscriptionUserIds)
+                ->whereDoesntHave('reports')
+                ->where(function ($query) use ($now) {
+                    $query->whereNull('publish_date')->orWhere('publish_date', '<', $now);
+                })
+                ->where(function ($query) {
+                    $query->whereNull('status')->orWhere('status', '!=', 'archive');
+                })
+                ->get()
+                ->filter(function ($post) use ($user) {
+                    return !$user->isBlocking($post->owner) && !$user->isBlockedBy($post->owner);
+                })
+                ->pluck('id')
+                ->toArray();
+
+            $posts = array_merge($posts, $subscriptionPosts);
+        }
+
+        $posts = array_merge($posts);
+
+        $marketPosts = Post::where('post_for_sale', 1)
+            ->where(function ($query) {
+                $query->where('status', '!=', 'archive')
+                    ->orWhereNull('status')
+                    ->orWhere('status', '');
+            })
+            ->whereDoesntHave('reports')
+            ->latest()
+            ->get()
+            ->filter(function ($post) use ($user) {
+                return !$user->isBlocking($post->owner) && !$user->isBlockedBy($post->owner);
+            })
+            ->pluck('id')
+            ->toArray();
+
+        $posts = array_merge($posts, $marketPosts);
+
+        $uniquePostIds = array_unique($posts);
+
+        $allPosts = Post::with(['owner', 'interests'])
+            ->whereIn('id', $uniquePostIds)
+            ->orderByRaw("GREATEST(COALESCE(publish_date, '1970-01-01'), COALESCE(created_at, '1970-01-01')) DESC")
+            ->get()
+            ->values(); // reset keys
+
+        $total = $allPosts->count();
+        $paginated = $allPosts->forPage($page, $limit)->values();
+        return response()->json([
+            'data' => PostResource::collection($paginated),
+            'meta' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total,
+            ]
+        ]);
+    }
 }
