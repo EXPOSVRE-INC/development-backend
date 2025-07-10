@@ -185,6 +185,7 @@ Route::group([
             Route::post('/search-tag', 'PostController@searchPostsByTag');
             Route::post('/search-interest', 'PostController@searchPostsByInterest');
 
+            Route::post('/search-interest-list', 'PostController@searchPostsListByInterest');
             Route::get('/view/{id}', 'PostController@viewPost');
             Route::get('/delete/{post}', 'PostController@deletePost');
             Route::get('/like/{post}', 'PostController@likePost');
@@ -239,6 +240,7 @@ Route::group([
             Route::get('/feeds/main', 'UserController@mainFeed');
             Route::get('/feeds/editorial', 'UserController@editorial');
             Route::get('/feeds/market', 'UserController@market');
+            Route::get('/profile/post', 'UserController@userProfilePost');
 
             // 🔹 POST ROUTES (specific endpoints)
             Route::post('/feed', 'UserController@feed');

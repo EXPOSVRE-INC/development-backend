@@ -905,6 +905,47 @@ class PostController extends Controller
         return PostResource::collection($posts);
     }
 
+    public function searchPostsListByInterest(Request $request)
+    {
+
+        $tag = $request->get('tag');
+        $limit = (int) $request->get('limit', 10);
+        $page = (int) $request->get('page', 1);
+
+        $query = Post::whereHas('interests', function ($query) use ($tag) {
+            $query->where('slug', 'LIKE', $tag);
+        })->where(function ($query) {
+            $query->where('status', '!=', 'archive')
+                ->orWhereNull('status');
+        });
+
+        $posts = $query->paginate($limit, ['*'], 'page', $page);
+
+        if ($posts->isEmpty() && $posts->total() > 0) {
+            return response()->json([
+                'message' => 'No posts found on this page!',
+                'code' => 404,
+            ], 404);
+        }
+
+        if ($posts->total() == 0) {
+            return response()->json([
+                'message' => 'No posts found!',
+                'code' => 404,
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => PostResource::collection($posts),
+            'meta' => [
+                'total' => $posts->total(),
+                'page' => $page,
+                'limit' => $limit,
+                'count' => $posts->count()
+            ]
+        ]);
+    }
+
     public function deletePost(Post $post)
     {
         $user = auth('api')->user();
