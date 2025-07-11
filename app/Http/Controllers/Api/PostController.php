@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreatePostRequest;
 use App\Http\Requests\SearchPostRequest;
+use App\Http\Resources\CollectionListResource;
 use App\Http\Resources\CollectionResource;
 use App\Http\Resources\CommentResource;
 use App\Http\Resources\PostImagePreviewResource;
@@ -728,6 +729,13 @@ class PostController extends Controller
         $user = User::where(['id' => $id])->with(['collections'])->first();
 
         return response()->json(['data' => CollectionResource::collection($user->collections)]);
+    }
+
+    public function collectionsListByUser($id)
+    {
+        $user = User::where(['id' => $id])->with(['collections'])->first();
+
+        return response()->json(['data' => CollectionListResource::collection($user->collections)]);
     }
 
     public function listPostsByCollectionId($id)
