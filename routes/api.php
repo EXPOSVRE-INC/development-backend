@@ -143,6 +143,8 @@ Route::group([
             Route::get('drop-files', 'PostController@dropCollectionFiles');
 
             Route::get('list-collections-by-user-id/{id}', 'PostController@listCollectionsByUser');
+
+            Route::get('list-by-user-id/{id}', 'PostController@collectionsListByUser');
             Route::get('list-collection-posts-ids/{id}', 'PostController@listPostsByCollectionId');
 
             Route::get('get/{id}', 'PostController@getCollection');
