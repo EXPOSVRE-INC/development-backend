@@ -951,12 +951,19 @@ class UserController extends Controller
             $total = $marketPosts->count();
             $paginated = $marketPosts->forPage($page, $limit)->values();
 
+            $totalViews = $marketPosts->sum('views_count');
+            $totalLikes = $marketPosts->sum(function ($post) {
+                return $post->likers()->count();
+            });
+
             return response()->json([
                 'data' => PostResource::collection($paginated),
                 'meta' => [
                     'page' => $page,
                     'limit' => $limit,
                     'total' => $total,
+                    'total_views' => $totalViews,
+                    'total_likes' => $totalLikes,
                 ]
             ]);
         }
