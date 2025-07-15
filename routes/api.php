@@ -78,6 +78,7 @@ Route::group([
             'middleware' => ['auth:api']
         ], function ($router) {
             Route::post('/', 'SearchController@index');
+            Route::post('/suggestions', 'SearchController@searchData');
         });
 
         Route::group([
