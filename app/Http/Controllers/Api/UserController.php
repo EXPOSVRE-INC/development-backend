@@ -936,6 +936,7 @@ class UserController extends Controller
         if ($type == 'market') {
             $marketPosts = Post::with(['owner'])
                 ->where('post_for_sale', 1)
+                ->where('owner_id', $user->id)
                 ->where(function ($query) {
                     $query->whereNull('status')
                         ->orWhere('status', '!=', 'archive');
