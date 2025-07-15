@@ -747,6 +747,27 @@ class PostController extends Controller
         })]);
     }
 
+    public function listPostsByCollections(Request $request, $id)
+    {
+        $collection = PostCollection::with('posts')->findOrFail($id);
+
+        $limit = (int) $request->input('limit', 10);
+        $page = (int) $request->input('page', 1);
+
+        $posts = $collection->posts;
+
+        $total = $posts->count();
+        $paginated = $posts->slice(($page - 1) * $limit, $limit)->values();
+
+        return response()->json([
+            'data' => PostResource::collection($paginated),
+            'meta' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total
+            ]
+        ]);
+    }
     public function updatePost(Request $request, $id)
     {
         $user = auth('api')->user();

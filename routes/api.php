@@ -147,6 +147,8 @@ Route::group([
 
             Route::get('list-by-user-id/{id}', 'PostController@collectionsListByUser');
             Route::get('list-collection-posts-ids/{id}', 'PostController@listPostsByCollectionId');
+            Route::get('list-collection-posts/{id}', 'PostController@listPostsByCollections');
+
 
             Route::get('get/{id}', 'PostController@getCollection');
 
