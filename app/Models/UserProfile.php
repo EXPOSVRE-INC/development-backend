@@ -26,11 +26,12 @@ class UserProfile extends Model implements HasMedia
         'jobDescription',
         'website',
         'instagram',
-        'twitter'
+        'twitter',
     ];
 
     protected $casts = [
         'birthDate' => 'date:Y-m-d',
+        'show_full_name' => 'boolean',
     ];
 
     public function user()
