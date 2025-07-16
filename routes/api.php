@@ -245,7 +245,7 @@ Route::group([
             Route::get('/feeds/main', 'UserController@mainFeed');
             Route::get('/feeds/editorial', 'UserController@editorial');
             Route::get('/feeds/market', 'UserController@market');
-            Route::get('/profile/post', 'UserController@userProfilePost');
+            Route::get('/profile/post/{id}', 'UserController@userProfilePost');
 
             // 🔹 POST ROUTES (specific endpoints)
             Route::post('/feed', 'UserController@feed');
