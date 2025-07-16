@@ -923,7 +923,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function userProfilePost(FeedRequest $request)
+    public function userProfilePost(FeedRequest $request, $id)
     {
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
         $limit = (int) $request->get('limit', 10); // default limit
@@ -936,7 +936,7 @@ class UserController extends Controller
         if ($type == 'market') {
             $marketPosts = Post::with(['owner'])
                 ->where('post_for_sale', 1)
-                ->where('owner_id', $user->id)
+                ->where('owner_id', $id)
                 ->where(function ($query) {
                     $query->whereNull('status')
                         ->orWhere('status', '!=', 'archive');
@@ -969,7 +969,7 @@ class UserController extends Controller
         }
 
         $ownPostsQuery = Post::with(['owner'])
-            ->where('owner_id', $user->id)
+            ->where('owner_id', $id)
             ->where(function ($query) {
                 $query->whereNull('status')
                     ->orWhere('status', '!=', 'archive');
