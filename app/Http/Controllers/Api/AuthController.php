@@ -229,6 +229,10 @@ class AuthController extends Controller
         ) {
             $profile->phone = $request->get('phone');
         }
+
+        if ($request->has('show_full_name')) {
+            $profile->show_full_name = $request->get('show_full_name');
+        }
         $profile->jobTitle = $request->get('jobTitle');
         $profile->jobDescription = $request->get('jobDescription');
 
@@ -791,6 +795,9 @@ class AuthController extends Controller
 
         if ($request->has('lastName')) {
             $profile->lastName = $request->get('lastName');
+        }
+        if ($request->has('show_full_name')) {
+            $profile->show_full_name = $request->get('show_full_name');
         }
         $birthDateInput = $request->get('birthDate');
         if ($birthDateInput) {

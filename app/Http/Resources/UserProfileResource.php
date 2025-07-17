@@ -25,7 +25,9 @@ class UserProfileResource extends JsonResource
             'image' => $this->getFirstMediaUrl('preview'),
             'jobTitle' => (string) $this->jobTitle,
             'jobDescription' => (string) $this->jobDescription,
-            'twoFactorEnabled'=> (bool) $this->user->twoFactorEnabled,
+            'twoFactorEnabled' => (bool) $this->user->twoFactorEnabled,
+            'show_full_name' => (bool) $this->show_full_name,
+
         ];
     }
 }
