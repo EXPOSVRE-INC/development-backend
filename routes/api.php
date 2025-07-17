@@ -78,6 +78,7 @@ Route::group([
             'middleware' => ['auth:api']
         ], function ($router) {
             Route::post('/', 'SearchController@index');
+            Route::post('/suggestions', 'SearchController@searchData');
         });
 
         Route::group([
@@ -146,6 +147,8 @@ Route::group([
 
             Route::get('list-by-user-id/{id}', 'PostController@collectionsListByUser');
             Route::get('list-collection-posts-ids/{id}', 'PostController@listPostsByCollectionId');
+            Route::get('list-collection-posts/{id}', 'PostController@listPostsByCollections');
+
 
             Route::get('get/{id}', 'PostController@getCollection');
 
@@ -242,7 +245,7 @@ Route::group([
             Route::get('/feeds/main', 'UserController@mainFeed');
             Route::get('/feeds/editorial', 'UserController@editorial');
             Route::get('/feeds/market', 'UserController@market');
-            Route::get('/profile/post', 'UserController@userProfilePost');
+            Route::get('/profile/post/{id}', 'UserController@userProfilePost');
 
             // 🔹 POST ROUTES (specific endpoints)
             Route::post('/feed', 'UserController@feed');
