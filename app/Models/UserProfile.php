@@ -27,6 +27,7 @@ class UserProfile extends Model implements HasMedia
         'website',
         'instagram',
         'twitter',
+        'show_full_name'
     ];
 
     protected $casts = [
