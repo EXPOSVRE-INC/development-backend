@@ -29,24 +29,28 @@ class PaymentController extends Controller
         $this->stripeService = $stripeService;
     }
 
-    public function addStripeAccount(Request $request) {
+    public function addStripeAccount(Request $request)
+    {
         $account = $this->stripeService->createAccount($request);
 
         return response()->json(['data' => $account]);
     }
 
-    public function createStripeBankAccount(Request $request) {
+    public function createStripeBankAccount(Request $request)
+    {
         $account = $this->stripeService->createBankAccount($request);
 
         return response()->json(['data' => $account]);
     }
 
-    public function buyPost(Request $request) {
+    public function buyPost(Request $request)
+    {
         $order = $this->stripeService->buy($request);
         return response()->json(['data' => new PurchasesResource($order)]);
     }
 
-    public function listAccountPayoutMethods(Request $request) {
+    public function listAccountPayoutMethods(Request $request)
+    {
 
         $user = auth('api')->user();
         $account = Account::retrieve($user->stripeAccountId, []);
@@ -71,46 +75,54 @@ class PaymentController extends Controller
         return response()->json(['data' => PaymentAccountResource::collection(auth('api')->user()->paymentAccounts)]);
     }
 
-    public function removeCard(Request $request) {
+    public function removeCard(Request $request)
+    {
         $cards = $this->stripeService->removeCustomerCard($request);
 
         return response()->json(['data' => PaymentCardResource::collection($cards)]);
     }
 
-    public function setDefaultCard(Request $request) {
+    public function setDefaultCard(Request $request)
+    {
         $cards = $this->stripeService->setDefaultCard($request);
 
         return response()->json(['data' => PaymentCardResource::collection($cards)]);
     }
 
-    public function removePaymentAccount(Request $request) {
+    public function removePaymentAccount(Request $request)
+    {
         $accounts = $this->stripeService->removePaymentAccount($request);
 
         return response()->json(['data' => PaymentAccountResource::collection($accounts)]);
     }
 
-    public function setDefaultAccount(Request $request) {
+    public function setDefaultAccount(Request $request)
+    {
         $accounts = $this->stripeService->setDefaultBankAccount($request);
 
         return response()->json(['data' => PaymentAccountResource::collection($accounts)]);
     }
 
-    public function listPurchases() {
+    public function listPurchases()
+    {
         return response()->json(['data' => $this->stripeService->listPurchases()]);
     }
 
-    public function listSales() {
+    public function listSales()
+    {
         return response()->json(['data' => $this->stripeService->listSales()]);
     }
 
-    public function listTransactions(Request $request) {
+    public function listTransactions(Request $request)
+    {
         $sales = $this->stripeService->listSales()->toArray($request);
         $purchases = $this->stripeService->listPurchases()->toArray($request);
 
         return response()->json(['data' => array_merge($sales, $purchases)]);
     }
 
-    public function setShippingAddressByOrderId($id, Request $request) {
+    public function setShippingAddressByOrderId($id, Request $request)
+    {
         $order = Order::where(['id' => $id])->first();
 
         $user = auth('api')->user();
@@ -150,14 +162,14 @@ class PaymentController extends Controller
         return response()->json(['data' => SalesResource::make($order)]);
     }
 
-    public function getBuyerByOrderId(Order $order) {
+    public function getBuyerByOrderId(Order $order)
+    {
         if ($order->seller->id == auth('api')->user()->id) {
             $buyer = $order->buyer;
             return response()->json(['data' => ['buyer' => UserWithShippingAddressResource::make($buyer)]]);
         } else {
             return response()->json(['error' => 'No access'], 401);
         }
-
     }
 
     public function sendPriceRequest($postId)
@@ -182,7 +194,7 @@ class PaymentController extends Controller
         $notification->deep_link = '';
         $notification->save();
 
-        $deepLink = 'EXPOSVRE://request/' . $post->id . '/' .$request->id;
+        $deepLink = 'EXPOSVRE://request/' . $post->id . '/' . $request->id;
         $notification->deep_link = $deepLink;
         $notification->save();
 
@@ -200,7 +212,7 @@ class PaymentController extends Controller
 
         $deepLink = 'EXPOSVRE://post/' . $request->post->id;
         $notification = new \App\Models\Notification();
-        $notification->title = 'Hello, the price of this is ' . round($request->post->fixed_price/100, 2) . '$';
+        $notification->title = 'Hello, the price of this is ' . number_format($request->post->fixed_price, 2) . '$';
         $notification->description = $request->id;
         $notification->type = 'priceRespondedApprove';
         $notification->user_id = $request->requestor->id;
@@ -216,10 +228,10 @@ class PaymentController extends Controller
 
         $request->requestor->notify(new PriceRequestAcceptedNotification($request->post, auth('api')->user(), $request));
 
-//        $priceRequests = PriceRequest::where(['post_id' => $request->porst_id, 'user_id' => $request->user_id])->get();
-//        foreach ($priceRequests as $priceRequest) {
-//            $priceRequest->delete();
-//        }
+        //        $priceRequests = PriceRequest::where(['post_id' => $request->porst_id, 'user_id' => $request->user_id])->get();
+        //        foreach ($priceRequests as $priceRequest) {
+        //            $priceRequest->delete();
+        //        }
 
         return response()->json(['data' => $request]);
     }
