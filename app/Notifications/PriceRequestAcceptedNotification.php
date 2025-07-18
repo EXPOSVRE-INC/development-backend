@@ -39,34 +39,34 @@ class PriceRequestAcceptedNotification extends Notification
     public function via($notifiable)
     {
         return [
-//            'database',
+            //            'database',
             ApnChannel::class
-            ];
+        ];
     }
 
 
     public function toApn($notifiable)
     {
-//        $deepLink = 'EXPOSVRE://post/' . $this->post->id;
-//        $notification = new \App\Models\Notification();
-//        $notification->title = 'Hi! The price of post is ' . round($this->post->price, 2) . '$';
-//        $notification->description = $this->request->id;
-//        $notification->type = 'priceResponded';
-//        $notification->user_id = $this->requestor->id;
-//        $notification->sender_id = $this->post->owner_id;
-//        $notification->post_id = $this->post->id;
-//        $notification->deep_link = $deepLink;
-//        $notification->save();
-//
-//
-//        $deepLink = 'EXPOSVRE://post/' . $this->post->id;
-//        $notification->deep_link = $deepLink;
-//        $notification->save();
+        //        $deepLink = 'EXPOSVRE://post/' . $this->post->id;
+        //        $notification = new \App\Models\Notification();
+        //        $notification->title = 'Hi! The price of post is ' . round($this->post->price, 2) . '$';
+        //        $notification->description = $this->request->id;
+        //        $notification->type = 'priceResponded';
+        //        $notification->user_id = $this->requestor->id;
+        //        $notification->sender_id = $this->post->owner_id;
+        //        $notification->post_id = $this->post->id;
+        //        $notification->deep_link = $deepLink;
+        //        $notification->save();
+        //
+        //
+        //        $deepLink = 'EXPOSVRE://post/' . $this->post->id;
+        //        $notification->deep_link = $deepLink;
+        //        $notification->save();
 
         return ApnMessage::create()
             ->badge(1)
             ->title('Price request accepted')
-            ->body('Hello, the price of this is ' . round($this->post->price, 2) . '$')
+            ->body('Hello, the price of this is ' . number_format($this->post->fixed_price, 2) . '$')
             ->custom('deepLink', 'EXPOSVRE://notifications');
     }
 
@@ -74,7 +74,7 @@ class PriceRequestAcceptedNotification extends Notification
     {
         $deepLink = 'EXPOSVRE://post/' . $this->post->id;
         $notification = new \App\Models\Notification();
-        $notification->title = 'Hello, the price of this is ' . round($this->post->price, 2) . '$';
+        $notification->title = 'Hello, the price of this is ' . number_format($this->post->fixed_price, 2) . '$';
         $notification->description = $this->request->id;
         $notification->type = 'priceResponded';
         $notification->user_id = $this->requestor->id;
