@@ -22,6 +22,9 @@ use Twilio\Rest\Client;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
 use App\Mail\EmailVerificationOTP;
+use Stripe\Customer;
+use Stripe\SetupIntent;
+
 
 class AuthController extends Controller
 {
@@ -538,6 +541,31 @@ class AuthController extends Controller
         ]);
     }
 
+    public function createSetupIntent(Request $req)
+    {
+        \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+        $user = auth('api')->user();
+
+        if (!$user->stripeCustomerId) {
+            $customer = Customer::create([
+                'email' => $user->email,
+                'metadata' => ['user_id' => $user->id],
+            ]);
+            $user->stripeCustomerId = $customer->id;
+            $user->save();
+        }
+
+        $intent = SetupIntent::create([
+            'customer' => $user->stripeCustomerId,
+            'usage' => 'off_session',
+        ]);
+
+        return response()->json([
+            'clientSecret' => $intent->client_secret,
+            'stripeCustomerId' => $intent->customer
+        ]);
+    }
     public function getCardList()
     {
         return response()->json([
