@@ -65,7 +65,7 @@
         // Deeplink URL
         var deeplinkUrl = redirectDeepLinkDomain + path;
         // App Store URL
-        var appStoreUrl = "https://apps.apple.com/us/app/exposvre/id1630178424";
+        var appStoreUrl = "https://apps.apple.com/us/app/exposvre/id6723885004";
 
         window.location.href = deeplinkUrl;
 

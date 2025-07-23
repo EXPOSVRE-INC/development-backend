@@ -95,6 +95,8 @@ Route::group([
         ], function ($router) {
 
             Route::post('set-payment-card', 'AuthController@addPaymentData');
+            Route::post('setup-intent', 'AuthController@createSetupIntent');
+
             Route::get('get-card-list', 'AuthController@getCardList');
 
             Route::get('get-buyer-by-order-id/{order}', 'PaymentController@getBuyerByOrderId');
