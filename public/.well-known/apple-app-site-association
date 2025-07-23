@@ -6,7 +6,9 @@
                     "Y82G5S669P.com.viaduct.exposure",
                     "Y82G5S669P.com.viaduct.exposure.stage",
                     "Y82G5S669P.com.viaduct.exposure.dev",
-                    "QP535PSF5H.com.exposvre"
+                    "QP535PSF5H.com.exposvre",
+                    "QP535PSF5H.com.exposvre.stage",
+                    "QP535PSF5H.com.exposvre.dev"
                 ],
                 "components": [
                     {
@@ -22,7 +24,9 @@
             "Y82G5S669P.com.viaduct.exposure",
             "Y82G5S669P.com.viaduct.exposure.stage",
             "Y82G5S669P.com.viaduct.exposure.dev",
-            "QP535PSF5H.com.exposvre"
+            "QP535PSF5H.com.exposvre",
+            "QP535PSF5H.com.exposvre.stage",
+            "QP535PSF5H.com.exposvre.dev"
         ]
     }
 }

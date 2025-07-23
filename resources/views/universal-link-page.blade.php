@@ -55,28 +55,25 @@
 
 <script>
     /// Handle with second domain universal link
-    function openApp() {
+       function openApp() {
+          
+            const redirectDeepLinkDomain = "https://apps.apple.com/us/app/exposvre/id6723885004"
 
-        const redirectDeepLinkDomain = "https://exposvre-a020b.web.app"
+            var start = new Date().getTime();
+            const path = window.location.pathname
+            var deeplinkUrl = redirectDeepLinkDomain;
+            
+            var appStoreUrl = "https://apps.apple.com/global/app/exposvre/id6723885004";  // Updated URL
 
-        var start = new Date().getTime();
-        // Path
-        const path = window.location.pathname
-        // Deeplink URL
-        var deeplinkUrl = redirectDeepLinkDomain + path;
-        // App Store URL
-        var appStoreUrl = "https://apps.apple.com/us/app/exposvre/id6723885004";
-
-        window.location.href = deeplinkUrl;
-
-        setTimeout(function() {
-            var end = new Date().getTime();
-            if (end - start < 1500) {
-                // Redirect to the App Store if the deeplink failed
-                window.location.href = appStoreUrl;
-            }
-        }, 2000);
-    }
+            window.location.href = deeplinkUrl;
+            
+            setTimeout(function() {
+                var end = new Date().getTime();
+                if (end - start < 1500) {
+                    window.location.href = appStoreUrl;                    
+                }
+            }, 2000);
+        }
 
     /// Handle with regular deeplink
     // function openApp() {
