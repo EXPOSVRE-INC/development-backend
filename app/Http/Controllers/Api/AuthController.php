@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Mail\EmailVerificationOTP;
 use Stripe\Customer;
 use Stripe\SetupIntent;
-
+use Stripe\EphemeralKey;
 
 class AuthController extends Controller
 {
@@ -523,15 +523,7 @@ class AuthController extends Controller
             $customer = $this->stripeService->createCustomer($request, $user);
             $customerId = $customer->id;
         } else {
-            //            $client = new StripeClient(env('STRIPE_SECRET'));
-            //
-            //            $client->paymentMethods->attach($request->stripePaymentMethod, [
-            //                'customer' => $user->stripeCustomerId
-            //            ]);
-
             $card = $this->stripeService->createCard($request->all());
-            //            $customer = Customer::createSource($user->stripeCustomerId, ['paymentMethod' => $card->id]);
-            //            $customerId = $user->stripeCustomerId;
         }
 
         return response()->json([
@@ -556,6 +548,10 @@ class AuthController extends Controller
             $user->save();
         }
 
+        $ephemeralKey = EphemeralKey::create(
+            ['customer' => $user->stripeCustomerId],
+            ['stripe_version' => '2025-06-30.basil'] // use latest or required Stripe API version
+        );
         $intent = SetupIntent::create([
             'customer' => $user->stripeCustomerId,
             'usage' => 'off_session',
@@ -563,7 +559,8 @@ class AuthController extends Controller
 
         return response()->json([
             'clientSecret' => $intent->client_secret,
-            'stripeCustomerId' => $intent->customer
+            'stripeCustomerId' => $user->stripeCustomerId,
+            'ephemeralKey' => $ephemeralKey->secret
         ]);
     }
     public function getCardList()
