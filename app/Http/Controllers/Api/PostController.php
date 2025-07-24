@@ -1636,4 +1636,57 @@ class PostController extends Controller
             ]
         ]);
     }
+
+    public function filter(Request $request)
+    {
+        $query = Post::query();
+
+        // Sort
+        switch ($request->input('sort_by')) {
+            case 'newest':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'lowest_price':
+                $query->orderBy('fixed_price', 'asc');
+                break;
+            case 'highest_price':
+                $query->orderBy('fixed_price', 'desc');
+                break;
+            default:
+                $query->orderBy('order_priority', 'desc');
+        }
+
+        // Status
+        $statusFilters = $request->input('status'); // e.g., ['new', 'buy_now']
+        if ($statusFilters && !in_array('all', $statusFilters)) {
+            $query->whereIn('status', $statusFilters);
+        }
+
+        // Type
+        $typeFilters = $request->input('type'); // e.g., ['image', 'video']
+        if ($typeFilters && !in_array('all', $typeFilters)) {
+            $query->whereIn('type', $typeFilters);
+        }
+
+        // Date Range
+        if ($request->filled('from')) {
+            $query->whereDate('created_at', '>=', $request->input('from'));
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('created_at', '<=', $request->input('to'));
+        }
+
+        // Interested In (tags/categories)
+        if ($request->filled('interested_in')) {
+            $interestedIn = $request->input('interested_in'); // ['sports', 'fashion']
+            $query->whereHas('interests', function ($q) use ($interestedIn) {
+                $q->whereIn('name', $interestedIn);
+            });
+        }
+
+        return response()->json($query->paginate(20));
+    }
 }
