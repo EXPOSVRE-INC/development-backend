@@ -521,15 +521,12 @@ class AuthController extends Controller
         $user = auth('api')->user();
         if (!$user->stripeCustomerId) {
             $customer = $this->stripeService->createCustomer($request, $user);
-            $customerId = $customer->id;
         } else {
-            $card = $this->stripeService->createCard($request->all());
+            $this->stripeService->createCard($request->all());
         }
 
         return response()->json([
-            'data' => PaymentCardResource::collection(
-                auth('api')->user()->paymentCards
-            ),
+            'data' => PaymentCardResource::collection($user->paymentCards)
         ]);
     }
 

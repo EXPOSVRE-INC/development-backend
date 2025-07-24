@@ -98,7 +98,7 @@ Route::group([
             Route::post('setup-intent', 'AuthController@createSetupIntent');
 
             Route::get('get-card-list', 'AuthController@getCardList');
-
+            Route::get('payment-cards', 'PaymentController@getStripeCards');
             Route::get('get-buyer-by-order-id/{order}', 'PaymentController@getBuyerByOrderId');
 
             Route::post('/remove-card', 'PaymentController@removeCard');

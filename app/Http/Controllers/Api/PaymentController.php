@@ -19,6 +19,8 @@ use App\Notifications\PriceRequestDeclinedNotification;
 use App\Notifications\PriceRequestNotification;
 use Illuminate\Http\Request;
 use Stripe\Account;
+use Stripe\Stripe;
+use Stripe\PaymentMethod;
 
 class PaymentController extends Controller
 {
@@ -258,5 +260,44 @@ class PaymentController extends Controller
 
 
         return response()->json(['data' => $request]);
+    }
+
+    public function getStripeCards()
+    {
+        $user = auth('api')->user();
+
+        if (!$user->stripeCustomerId) {
+            return response()->json(['message' => 'Stripe customer not found'], 404);
+        }
+
+        Stripe::setApiKey(env('STRIPE_SECRET'));
+
+        try {
+            $paymentMethods = PaymentMethod::all([
+                'customer' => $user->stripeCustomerId,
+                'type' => 'card',
+            ]);
+
+            $cards = [];
+
+            foreach ($paymentMethods->data as $pm) {
+                $cards[] = [
+                    'payment_method_id' => $pm->id,
+                    'brand' => $pm->card->brand,
+                    'last4' => $pm->card->last4,
+                    'exp_month' => $pm->card->exp_month,
+                    'exp_year' => $pm->card->exp_year,
+                    'name' => $pm->billing_details->name,
+                    'address' => $pm->billing_details->address,
+                ];
+            }
+
+            return response()->json(['cards' => $cards]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch cards',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }
