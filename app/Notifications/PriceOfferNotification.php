@@ -3,13 +3,11 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
 
-class PriceRequestNotification extends Notification
+class PriceOfferNotification  extends Notification
 {
     use Queueable;
 
@@ -49,8 +47,8 @@ class PriceRequestNotification extends Notification
     {
         return ApnMessage::create()
             ->badge(1)
-            ->title('Price request')
-            ->body($this->requestor->profile->firstName . ' ' . $this->requestor->profile->lastName . ' is interested in item')
+            ->title('Offered Price request')
+            ->body($this->requestor->profile->firstName . ' ' . $this->requestor->profile->lastName . ' offered $' . $this->requestor->offered_price)
             ->custom('deepLink', 'EXPOSVRE://notifications');
     }
 

@@ -16,6 +16,7 @@ use App\Models\PriceRequest;
 use App\Models\UserShippingAddress;
 use App\Notifications\PriceRequestAcceptedNotification;
 use App\Notifications\PriceRequestDeclinedNotification;
+use App\Notifications\PriceOfferNotification;
 use App\Notifications\PriceRequestNotification;
 use Illuminate\Http\Request;
 use Stripe\Account;
@@ -205,6 +206,43 @@ class PaymentController extends Controller
         return response()->json(['data' => $request]);
     }
 
+    public function setOfferedPrice(Request $request, $requestId)
+    {
+        $user = auth('api')->user();
+
+        $request->validate([
+            'offered_price' => 'required|numeric|min:1',
+        ]);
+
+        $priceRequest = PriceRequest::findOrFail($requestId);
+
+        if ($priceRequest->user_id !== $user->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $priceRequest->offered_price = $request->offered_price;
+        $priceRequest->status = 'new';
+        $priceRequest->save();
+
+        $post = $priceRequest->post;
+
+        $title = "{$user->profile->firstName} {$user->profile->lastName} offered $" . number_format($request->offered_price);
+        $notification = new \App\Models\Notification();
+        $notification->title = $title;
+        $notification->description = 'Offered price is : $' . $request->offered_price;
+        $notification->type = 'priceOffer';
+        $notification->user_id = $post->owner_id;
+        $notification->sender_id = $user->id;
+        $notification->post_id = $post->id;
+        $notification->deep_link = 'EXPOSVRE://request/' . $post->id . '/' . $priceRequest->id;
+        $notification->save();
+
+        // Send custom notification if needed
+        $post->owner->notify(new PriceOfferNotification($post, $user, $priceRequest));
+
+        return response()->json(['data' => $priceRequest]);
+    }
+
     public function acceptRequest($requestId)
     {
         $user = auth('api')->user();
@@ -213,8 +251,12 @@ class PaymentController extends Controller
         $request->save();
 
         $deepLink = 'EXPOSVRE://post/' . $request->post->id;
+        $priceToShow = $request->offered_price ?? $request->post->fixed_price;
+        $priceLabel = $request->offered_price ? 'Hello, your offer was accepted' : 'Hello, the price of this is ';
+
         $notification = new \App\Models\Notification();
-        $notification->title = 'Hello, the price of this is ' . number_format($request->post->fixed_price, 2) . '$';
+
+        $notification->title = "{$priceLabel}: $" . number_format($priceToShow, 2);
         $notification->description = $request->id;
         $notification->type = 'priceRespondedApprove';
         $notification->user_id = $request->requestor->id;
