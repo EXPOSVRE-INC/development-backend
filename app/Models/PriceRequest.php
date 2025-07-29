@@ -13,14 +13,17 @@ class PriceRequest extends Model
         'id',
         'user_id',
         'post_id',
-        'status'
+        'status',
+        'offered_price'
     ];
 
-    public function requestor() {
+    public function requestor()
+    {
         return $this->hasOne(User::class, 'id', 'user_id');
     }
 
-    public function post() {
+    public function post()
+    {
         return $this->hasOne(Post::class, 'id', 'post_id');
     }
 }
