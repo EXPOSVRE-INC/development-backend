@@ -560,6 +560,48 @@ class UserController extends Controller
         return response()->json(['data' => []], 404);
     }
 
+    public function getMarketNotificationsList(Request $request)
+    {
+        $user = auth()->user();
+
+        if ($user->profile) {
+            $page = (int) $request->input('page', 1);
+            $limit = (int) $request->input('limit', 20);
+            $offset = ($page - 1) * $limit;
+
+            $allowedTypes = [
+                'priceRequest',
+                'priceRespondedApprove',
+                'priceRespondedDecline',
+                'priceOffer',
+            ];
+
+            $notificationsQuery = $user->notifications()
+                ->whereIn('type', $allowedTypes)
+                ->whereDoesntHave('sender', function ($query) use ($user) {
+                    $query->whereIn(
+                        'id',
+                        $user->blocks()->pluck('blocking_id')
+                    );
+                })
+                ->orderBy('updated_at', 'desc');
+
+            if ($request->has('page') && $request->has('limit')) {
+                $paginatedNotifications = $notificationsQuery
+                    ->skip($offset)
+                    ->take($limit)
+                    ->get();
+            } else {
+                $paginatedNotifications = $notificationsQuery->get();
+            }
+
+            return response()->json([
+                'data' => NotificationResource::collection($paginatedNotifications)
+            ]);
+        }
+
+        return response()->json(['data' => []], 404);
+    }
     public function marketLike($id)
     {
         $user = User::where(['id' => $id])->first();
