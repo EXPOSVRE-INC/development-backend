@@ -228,6 +228,8 @@ Route::group([
             'middleware' => ['auth:api']
         ], function ($router) {
             Route::get('/', 'UserController@getNotificationsList');
+            Route::get('/marketplace', 'UserController@getMarketNotificationsList');
+
             Route::post('action', 'UserController@notificationAction');
         });
 
