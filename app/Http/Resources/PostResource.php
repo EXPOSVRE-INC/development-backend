@@ -93,6 +93,7 @@ class PostResource extends JsonResource
             'isPriceRequested' => $priceRequest != null ? true : false,
             'priceRequestStatus' =>
             $priceRequest != null ? $priceRequest->status : 'none',
+            'offeredPrice' => $priceRequest != null ? $priceRequest->offered_price : 0,
             'shippingIncluded' => (bool) $this->isFree,
             'shippingPrice' => (int) $this->shippingPrice,
             'transactionFees' => ((int) $this->fixed_price) * 0.059,

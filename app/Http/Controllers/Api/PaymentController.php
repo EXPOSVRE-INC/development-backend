@@ -221,7 +221,7 @@ class PaymentController extends Controller
         }
 
         $priceRequest->offered_price = $request->offered_price;
-        $priceRequest->status = 'new';
+        $priceRequest->status = 'offered';
         $priceRequest->save();
 
         $post = $priceRequest->post;
