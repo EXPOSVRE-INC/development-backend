@@ -733,10 +733,14 @@ class UserController extends Controller
         $limit = (int) $request->input('limit', 10);
         $offset = ($page - 1) * $limit;
 
-        $fromDate = Carbon::createFromTimestamp($request->get('last_update_date'))
-            ->setTimezone('US/Eastern')->toDateTimeString();
-        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
+        $timestamp = $request->get('last_update_date');
 
+        $fromDateEastern = Carbon::createFromTimestamp($timestamp)->setTimezone('US/Eastern');
+
+        $fromDateUTC = $fromDateEastern->copy()->setTimezone('UTC')->toDateTimeString();
+
+
+        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
         $user = auth('api')->user();
 
         $userInterestSlugs = $user->interests()->pluck('slug')->toArray();
@@ -748,14 +752,14 @@ class UserController extends Controller
 
         $baseQuery = Post::query()
             ->select('posts.*')
-            ->where(function ($q) use ($user, $userInterestSlugs, $subscribedOwnerIds, $fromDate, $now, $blockedOwnerIds) {
-                $q->where(function ($q1) use ($userInterestSlugs, $fromDate) {
+            ->where(function ($q) use ($user, $userInterestSlugs, $subscribedOwnerIds, $fromDateUTC, $now, $blockedOwnerIds) {
+                $q->where(function ($q1) use ($userInterestSlugs, $fromDateUTC) {
                     $q1->whereHas('interests', fn($q2) => $q2->whereIn('slug', $userInterestSlugs))
-                        ->where('updated_at', '>=', $fromDate);
+                        ->where('updated_at', '<=', $fromDateUTC);
                 })
-                    ->orWhere(function ($q1) use ($user, $fromDate) {
+                    ->orWhere(function ($q1) use ($user, $fromDateUTC) {
                         $q1->where('owner_id', $user->id)
-                            ->where('updated_at', '>=', $fromDate);
+                            ->where('updated_at', '<=', $fromDateUTC);
                     })
                     ->orWhere(function ($q1) use ($subscribedOwnerIds, $now) {
                         $q1->whereIn('owner_id', $subscribedOwnerIds)
@@ -774,21 +778,22 @@ class UserController extends Controller
             ->where('owner_id', 1)
             ->where('publish_date', '<', $now)
             ->where('ad', 1)
-            ->where(function ($query) use ($fromDate) {
+            ->where(function ($query) use ($fromDateUTC) {
                 $query->whereNull('status')
-                    ->orWhere(function ($q) use ($fromDate) {
+                    ->orWhere(function ($q) use ($fromDateUTC) {
                         $q->where('status', '!=', 'archive')
-                            ->where('updated_at', '>=', $fromDate);
+                            ->where('updated_at', '<=', $fromDateUTC);
                     });
             });
         $basePostIds = $baseQuery->pluck('id');
         $editorialPostIds = $editorialQuery->pluck('id');
 
-        $mergedPostIds = $basePostIds->merge($editorialPostIds)->unique();
+        $mergedPosts = Post::whereIn('id', $basePostIds->merge($editorialPostIds)->unique())
+            ->orderByDesc('created_at')
+            ->pluck('id');
 
-        $total = $mergedPostIds->count();
-
-        $paginatedIds = $mergedPostIds->slice($offset, $limit)->values();
+        $total = $mergedPosts->count();
+        $paginatedIds = $mergedPosts->slice($offset, $limit)->values();
 
         $posts = Post::with(['interests', 'owner'])
             ->whereIn('id', $paginatedIds)
