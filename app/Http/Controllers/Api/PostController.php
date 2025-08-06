@@ -1655,4 +1655,114 @@ class PostController extends Controller
             'count' => $totalCount,
         ]);
     }
+
+    public function mostViewedByInterest(Request $request, $interestId)
+    {
+        $user = auth('api')->user();
+        $now = Carbon::now();
+        $sevenDaysAgo = $now->copy()->subDays(7);
+
+        $page = max((int) $request->input('page', 1), 1);
+        $limit = (int) $request->input('limit', 10);
+
+        // Step 1: Get posts by interest
+        $posts = Post::whereHas('interestAssignments', function ($query) use ($interestId) {
+            $query->where('interest_id', $interestId);
+        })
+            ->where('updated_at', '>=', $sevenDaysAgo)
+            ->where('views_by_last_day', '>', 0)
+            ->orderBy('views_by_last_day', 'DESC')
+            ->get();
+
+        // Step 2: Filter posts
+        $filteredPosts = $posts->filter(function ($post) {
+            return $post->reports->count() == 0;
+        })->filter(function ($post) use ($now, $user) {
+            if ($post->status === 'archive') return false;
+
+            if ($post->publish_date === null || $post->publish_date <= $now) {
+                if (
+                    $user->isBlocking($post->owner) || $user->isBlockedBy($post->owner) ||
+                    in_array($post->owner->status, ['flagged', 'warning', 'deleted'])
+                ) {
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        });
+
+        $postTotal = $filteredPosts->count();
+        $paginatedPosts = $filteredPosts->forPage($page, $limit);
+        $formattedPosts = $paginatedPosts->map(fn($post) => new PostResource($post))->values();
+
+        return response()->json([
+            'data' => [
+                'posts' => $formattedPosts,
+            ],
+            'meta' => [
+                'page' => $page,
+                'limit' => $limit,
+                'posts_total' => $postTotal,
+                'posts_count' => $formattedPosts->count(),
+
+            ]
+        ]);
+    }
+
+    public function mostLikedByInterest(Request $request, $interestId)
+    {
+        $user = auth('api')->user();
+        $now = Carbon::now();
+        $sevenDaysAgo = $now->copy()->subDays(7); // Define once and use consistently
+
+        $page = max((int) $request->input('page', 1), 1);
+        $limit = (int) $request->input('limit', 10);
+
+        $posts = Post::whereHas('interestAssignments', function ($query) use ($interestId) {
+            $query->where('interest_id', $interestId);
+        })
+            ->withCount([
+                'likers' => function ($query) use ($sevenDaysAgo) {
+                    $query->where('likes.created_at', '>=', $sevenDaysAgo);
+                },
+            ])
+            ->having('likers_count', '>', 0) // 💥 this is the critical fix
+            ->orderBy('likers_count', 'DESC')
+            ->get();
+
+        $filteredPosts = $posts->filter(function ($post) {
+            return $post->reports->count() === 0;
+        })->filter(function ($post) use ($now, $user) {
+            if ($post->status === 'archive') return false;
+
+            if ($post->publish_date === null || $post->publish_date <= $now) {
+                if (
+                    $user->isBlocking($post->owner) || $user->isBlockedBy($post->owner) ||
+                    in_array($post->owner->status, ['flagged', 'warning', 'deleted'])
+                ) {
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        });
+
+        $postTotal = $filteredPosts->count();
+        $paginatedPosts = $filteredPosts->forPage($page, $limit);
+        $formattedPosts = $paginatedPosts->map(fn($post) => new PostResource($post))->values();
+
+        return response()->json([
+            'data' => [
+                'posts' => $formattedPosts,
+            ],
+            'meta' => [
+                'page' => $page,
+                'limit' => $limit,
+                'posts_total' => $postTotal,
+                'posts_count' => $formattedPosts->count(),
+
+            ]
+        ]);
+    }
 }
