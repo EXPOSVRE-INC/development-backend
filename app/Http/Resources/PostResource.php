@@ -91,6 +91,7 @@ class PostResource extends JsonResource
             'typeOfPrice' => (string) $this->typeOfPrice,
             'isFree' => (bool) $this->isFree,
             'isPriceRequested' => $priceRequest != null ? true : false,
+            'priceRequestId' => $priceRequest != null ? $priceRequest->id : null,
             'priceRequestStatus' =>
             $priceRequest != null ? $priceRequest->status : 'none',
             'offeredPrice' => $priceRequest != null ? $priceRequest->offered_price : 0,
