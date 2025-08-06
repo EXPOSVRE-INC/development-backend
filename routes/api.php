@@ -182,6 +182,7 @@ Route::group([
             Route::get('/most-post-viewed', 'PostController@mostPostViewed');
             Route::get('/get-files', 'PostController@getAllPostImages');
             Route::get('/drop-files', 'PostController@dropFiles');
+            Route::get('/filter-by-interest/{id}', 'PostController@getPostsByInterest');
 
             Route::post('/create', 'PostController@createPost');
             Route::post('/upload', 'PostController@fileUploader');
@@ -352,4 +353,4 @@ Route::group([
         });
     });
 });
-// });
+// })

@@ -1636,4 +1636,23 @@ class PostController extends Controller
             ]
         ]);
     }
+
+    public function getPostsByInterest($id)
+    {
+        $totalCount = Post::whereHas('interestAssignments', function ($query) use ($id) {
+            $query->where('interest_id', $id);
+        })->count();
+
+        $latestPost = Post::whereHas('interestAssignments', function ($query) use ($id) {
+            $query->where('interest_id', $id);
+        })
+            ->with('interests')
+            ->latest()
+            ->first();
+
+        return response()->json([
+            'latest' => $latestPost ? new PostResource($latestPost) : null,
+            'count' => $totalCount,
+        ]);
+    }
 }
