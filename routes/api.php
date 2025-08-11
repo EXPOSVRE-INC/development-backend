@@ -5,7 +5,7 @@ use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\MusicController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Api\OfferController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -352,6 +352,15 @@ Route::group([
             Route::get('comments-list/{id}', [MusicController::class, 'songListComments']);
 
             Route::get('/download/{id}', [MusicController::class, 'download']);
+        });
+
+        Route::group([
+            'prefix' => 'offers',
+            'middleware' => ['auth:api']
+        ], function ($router) {
+            Route::post('/', [OfferController::class, 'store']); // Make offer
+            Route::put('/{id}/respond', [OfferController::class, 'respond']); // Accept/Reject/Counter
+            Route::get('/post/{post_id}', [OfferController::class, 'listByPost']); // View all offers for a post
         });
     });
 });
