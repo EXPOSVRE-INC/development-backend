@@ -44,7 +44,7 @@ class OfferController extends Controller
             'offered_price' => $offer->offered_price,
             'status'        => $offer->status,
             'made_by'       => $offer->made_by,
-            'source'        => $offer->source,
+            'source'        => 'chat',
             'created_at'    => $offer->created_at->toDateTimeString(),
         ]);
 
