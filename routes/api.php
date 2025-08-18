@@ -210,6 +210,7 @@ Route::group([
             Route::get('/accept-price-request/{id}', 'PaymentController@acceptRequest');
             Route::get('/decline-price-request/{id}', 'PaymentController@declineRequest');
             Route::post('/offer-price-request/{id}', 'PaymentController@setOfferedPrice');
+            Route::put('/offer-price-status/{id}', 'PaymentController@updateStatus');
 
 
             Route::get('/{post}/comments', 'PostController@getComments');

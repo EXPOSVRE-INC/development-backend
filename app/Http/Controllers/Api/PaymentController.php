@@ -304,6 +304,24 @@ class PaymentController extends Controller
         return response()->json(['data' => $request]);
     }
 
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required',
+        ]);
+
+
+        $priceRequest = PriceRequest::findOrFail($id);
+        if (!$priceRequest) {
+            return response()->json([
+                'error' => 'Price request not found',
+            ], 404);
+        }
+        $priceRequest->status = $request->status;
+        $priceRequest->save();
+
+        return response()->json(['data' => $priceRequest]);
+    }
     public function getStripeCards()
     {
         $user = auth('api')->user();
