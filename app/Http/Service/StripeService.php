@@ -31,41 +31,41 @@ class StripeService
 
     public function createCustomer(Request $request, User $user)
     {
-//        try {
+        //        try {
         if ($user->profile != null) {
             $data['phone'] = $user->profile->phone;
         }
         $data = [
-//            'payment_method' => $request->stripePaymentMethod,
+            //            'payment_method' => $request->stripePaymentMethod,
             'email' => $user->email,
         ];
         $result = Customer::create($data);
         $user->stripeCustomerId = $result->id;
         $user->save();
 
-//        dump($result);
-            $card = $this->createCard($request->all());
+        //        dump($result);
+        $card = $this->createCard($request->all());
 
 
-            return $result;
-//        } catch (\Exception $e) {
-//            return $e->getMessage();
-//        }
+        return $result;
+        //        } catch (\Exception $e) {
+        //            return $e->getMessage();
+        //        }
     }
 
     public function createCard($data)
     {
-    //    $card = Token::create([
-    //        'card' => [
-    //            'name' => $data['holder'],
-    //            'number' => $data['number'],
-    //            'exp_month' => sprintf("%02d", $data['expMonth']),
-    //            'exp_year' => $data['expYear'],
-    //            'cvc' => $data['cvv']
-    //        ],
-    //    ]);
-    $client = new StripeClient(env('STRIPE_SECRET'));
-    $client->paymentMethods->attach($data['stripePaymentMethod'], [
+        //    $card = Token::create([
+        //        'card' => [
+        //            'name' => $data['holder'],
+        //            'number' => $data['number'],
+        //            'exp_month' => sprintf("%02d", $data['expMonth']),
+        //            'exp_year' => $data['expYear'],
+        //            'cvc' => $data['cvv']
+        //        ],
+        //    ]);
+        $client = new StripeClient(env('STRIPE_SECRET'));
+        $client->paymentMethods->attach($data['stripePaymentMethod'], [
             'customer' => auth('api')->user()->stripeCustomerId
         ]);
         $newCard = new PaymentCard();
@@ -120,7 +120,8 @@ class StripeService
     }
 
 
-    public function getStateTax($post_id) {
+    public function getStateTax($post_id)
+    {
         $user = auth('api')->user();
         $client = new StripeClient(env('STRIPE_SECRET'));
 
@@ -149,7 +150,8 @@ class StripeService
     }
 
 
-    public function createAccount($request) {
+    public function createAccount($request)
+    {
         $client = new StripeClient(env('STRIPE_SECRET'));
 
         $user = auth()->user();
@@ -162,107 +164,114 @@ class StripeService
                     'type' => 'standard',
                     'country' => 'US',
                     'email' => auth()->user()->email,
-//                'capabilities' => [
-//                    'card_payments' => ['requested' => true],
-//                    'transfers' => ['requested' => true],
-//                ],
+                    //                'capabilities' => [
+                    //                    'card_payments' => ['requested' => true],
+                    //                    'transfers' => ['requested' => true],
+                    //                ],
                 ]
             );
         }
 
 
-//        $account = Account::create(
-//            [
-//                'type' => 'standard',
-//                'country' => 'US',
-//                'email' => auth()->user()->email,
-//                'business_type' => 'individual',
-//                'capabilities' => [
-//                    'card_payments' => ['requested' => true],
-//                    'transfers' => ['requested' => true],
-//                ],
-//                'business_profile' => [
-//                    'url' => 'app.exposvre.com',
-//                    'mcc' => '7221'
-//                ],
-//                'company' => [
-//                    'address' => [
-//                        'city' => 'Bishop',
-//                        "country" => "US",
-//                        "line1" => "350 Short St",
-//                        "postal_code" => "93514",
-//                        "state" => "CA"
-//                    ],
-//                    'name' => $user->profile->firstName . " " . $user->profile->lastName,
-//                    'tax_id' => '000000000',
-//                    'phone' => '+14844608139',
-//                ],
-//                'individual' => [
-//                    'email' => $user->email,
-//                    'first_name' => $user->profile->firstName,
-//                    'last_name' => $user->profile->lastName,
-//                    'phone' => '+14844731459',
-//                    'ssn_last_4' => '0000',
-////                    'id_number' => '123456789',
-//                    'address' => [
-//                        'city' => 'Bishop',
-//                        "country" => "US",
-//                        "line1" => "350 Short St",
-//                        "postal_code" => "93514",
-//                        "state" => "CA"
-//                    ],
-//                    'dob' => [
-//                        'day' => 20,
-//                        'month' => 7,
-//                        'year' => 1990
-//                    ]
-//                ]
-//            ]
-//        );
+        //        $account = Account::create(
+        //            [
+        //                'type' => 'standard',
+        //                'country' => 'US',
+        //                'email' => auth()->user()->email,
+        //                'business_type' => 'individual',
+        //                'capabilities' => [
+        //                    'card_payments' => ['requested' => true],
+        //                    'transfers' => ['requested' => true],
+        //                ],
+        //                'business_profile' => [
+        //                    'url' => 'app.exposvre.com',
+        //                    'mcc' => '7221'
+        //                ],
+        //                'company' => [
+        //                    'address' => [
+        //                        'city' => 'Bishop',
+        //                        "country" => "US",
+        //                        "line1" => "350 Short St",
+        //                        "postal_code" => "93514",
+        //                        "state" => "CA"
+        //                    ],
+        //                    'name' => $user->profile->firstName . " " . $user->profile->lastName,
+        //                    'tax_id' => '000000000',
+        //                    'phone' => '+14844608139',
+        //                ],
+        //                'individual' => [
+        //                    'email' => $user->email,
+        //                    'first_name' => $user->profile->firstName,
+        //                    'last_name' => $user->profile->lastName,
+        //                    'phone' => '+14844731459',
+        //                    'ssn_last_4' => '0000',
+        ////                    'id_number' => '123456789',
+        //                    'address' => [
+        //                        'city' => 'Bishop',
+        //                        "country" => "US",
+        //                        "line1" => "350 Short St",
+        //                        "postal_code" => "93514",
+        //                        "state" => "CA"
+        //                    ],
+        //                    'dob' => [
+        //                        'day' => 20,
+        //                        'month' => 7,
+        //                        'year' => 1990
+        //                    ]
+        //                ]
+        //            ]
+        //        );
 
         $user->stripeAccountId = $account->id;
         $user->save();
 
 
-//        $client->accounts->update($account->id, [
-//            'tos_acceptance' => [
-//                'date' => Carbon::now()->timestamp,
-//                'ip' => $request->ip(),
-//            ],
-//        ]);
+        //        $client->accounts->update($account->id, [
+        //            'tos_acceptance' => [
+        //                'date' => Carbon::now()->timestamp,
+        //                'ip' => $request->ip(),
+        //            ],
+        //        ]);
         $accountLink = $client->accountLinks->create([
             'account' => $account->id,
             'refresh_url' => 'https://app.exposvre.com/stripe-redirect',
             'return_url' => 'https://app.exposvre.com/stripe-redirect',
             'type' => 'account_onboarding',
         ]);
-//        dump($accountLink->url);
+        //        dump($accountLink->url);
 
         return $accountLink->url;
     }
 
-    public function buy(Request $request) {
+    public function buy(Request $request)
+    {
         $post = Post::where(['id' => $request->get('id')])->first();
         $user = auth('api')->user();
-        $price = $post->fixed_price;
+        $priceRequest = \App\Models\PriceRequest::where('post_id', $post->id)
+            ->where('user_id', $user->id)
+            ->where('status', 'offer_accepted') // adjust if you store status
+            ->first();
+
+        $price = $priceRequest ? $priceRequest->offered_price : $post->fixed_price;
+
         if ($post->shippingIncluded == 0) {
-            $price = $price + $post->shippingPrice + $post->fixed_price * 0.059 + $post->fixed_price/100 * 0.0825;
+            $price = $price + $post->shippingPrice + $post->fixed_price * 0.059 + $post->fixed_price * 0.0825;
         }
         $payment_method = $user->paymentCards->filter(function ($card) {
-           return $card->isActive == 1;
+            return $card->isActive == 1;
         })->first();
         if ($price > 0) {
             $payment_intent = \Stripe\PaymentIntent::create([
                 'payment_method_types' => ['card'],
                 'payment_method' => $payment_method->stripeToken,
-//            'automatic_payment_methods' => ['enabled' => true],
+                //            'automatic_payment_methods' => ['enabled' => true],
                 'amount' => round($price),
                 'customer' => $user->stripeCustomerId,
                 'currency' => 'usd',
                 'description' => $post->title,
                 'application_fee_amount' => round($post->fixed_price * 0.1),
                 'transfer_data' => [
-//                        'amount' => round($request->amount * $space->applicationFee/100),
+                    //                        'amount' => round($request->amount * $space->applicationFee/100),
                     'destination' => $post->owner->stripeAccountId,
                 ],
                 'receipt_email' => $user->email,
@@ -309,7 +318,8 @@ class StripeService
         return $order;
     }
 
-    public function listCustomerPaymentMethods() {
+    public function listCustomerPaymentMethods()
+    {
         $user = auth()->user();
 
         $client = new StripeClient(env('STRIPE_SECRET'));
@@ -324,7 +334,8 @@ class StripeService
         return $paymentMethods;
     }
 
-    public function removeCustomerCard(Request $request) {
+    public function removeCustomerCard(Request $request)
+    {
         $user = auth()->user();
         $client = new StripeClient(env('STRIPE_SECRET'));
 
@@ -336,13 +347,14 @@ class StripeService
         return $user->paymentCards;
     }
 
-    public function setDefaultCard(Request $request) {
+    public function setDefaultCard(Request $request)
+    {
 
         $user = auth()->user();
 
         $findCard = PaymentCard::where(['id' => $request->get('id')])->first();
 
-//        $customer = Customer::retrieve($user->stripeCustomerId);
+        //        $customer = Customer::retrieve($user->stripeCustomerId);
 
         $customer = Customer::update($user->stripeCustomerId, [
             'invoice_settings' => [
@@ -365,7 +377,8 @@ class StripeService
         return $user->paymentCards;
     }
 
-    public function setDefaultBankAccount(Request $request) {
+    public function setDefaultBankAccount(Request $request)
+    {
 
         $user = auth()->user();
 
@@ -395,7 +408,8 @@ class StripeService
         return $user->paymentAccounts;
     }
 
-    public function removePaymentAccount(Request $request) {
+    public function removePaymentAccount(Request $request)
+    {
 
         $user = auth()->user();
         $client = new StripeClient(env('STRIPE_SECRET'));
@@ -414,13 +428,15 @@ class StripeService
         return $user->paymentAccounts;
     }
 
-    public function listPurchases() {
+    public function listPurchases()
+    {
         $ordersForBuyer = auth()->user()->ordersForBuyer;
 
         return PurchasesResource::collection($ordersForBuyer);
     }
 
-    public function listSales() {
+    public function listSales()
+    {
         $ordersForSeller = auth()->user()->ordersForSeller;
 
         return SalesResource::collection($ordersForSeller);
