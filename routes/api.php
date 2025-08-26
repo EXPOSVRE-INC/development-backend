@@ -119,6 +119,9 @@ Route::group([
 
             Route::get('/list-purchases', 'PaymentController@listPurchases');
             Route::get('/list-sales', 'PaymentController@listSales');
+
+            Route::get('/hybrid-list-purchases', 'PaymentController@hybridListPurchases');
+            Route::get('/hybrid-list-sales', 'PaymentController@hybridListSales');
             Route::get('/list-transactions', 'PaymentController@listTransactions');
         });
 

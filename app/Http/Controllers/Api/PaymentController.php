@@ -116,6 +116,16 @@ class PaymentController extends Controller
         return response()->json(['data' => $this->stripeService->listSales()]);
     }
 
+    public function hybridListPurchases()
+    {
+        return response()->json(['data' => $this->stripeService->hybridlListPurchases()]);
+    }
+
+    public function hybridListSales()
+    {
+        return response()->json(['data' => $this->stripeService->hybridListSales()]);
+    }
+
     public function listTransactions(Request $request)
     {
         $sales = $this->stripeService->listSales()->toArray($request);
