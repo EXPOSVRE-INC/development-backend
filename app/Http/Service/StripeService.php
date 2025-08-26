@@ -3,6 +3,8 @@
 namespace App\Http\Service;
 
 use App\Http\Requests\SearchPostRequest;
+use App\Http\Resources\HybridPurchasesResource;
+use App\Http\Resources\HybridSalesResource;
 use App\Http\Resources\PurchasesResource;
 use App\Http\Resources\SalesResource;
 use App\Models\Order;
@@ -265,11 +267,11 @@ class StripeService
                 'payment_method_types' => ['card'],
                 'payment_method' => $payment_method->stripeToken,
                 //            'automatic_payment_methods' => ['enabled' => true],
-                'amount' => round($price),
+                'amount' => round($price * 100),
                 'customer' => $user->stripeCustomerId,
                 'currency' => 'usd',
                 'description' => $post->title,
-                'application_fee_amount' => round($post->fixed_price * 0.1),
+                'application_fee_amount' => round($post->fixed_price * 0.1 * 100), // also in cents!
                 'transfer_data' => [
                     //                        'amount' => round($request->amount * $space->applicationFee/100),
                     'destination' => $post->owner->stripeAccountId,
@@ -440,5 +442,19 @@ class StripeService
         $ordersForSeller = auth()->user()->ordersForSeller;
 
         return SalesResource::collection($ordersForSeller);
+    }
+
+    public function hybridlListPurchases()
+    {
+        $ordersForBuyer = auth()->user()->ordersForBuyer;
+
+        return HybridPurchasesResource::collection($ordersForBuyer);
+    }
+
+    public function hybridListSales()
+    {
+        $ordersForSeller = auth()->user()->ordersForSeller;
+
+        return HybridSalesResource::collection($ordersForSeller);
     }
 }

@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class PurchasesResource extends JsonResource
+class HybridSalesResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -18,16 +18,17 @@ class PurchasesResource extends JsonResource
         return [
             'id' => $this->id,
             'postId' => $this->post->id,
-            'userId' => $this->seller->id,
-            'userName' => $this->seller->username,
-            'userAvatar' => $this->seller->getFirstMediaUrl('preview'),
+            'userId' => $this->buyer->id,
+            'userName' => $this->buyer->username,
+            'userAvatar' => $this->buyer->getFirstMediaUrl('preview'),
             'status' => (int) $this->status,
-            'price' => $this->price,
+            'price' => $this->price / 100,
             'date' => Carbon::createFromFormat('Y-m-d H:i:s', $this->updated_at)->timestamp,
-            'type' => 0,
+            'type' => 1,
             'currency' => $this->post->currency,
             'shipping' => ($this->shippingMethod != null) ? $this->shippingMethod : '',
             'number' => ($this->trackingNumber != null) ? $this->trackingNumber : '',
+            'post' => new PostResource($this->post),
         ];
     }
 }
