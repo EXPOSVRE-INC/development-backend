@@ -789,6 +789,7 @@ class UserController extends Controller
         $editorialPostIds = $editorialQuery->pluck('id');
 
         $mergedPosts = Post::whereIn('id', $basePostIds->merge($editorialPostIds)->unique())
+            ->whereDoesntHave('reports')
             ->orderByDesc('created_at')
             ->pluck('id');
 
@@ -871,11 +872,8 @@ class UserController extends Controller
                 $query->where('status', '!=', 'archive')
                     ->orWhereNull('status')
                     ->orWhere('status', '');
-            });
+            })->whereDoesntHave('reports');
 
-        // if ($fromDate) {
-        //     $baseQuery->where('updated_at', '>=', $fromDate);
-        // }
 
         $baseQuery->with(['reports', 'owner']);
 
