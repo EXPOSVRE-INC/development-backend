@@ -56,26 +56,47 @@ class PaymentController extends Controller
     {
 
         $user = auth('api')->user();
-        $account = Account::retrieve($user->stripeAccountId, []);
 
-
-        if ($account->external_accounts && count($account->external_accounts->data) > 0) {
-            if (auth('api')->user()->paymentAccounts->count() < 1) {
-                $externalAccountData = $account->external_accounts->data[0];
-
-                // Create a new PaymentAccount record
-                $externalAccount = new PaymentAccount();
-                $externalAccount->stripeId = $externalAccountData->id;
-                $externalAccount->accountNumber = $externalAccountData->last4;
-                $externalAccount->nameOfBank = $externalAccountData->bank_name;
-                $externalAccount->user_id = $user->id;
-                $externalAccount->isActive = 1;
-                $externalAccount->save();
-            }
+        if (!$user->stripeAccountId) {
+            return response()->json(['data' => []]); // no account linked
         }
-        auth('api')->user()->refresh();
 
-        return response()->json(['data' => PaymentAccountResource::collection(auth('api')->user()->paymentAccounts)]);
+
+        try {
+            $account = Account::retrieve($user->stripeAccountId, []);
+
+            if ($account->external_accounts && count($account->external_accounts->data) > 0) {
+                if ($user->paymentAccounts->count() < 1) {
+                    $externalAccountData = $account->external_accounts->data[0];
+
+                    $externalAccount = new PaymentAccount();
+                    $externalAccount->stripeId = $externalAccountData->id;
+                    $externalAccount->accountNumber = $externalAccountData->last4;
+                    $externalAccount->nameOfBank = $externalAccountData->bank_name ?? null;
+                    $externalAccount->user_id = $user->id;
+                    $externalAccount->isActive = 1;
+                    $externalAccount->save();
+                }
+            }
+
+            $user->refresh();
+
+            return response()->json([
+                'data' => PaymentAccountResource::collection($user->paymentAccounts)
+            ]);
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            $user->stripeAccountId = null;
+            $user->save();
+
+            $user->paymentAccounts->delete();
+
+            return response()->json([
+                'data' => [],
+                'warning' => 'Stripe account not found, user has been unlinked.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function removeCard(Request $request)

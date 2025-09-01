@@ -341,12 +341,42 @@ class StripeService
         $user = auth()->user();
         $client = new StripeClient(env('STRIPE_SECRET'));
 
-        $findCard = PaymentCard::where(['id' => $request->get('id')])->first();
+        try {
 
-        $delete = $client->paymentMethods->detach($findCard->stripeToken);
-        $findCard->delete();
+            $findCard = PaymentCard::where('id', $request->id)
+                ->where('user_id', $user->id)
+                ->first();
 
-        return $user->paymentCards;
+            if (!$findCard) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Card not found or does not belong to this user'
+                ], 404);
+            }
+
+            try {
+                $client->paymentMethods->detach($findCard->stripeToken);
+            } catch (\Stripe\Exception\ApiErrorException $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Stripe error: ' . $e->getMessage()
+                ], 500);
+            }
+
+            $findCard->delete();
+
+            return $user->paymentCards;
+        } catch (\Exception $e) {
+            Log::error('Remove Customer Card Error: ' . $e->getMessage(), [
+                'user_id' => $user->id ?? null,
+                'request' => $request->all(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Something went wrong: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function setDefaultCard(Request $request)
@@ -412,22 +442,50 @@ class StripeService
 
     public function removePaymentAccount(Request $request)
     {
-
         $user = auth()->user();
         $client = new StripeClient(env('STRIPE_SECRET'));
 
-        $BA = PaymentAccount::where(['id' => $request->get('id')])->first();
+        try {
+            $BA = PaymentAccount::where('id', $request->id)
+                ->where('user_id', $user->id)
+                ->first();
 
-        $delete = $client->accounts->deleteExternalAccount(
-            $user->stripeAccountId,
-            $BA->stripeId,
-            []
-        );
+            if (!$BA) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Payment account not found or does not belong to this user'
+                ], 404);
+            }
 
-        if ($delete->deleted == true) {
-            $BA->delete();
+            try {
+                $delete = $client->accounts->deleteExternalAccount(
+                    $user->stripeAccountId,
+                    $BA->stripeId,
+                    []
+                );
+            } catch (\Stripe\Exception\ApiErrorException $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Stripe error: ' . $e->getMessage()
+                ], 500);
+            }
+
+            if (isset($delete->deleted) && $delete->deleted === true) {
+                $BA->delete();
+            }
+
+            return $user->paymentAccounts;
+        } catch (\Exception $e) {
+            Log::error('Remove Payment Account Error: ' . $e->getMessage(), [
+                'user_id' => $user->id ?? null,
+                'request' => $request->all(),
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Something went wrong: ' . $e->getMessage()
+            ], 500);
         }
-        return $user->paymentAccounts;
     }
 
     public function listPurchases()
