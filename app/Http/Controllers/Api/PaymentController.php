@@ -115,9 +115,19 @@ class PaymentController extends Controller
 
     public function removePaymentAccount(Request $request)
     {
-        $accounts = $this->stripeService->removePaymentAccount($request);
+        try {
+            $accounts = $this->stripeService->removePaymentAccount($request);
 
-        return response()->json(['data' => PaymentAccountResource::collection($accounts)]);
+            return response()->json([
+                'status' => 'success',
+                'data' => PaymentAccountResource::collection($accounts)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
 
     public function setDefaultAccount(Request $request)
