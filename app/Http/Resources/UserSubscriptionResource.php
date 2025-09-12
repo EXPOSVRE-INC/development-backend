@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Resources;
+
 use Illuminate\Database\Eloquent\Builder;
 
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -31,8 +32,8 @@ class UserSubscriptionResource extends JsonResource
             'tags' => TagsResource::collection($this->tags),
             'interests' => $interests,
             'not-interests' => $notInterests,
-//            'interests' => InterestsResource::collection($this->interestAssignments),
-//            'not-interests' => InterestsResource::collection($this->notInterestAssignments),
+            //            'interests' => InterestsResource::collection($this->interestAssignments),
+            //            'not-interests' => InterestsResource::collection($this->notInterestAssignments),
             'marketLikesCount' => $this->profile != null ? $this->profile->likers()->count() : 0,
             'isMarketLikeByUser' => $this->profile != null ? $this->profile->isLikedBy(auth('api')->user()) : false,
             'posts' => $this->posts()->count(),
@@ -42,7 +43,7 @@ class UserSubscriptionResource extends JsonResource
             // 'followers' => $this->subscribers()->count(),
             // 'followed' => $this->subscriptions()->count(),
 
-            'followers' => auth('api')->user()->subscribers()
+            'followers' => $this->subscribers()
                 ->whereHas('profile')
                 ->whereDoesntHave('blockedBy', function (Builder $query) {
                     $query->where('user_id', $this->id);
@@ -51,7 +52,7 @@ class UserSubscriptionResource extends JsonResource
                     $query->where('blocking_id', $this->id);
                 })
                 ->count(),
-            'followed' => auth('api')->user()->subscriptions()
+            'followed' => $this->subscriptions()
                 ->whereHas('profile')
                 ->whereDoesntHave('blockedBy', function (Builder $query) {
                     $query->where('user_id', $this->id);

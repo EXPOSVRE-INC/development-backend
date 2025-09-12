@@ -445,47 +445,29 @@ class StripeService
         $user = auth()->user();
         $client = new StripeClient(env('STRIPE_SECRET'));
 
-        try {
-            $BA = PaymentAccount::where('id', $request->id)
-                ->where('user_id', $user->id)
-                ->first();
+        $BA = PaymentAccount::where('id', $request->id)
+            ->where('user_id', $user->id)
+            ->first();
 
-            if (!$BA) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Payment account not found or does not belong to this user'
-                ], 404);
-            }
-
-            try {
-                $delete = $client->accounts->deleteExternalAccount(
-                    $user->stripeAccountId,
-                    $BA->stripeId,
-                    []
-                );
-            } catch (\Stripe\Exception\ApiErrorException $e) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Stripe error: ' . $e->getMessage()
-                ], 500);
-            }
-
-            if (isset($delete->deleted) && $delete->deleted === true) {
-                $BA->delete();
-            }
-
-            return $user->paymentAccounts;
-        } catch (\Exception $e) {
-            Log::error('Remove Payment Account Error: ' . $e->getMessage(), [
-                'user_id' => $user->id ?? null,
-                'request' => $request->all(),
-            ]);
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Something went wrong: ' . $e->getMessage()
-            ], 500);
+        if (!$BA) {
+            throw new \Exception('Payment account not found or does not belong to this user');
         }
+
+        try {
+            $delete = $client->accounts->deleteExternalAccount(
+                $user->stripeAccountId,
+                $BA->stripeId,
+                []
+            );
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            throw new \Exception('Stripe error: ' . $e->getMessage());
+        }
+
+        if (isset($delete->deleted) && $delete->deleted === true) {
+            $BA->delete();
+        }
+
+        return $user->paymentAccounts()->get();
     }
 
     public function listPurchases()

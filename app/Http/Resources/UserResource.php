@@ -26,7 +26,15 @@ class UserResource extends JsonResource
             'isConfirmed' => $this->isConfirmed,
             'marketLikesCount' => $this->profile ? $this->profile->likers()->count() : 0,
             'isMarketLikeByUser' => $this->profile ? $this->profile->isLikedBy(auth('api')->user()) : 0,
-            'posts' => $this->posts()->count(),
+            'posts' => $this->posts()
+                ->whereDoesntHave('reports', function ($q) {
+                    $q->where('model', 'post');
+                })
+                ->where(function ($query) {
+                    $query->whereNull('status')
+                        ->orWhere('status', '!=', 'archive');
+                })
+                ->count(),
             'status' => $this->status,
             'subscribed' => auth('api')->user()->isSubscriber($this->id),
             'subscribing' => auth('api')->user()->isSubscription($this->id),

@@ -177,6 +177,7 @@ Route::group([
         ], function () {
 
             Route::get('/', 'PostController@index');
+            Route::get('/filter', 'PostController@filter');
             Route::get('/saved-posts', 'PostController@getSavedPosts');
             Route::get('/archived-posts', 'PostController@getArchivedPosts');
             Route::get('/most-crowned', 'PostController@mostCrowned');
