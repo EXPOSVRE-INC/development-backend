@@ -1765,4 +1765,79 @@ class PostController extends Controller
             ]
         ]);
     }
+
+    public function filter(Request $request)
+    {
+        $query = Post::query();
+
+        // Sort By
+        switch ($request->input('sort_by')) {
+            case 'lowest_price':
+                $query->orderBy('fixed_price', 'asc');
+                break;
+            case 'highest_price':
+                $query->orderBy('fixed_price', 'desc');
+                break;
+        }
+
+        // Status Filter - Based on actual database structure
+        $statusFilters = $request->input('status');
+        if ($statusFilters && !in_array('all', $statusFilters)) {
+            $query->where(function ($q) use ($statusFilters) {
+                foreach ($statusFilters as $filter) {
+                    switch ($filter) {
+                        case 'price_upon_request':
+                            $q->orWhere('typeOfPrice', 'private');
+                            break;
+                        case 'public_price':
+                            $q->orWhere('typeOfPrice', 'public');
+                            break;
+                        case 'sold':
+                            $q->orWhere('status', 'sold');
+                            break;
+                        case 'limited_edition':
+                            $q->orWhere('limited_addition_number', '!=', 0);
+                            break;
+                        case 'experiences':
+                            $q->orWhere(function ($subQ) {
+                                $subQ->where(function ($innerQ) {
+                                    $innerQ->whereNotNull('time_sale_from_date')
+                                        ->where('time_sale_from_date', '!=', '1970-01-01 00:00:00');
+                                })
+                                    ->orWhere(function ($innerQ) {
+                                        $innerQ->whereNotNull('time_sale_to_date')
+                                            ->where('time_sale_to_date', '!=', '1970-01-01 00:00:00');
+                                    });
+                            });
+                    }
+                }
+            });
+        }
+
+        $typeFilters = $request->input('type');
+        if ($typeFilters && !in_array('all', $typeFilters)) {
+            $query->whereIn('type', $typeFilters);
+        }
+
+
+
+        // Interested In (tags/categories) Filter
+        if ($request->filled('interested_in')) {
+            $interestedIn = $request->input('interested_in');
+
+            // Check if it's a single value or array
+            if (!is_array($interestedIn)) {
+                $interestedIn = [$interestedIn];
+            }
+
+            // Skip filter if 'all' is selected
+            if (!in_array('all', $interestedIn)) {
+                $query->whereHas('interests', function ($q) use ($interestedIn) {
+                    $q->whereIn('name', $interestedIn);
+                });
+            }
+        }
+
+        return response()->json($query->paginate(20));
+    }
 }

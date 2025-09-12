@@ -205,17 +205,9 @@ class UserController extends Controller
      */
     public function feed(FeedRequest $request)
     {
-        $timestamp = $request->get('last_update_date');
-
-        $fromDateEastern = Carbon::createFromTimestamp($timestamp)->setTimezone('US/Eastern');
-
-        $fromDateUTC = $fromDateEastern->copy()->setTimezone('UTC')->toDateTimeString();
-
-
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
 
         $user = auth('api')->user();
-
         $userInterestsArray = $user->interests()->pluck('slug')->toArray();
 
         $posts = [];
@@ -239,27 +231,23 @@ class UserController extends Controller
             $posts = array_merge($posts, $postsInterested);
         }
 
+        // 2. User's own posts
         $userPosts = $user->posts()
             ->where(function ($query) {
                 $query->whereNull('status')
                     ->orWhere('status', '!=', 'archive');
             })
             ->whereDoesntHave('reports')
-            ->where('updated_at', '<=', $fromDateUTC)
             ->pluck('id')
             ->toArray();
 
         $posts = array_merge($posts, $userPosts);
 
+        // 3. Subscription posts
         $subscriptionUserIds = $user->subscriptions->pluck('id')->toArray();
-
         if (!empty($subscriptionUserIds)) {
             $subscriptionPosts = Post::whereIn('owner_id', $subscriptionUserIds)
                 ->whereDoesntHave('reports')
-                ->where(function ($query) use ($now) {
-                    $query->whereNull('publish_date')
-                        ->orWhere('publish_date', '<', $now);
-                })
                 ->where(function ($query) {
                     $query->whereNull('status')
                         ->orWhere('status', '!=', 'archive');
@@ -277,27 +265,26 @@ class UserController extends Controller
             $posts = array_merge($posts, $subscriptionPosts);
         }
 
+        // 4. Additorials (ads)
         $postsAdditorials = Post::where('owner_id', 1)
-            ->where('publish_date', '<', $now)
             ->where('ad', 1)
-            ->where(function ($query) use ($fromDateUTC) {
+            ->where(function ($query) use ($now) {
+                $query->whereNull('publish_date')
+                    ->orWhere('publish_date', '<=', $now);
+            })
+            ->where(function ($query) {
                 $query->whereNull('status')
-                    ->orWhere(function ($q) use ($fromDateUTC) {
-                        $q->where('status', '!=', 'archive')
-                            ->where('updated_at', '<=', $fromDateUTC);
-                    });
+                    ->orWhere('status', '!=', 'archive');
             })
             ->pluck('id')
             ->toArray();
 
-
         $posts = array_merge($posts, $postsAdditorials);
 
-        // 5. Market posts - optimized
+        // 5. Market posts
         $marketPosts = Post::where('post_for_sale', 1)
             ->where('status', '!=', 'archive')
             ->whereDoesntHave('reports')
-            ->where('updated_at', '<=', $fromDateUTC)
             ->get()
             ->filter(function ($post) use ($user) {
                 return !$user->isBlocking($post->owner);
@@ -310,20 +297,20 @@ class UserController extends Controller
 
         $posts = array_merge($posts, $marketPosts);
 
+        // Final collection
         $uniquePostIds = array_unique($posts);
 
         $sortedPosts = Post::whereIn('id', $uniquePostIds)
             ->orderByRaw("GREATEST(
-                COALESCE(publish_date, '1970-01-01'),
-                COALESCE(created_at, '1970-01-01')
-            ) DESC")
+            COALESCE(publish_date, '1970-01-01'),
+            COALESCE(created_at, '1970-01-01')
+        ) DESC")
             ->get();
 
         return response()->json([
             'data' => $sortedPosts->pluck('id')->values()
         ]);
     }
-
 
     public function notificationAction(Request $request)
     {
