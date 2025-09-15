@@ -217,7 +217,10 @@ class UserController extends Controller
                 ->whereHas('interests', function ($query) use ($userInterestsArray) {
                     $query->whereIn('slug', $userInterestsArray);
                 })
-                ->where('status', '!=', 'archive')
+                ->where(function ($query) {
+                    $query->whereNull('status')
+                        ->orWhereNotIn('status', ['archive']);
+                })
                 ->whereDoesntHave('reports')
                 ->get()
                 ->filter(function ($post) use ($user) {
@@ -276,7 +279,7 @@ class UserController extends Controller
             })
             ->where(function ($query) {
                 $query->whereNull('status')
-                    ->orWhere('status', '!=', 'archive');
+                    ->orWhereNotIn('status', ['archive']);
             })
             ->pluck('id')
             ->toArray();
@@ -304,9 +307,9 @@ class UserController extends Controller
 
         $sortedPosts = Post::whereIn('id', $uniquePostIds)
             ->orderByRaw("GREATEST(
-            COALESCE(publish_date, '1970-01-01'),
-            COALESCE(created_at, '1970-01-01')
-        ) DESC")
+                COALESCE(publish_date, '1970-01-01'),
+                COALESCE(created_at, '1970-01-01')
+            ) DESC")
             ->get();
 
         return response()->json([
@@ -745,11 +748,9 @@ class UserController extends Controller
                         $q1->whereIn('owner_id', $subscribedOwnerIds);
                     });
             })
-            ->where(function ($q) {
-                $q->where(function ($query) {
-                    $query->whereNull('status')
-                        ->orWhere('status', '!=', 'archive');
-                });
+            ->where(function ($query) {
+                $query->whereNull('status')
+                    ->orWhereNotIn('status', ['archive']);
             })
             ->whereNotIn('owner_id', $blockedOwnerIds)
             ->whereDoesntHave('reports');
@@ -770,7 +771,10 @@ class UserController extends Controller
 
         $mergedPosts = Post::whereIn('id', $basePostIds->merge($editorialPostIds)->unique())
             ->whereDoesntHave('reports')
-            ->orderByDesc('created_at')
+            ->orderByRaw("GREATEST(
+                COALESCE(publish_date, '1970-01-01'),
+                COALESCE(created_at, '1970-01-01')
+            ) DESC")
             ->pluck('id');
 
         $total = $mergedPosts->count();
@@ -778,7 +782,10 @@ class UserController extends Controller
 
         $posts = Post::with(['interests', 'owner'])
             ->whereIn('id', $paginatedIds)
-            ->orderByDesc('created_at')
+            ->orderByRaw("GREATEST(
+                COALESCE(publish_date, '1970-01-01'),
+                COALESCE(created_at, '1970-01-01')
+            ) DESC")
             ->get();
 
         return response()->json([
@@ -814,7 +821,10 @@ class UserController extends Controller
         $total = (clone $baseQuery)->count();
 
         $posts = $baseQuery
-            ->orderBy('created_at', 'desc')
+            ->orderByRaw("GREATEST(
+                COALESCE(publish_date, '1970-01-01'),
+                COALESCE(created_at, '1970-01-01')
+            ) DESC")
             ->offset($offset)
             ->limit($limit)
             ->get();
