@@ -218,6 +218,7 @@ class UserController extends Controller
                     $query->whereIn('slug', $userInterestsArray);
                 })
                 ->where('status', '!=', 'archive')
+                ->whereDoesntHave('reports')
                 ->get()
                 ->filter(function ($post) use ($user) {
                     return !$user->isBlocking($post->owner);
@@ -268,6 +269,7 @@ class UserController extends Controller
         // 4. Additorials (ads)
         $postsAdditorials = Post::where('owner_id', 1)
             ->where('ad', 1)
+            ->whereDoesntHave('reports')
             ->where(function ($query) use ($now) {
                 $query->whereNull('publish_date')
                     ->orWhere('publish_date', '<=', $now);
