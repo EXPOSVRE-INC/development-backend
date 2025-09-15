@@ -720,13 +720,6 @@ class UserController extends Controller
         $limit = (int) $request->input('limit', 10);
         $offset = ($page - 1) * $limit;
 
-        $timestamp = $request->get('last_update_date');
-
-        $fromDateEastern = Carbon::createFromTimestamp($timestamp)->setTimezone('US/Eastern');
-
-        $fromDateUTC = $fromDateEastern->copy()->setTimezone('UTC')->toDateTimeString();
-
-
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
         $user = auth('api')->user();
 
@@ -735,43 +728,41 @@ class UserController extends Controller
             ->merge($user->blockedBy()->pluck('user_id'))
             ->unique()
             ->toArray();
-        $subscribedOwnerIds = $user->subscriptions()->pluck('id')->toArray();
 
+        $subscribedOwnerIds = $user->subscriptions()->pluck('id')->toArray();
         $baseQuery = Post::query()
             ->select('posts.*')
-            ->where(function ($q) use ($user, $userInterestSlugs, $subscribedOwnerIds, $fromDateUTC, $now, $blockedOwnerIds) {
-                $q->where(function ($q1) use ($userInterestSlugs, $fromDateUTC) {
-                    $q1->whereHas('interests', fn($q2) => $q2->whereIn('slug', $userInterestSlugs))
-                        ->where('updated_at', '<=', $fromDateUTC);
+            ->where(function ($q) use ($user, $userInterestSlugs, $subscribedOwnerIds, $now) {
+                $q->where(function ($q1) use ($userInterestSlugs) {
+                    $q1->whereHas('interests', fn($q2) => $q2->whereIn('slug', $userInterestSlugs));
                 })
-                    ->orWhere(function ($q1) use ($user, $fromDateUTC) {
-                        $q1->where('owner_id', $user->id)
-                            ->where('updated_at', '<=', $fromDateUTC);
+                    ->orWhere(function ($q1) use ($user) {
+                        $q1->where('owner_id', $user->id);
                     })
                     ->orWhere(function ($q1) use ($subscribedOwnerIds, $now) {
-                        $q1->whereIn('owner_id', $subscribedOwnerIds)
-                            ->where('publish_date', '<', $now);
+                        $q1->whereIn('owner_id', $subscribedOwnerIds);
                     });
             })
             ->where(function ($q) {
-                $q->where('status', '!=', 'archive')
-                    ->orWhereNull('status')
-                    ->orWhere('status', '');
+                $q->where(function ($query) {
+                    $query->whereNull('status')
+                        ->orWhere('status', '!=', 'archive');
+                });
             })
             ->whereNotIn('owner_id', $blockedOwnerIds)
             ->whereDoesntHave('reports');
 
-        $editorialQuery = Post::query()
-            ->where('owner_id', 1)
-            ->where('publish_date', '<', $now)
+        $editorialQuery = Post::where('owner_id', 1)
             ->where('ad', 1)
-            ->where(function ($query) use ($fromDateUTC) {
+            ->where(function ($query) use ($now) {
+                $query->whereNull('publish_date')
+                    ->orWhere('publish_date', '<=', $now);
+            })
+            ->where(function ($query) {
                 $query->whereNull('status')
-                    ->orWhere(function ($q) use ($fromDateUTC) {
-                        $q->where('status', '!=', 'archive')
-                            ->where('updated_at', '<=', $fromDateUTC);
-                    });
+                    ->orWhere('status', '!=', 'archive');
             });
+
         $basePostIds = $baseQuery->pluck('id');
         $editorialPostIds = $editorialQuery->pluck('id');
 
@@ -806,10 +797,8 @@ class UserController extends Controller
         $limit = (int) $request->input('limit', 10);
         $offset = ($page - 1) * $limit;
 
-        $fromDate = Carbon::createFromTimestamp($request->get('last_update_date'))
-            ->setTimezone('US/Eastern')->toDateTimeString();
-
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
+
 
         $baseQuery = Post::where('owner_id', 1)
             ->where(function ($query) {
@@ -818,8 +807,7 @@ class UserController extends Controller
                     ->orWhere('status', '');
             })
             ->where('publish_date', '<', $now)
-            ->where('ad', 1)
-            ->where('updated_at', '>=', $fromDate);
+            ->where('ad', 1);
 
         $total = (clone $baseQuery)->count();
 
@@ -847,11 +835,6 @@ class UserController extends Controller
         $limit = (int) $request->input('limit', 10);
         $offset = ($page - 1) * $limit;
 
-        $fromDate = $request->has('last_update_date')
-            ? Carbon::createFromTimestamp($request->get('last_update_date'))
-            ->setTimezone('US/Eastern')->toDateTimeString()
-            : null;
-
         $user = auth('api')->user();
 
         $baseQuery = Post::where('post_for_sale', 1)
@@ -859,13 +842,12 @@ class UserController extends Controller
                 $query->where('status', '!=', 'archive')
                     ->orWhereNull('status')
                     ->orWhere('status', '');
-            })->whereDoesntHave('reports');
+            })
+            ->whereDoesntHave('reports')
+            ->with(['reports', 'owner'])
+            ->orderBy('created_at', 'desc');
 
-
-        $baseQuery->with(['reports', 'owner']);
-
-        $allPosts = $baseQuery->latest()->get();
-
+        $allPosts = $baseQuery->get();
         $filteredPosts = $allPosts->filter(function ($post) use ($user) {
             if ($post->reports->isNotEmpty()) {
                 return false;

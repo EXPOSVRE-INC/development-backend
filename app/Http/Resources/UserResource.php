@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Database\Eloquent\Builder;
 
 class UserResource extends JsonResource
 {
@@ -39,8 +40,24 @@ class UserResource extends JsonResource
             'subscribed' => auth('api')->user()->isSubscriber($this->id),
             'subscribing' => auth('api')->user()->isSubscription($this->id),
             'verify' => (bool) $this->verify,
-            'followers' => $this->subscribers()->count(),
-            'followed' => $this->subscriptions()->count(),
+            'followers' => $this->subscribers()
+                ->whereHas('profile')
+                ->whereDoesntHave('blockedBy', function (Builder $query) {
+                    $query->where('user_id', $this->id);
+                })
+                ->whereDoesntHave('blocks', function (Builder $query) {
+                    $query->where('blocking_id', $this->id);
+                })
+                ->count(),
+            'followed' => $this->subscriptions()
+                ->whereHas('profile')
+                ->whereDoesntHave('blockedBy', function (Builder $query) {
+                    $query->where('user_id', $this->id);
+                })
+                ->whereDoesntHave('blocks', function (Builder $query) {
+                    $query->where('blocking_id', $this->id);
+                })
+                ->count(),
             'followersHidden' => $this->setting ? (bool) $this->setting->followersHidden : false,
             'followedHidden' => $this->setting ? (bool) $this->setting->followedHidden : false,
         ];
