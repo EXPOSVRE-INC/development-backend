@@ -515,31 +515,20 @@ class PostController extends Controller
                     $interval->delete();
                 }
             }
-
-            //        dd($user->paymentAccounts);
-
-
             if (!empty($liveExpiriences)) {
                 foreach ($liveExpiriences as $liveExpirience) {
-
-                    $fromDate = \Carbon\Carbon::createFromTimestamp($liveExpirience['startUnixTime'])->toDateTime();
-                    $toDate = \Carbon\Carbon::createFromTimestamp($liveExpirience['finalUnixTime'])->toDateTime();
-
-
                     $newLiveExpirience = new LiveExpirience();
                     $newLiveExpirience->name = $liveExpirience['content'];
-                    if ($liveExpirience['startUnixTime'] == 0) {
-                        $newLiveExpirience->startUnixTime = null;
-                    } else {
-                        $newLiveExpirience->startUnixTime = $fromDate;
-                    }
-
-                    if ($liveExpirience['finalUnixTime'] == 0) {
-                        $newLiveExpirience->finalUnixTime = null;
-                    } else {
-                        $newLiveExpirience->finalUnixTime = $toDate;
-                    }
                     $newLiveExpirience->post_id = $post->id;
+
+                    $newLiveExpirience->startUnixTime = ($liveExpirience['startUnixTime'] ?? 0) > 0
+                        ? \Carbon\Carbon::createFromTimestamp($liveExpirience['startUnixTime'])->toDateTime()
+                        : null;
+
+                    $newLiveExpirience->finalUnixTime = ($liveExpirience['finalUnixTime'] ?? 0) > 0
+                        ? \Carbon\Carbon::createFromTimestamp($liveExpirience['finalUnixTime'])->toDateTime()
+                        : null;
+
                     $newLiveExpirience->save();
                 }
             }
@@ -639,10 +628,6 @@ class PostController extends Controller
                     $report->save();
                 }
             }
-
-
-
-
             $interests = $request->get('interests');
 
             if (is_array($interests)) {

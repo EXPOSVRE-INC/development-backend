@@ -757,6 +757,7 @@ class UserController extends Controller
 
         $editorialQuery = Post::where('owner_id', 1)
             ->where('ad', 1)
+            ->whereDoesntHave('reports')
             ->where(function ($query) use ($now) {
                 $query->whereNull('publish_date')
                     ->orWhere('publish_date', '<=', $now);
@@ -808,8 +809,8 @@ class UserController extends Controller
 
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
 
-
         $baseQuery = Post::where('owner_id', 1)
+            ->whereDoesntHave('reports')
             ->where(function ($query) {
                 $query->where('status', '!=', 'archive')
                     ->orWhereNull('status')
@@ -821,10 +822,7 @@ class UserController extends Controller
         $total = (clone $baseQuery)->count();
 
         $posts = $baseQuery
-            ->orderByRaw("GREATEST(
-                COALESCE(publish_date, '1970-01-01'),
-                COALESCE(created_at, '1970-01-01')
-            ) DESC")
+            ->orderByRaw("COALESCE(publish_date, created_at) DESC")
             ->offset($offset)
             ->limit($limit)
             ->get();
@@ -856,7 +854,7 @@ class UserController extends Controller
                     ->orWhere('status', '');
             })
             ->whereDoesntHave('reports')
-            ->with(['reports', 'owner'])
+            ->with(['owner'])
             ->orderBy('created_at', 'desc');
 
         $allPosts = $baseQuery->get();
