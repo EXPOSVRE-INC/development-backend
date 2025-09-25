@@ -3,11 +3,11 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
+use App\Notifications\Channels\FirebaseChannel;
+use Kreait\Firebase\Messaging\CloudMessage;
 
 class PriceRequestAcceptedNotification extends Notification
 {
@@ -39,30 +39,14 @@ class PriceRequestAcceptedNotification extends Notification
     public function via($notifiable)
     {
         return [
-            //            'database',
-            ApnChannel::class
+            FirebaseChannel::class,
+            ApnChannel::class,
         ];
     }
 
 
     public function toApn($notifiable)
     {
-        //        $deepLink = 'EXPOSVRE://post/' . $this->post->id;
-        //        $notification = new \App\Models\Notification();
-        //        $notification->title = 'Hi! The price of post is ' . round($this->post->price, 2) . '$';
-        //        $notification->description = $this->request->id;
-        //        $notification->type = 'priceResponded';
-        //        $notification->user_id = $this->requestor->id;
-        //        $notification->sender_id = $this->post->owner_id;
-        //        $notification->post_id = $this->post->id;
-        //        $notification->deep_link = $deepLink;
-        //        $notification->save();
-        //
-        //
-        //        $deepLink = 'EXPOSVRE://post/' . $this->post->id;
-        //        $notification->deep_link = $deepLink;
-        //        $notification->save();
-
         return ApnMessage::create()
             ->badge(1)
             ->title('Price request accepted')
@@ -89,5 +73,18 @@ class PriceRequestAcceptedNotification extends Notification
         $notification->save();
 
         return $notification;
+    }
+
+    public function toFirebase($notifiable, $token)
+    {
+        return CloudMessage::new()
+            ->withTarget('token', $token)
+            ->withNotification([
+                'title' => 'Price request accepted',
+                'body' => 'Hello, the price of this is ' . number_format($this->post->fixed_price, 2) . '$'
+            ])
+            ->withData([
+                'deepLink' => 'EXPOSVRE://notifications',
+            ]);
     }
 }

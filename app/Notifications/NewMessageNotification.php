@@ -3,12 +3,11 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Log;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
+use App\Notifications\Channels\FirebaseChannel;
+use Kreait\Firebase\Messaging\CloudMessage;
 
 class NewMessageNotification extends Notification
 {
@@ -41,15 +40,15 @@ class NewMessageNotification extends Notification
     public function via($notifiable)
     {
         return [
-//            'database',
-            ApnChannel::class
+            FirebaseChannel::class,
+            ApnChannel::class,
         ];
     }
 
 
     public function toApn($notifiable)
     {
-        $deepLink = 'EXPOSVRE://user/'. $this->subscriber->id;
+        $deepLink = 'EXPOSVRE://user/' . $this->subscriber->id;
         $notification = new \App\Models\Notification();
         $notification->title = 'You have new message from,' . $this->subscriber->username;
         $notification->description = 'You have new message from,' . $this->subscriber->username;
@@ -70,7 +69,7 @@ class NewMessageNotification extends Notification
 
     public function toDatabase($notifiable)
     {
-        $deepLink = 'EXPOSVRE://user/'. $this->subscriber->id;
+        $deepLink = 'EXPOSVRE://user/' . $this->subscriber->id;
         $notification = new \App\Models\Notification();
         $notification->title = 'You have new message from,' . $this->subscriber->username;
         $notification->description = 'You have new message from,' . $this->subscriber->username;
@@ -83,4 +82,17 @@ class NewMessageNotification extends Notification
         return $notification;
     }
 
+    public function toFirebase($notifiable, $token)
+    {
+        $deepLink = 'EXPOSVRE://user/' . $this->subscriber->id;
+        return CloudMessage::new()
+            ->withTarget('token', $token)
+            ->withNotification([
+                'title' => 'You have new message from, ' . $this->subscriber->username . '.',
+                'body' => $this->message,
+            ])
+            ->withData([
+                'deepLink' => $deepLink,
+            ]);
+    }
 }

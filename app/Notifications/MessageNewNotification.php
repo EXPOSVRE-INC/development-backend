@@ -3,11 +3,11 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
+use App\Notifications\Channels\FirebaseChannel;
+use Kreait\Firebase\Messaging\CloudMessage;
 
 class MessageNewNotification extends Notification
 {
@@ -37,24 +37,14 @@ class MessageNewNotification extends Notification
     public function via($notifiable)
     {
         return [
-//            'database',
-            ApnChannel::class
+            FirebaseChannel::class,
+            ApnChannel::class,
         ];
     }
 
     public function toApn($notifiable)
     {
-        $deepLink = 'EXPOSVRE://user/'. $this->sender->id;
-
-//        $notification = new \App\Models\Notification();
-//        $notification->title = 'You have new message from,' . $this->sender->username;
-//        $notification->description = $this->sender->username . ':' . $this->message;
-//        $notification->type = 'newmessage';
-//        $notification->user_id = $this->receiver->id;
-//        $notification->sender_id = $this->sender->id;
-////        $notification->post_id = $this->collection->id;
-//        $notification->deep_link = $deepLink;
-//        $notification->save();
+        $deepLink = 'EXPOSVRE://user/' . $this->sender->id;
 
         return ApnMessage::create()
             ->badge(1)
@@ -63,20 +53,20 @@ class MessageNewNotification extends Notification
             ->custom('deepLink', $deepLink);
     }
 
-    public function toDatabase($notifiable)
+    public function toFirebase($notifiable, $token)
     {
-//         $deepLink = 'EXPOSVRE://user/'. $this->sender->id;
+        $deepLink = 'EXPOSVRE://user/' . $this->sender->id;
 
-//         $notification = new \App\Models\Notification();
-//         $notification->title = 'You have new message from,' . $this->sender->username;
-//         $notification->description = $this->sender->username . ':' . $this->message;
-//         $notification->type = 'newmessage';
-//         $notification->user_id = $this->receiver->id;
-//         $notification->sender_id = $this->sender->id;
-// //        $notification->post_id = $this->collection->id;
-//         $notification->deep_link = $deepLink;
-//         $notification->save();
-
-//         return $notification;
+        return CloudMessage::new()
+            ->withTarget('token', $token)
+            ->withNotification([
+                'title' => 'You have new message from,' . $this->sender->profile->firsName . ' ' . $this->sender->profile->firsName . '.',
+                'body'  => $this->message,
+            ])
+            ->withData([
+                'deepLink' => $deepLink,
+            ]);
     }
+
+    public function toDatabase($notifiable) {}
 }

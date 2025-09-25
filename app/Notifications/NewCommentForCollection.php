@@ -3,12 +3,12 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
+use App\Notifications\Channels\FirebaseChannel;
+use Kreait\Firebase\Messaging\CloudMessage;
 
 class NewCommentForCollection extends Notification
 {
@@ -33,28 +33,35 @@ class NewCommentForCollection extends Notification
 
     public function via($notifiable)
     {
-        return [ApnChannel::class];
+        return [
+            FirebaseChannel::class,
+            ApnChannel::class,
+        ];
     }
 
 
     public function toApn($notifiable)
     {
-        $deepLink = 'EXPOSVRE://gallerycomment/'. $this->collection->id;
-
-//        $notification = new \App\Models\Notification();
-//        $notification->title = 'commented on your collection';
-//        $notification->description = 'commented on your collection';
-//        $notification->type = 'collectioncomment';
-//        $notification->user_id = $this->collection->user_id;
-//        $notification->sender_id = $this->user->id;
-//        $notification->post_id = $this->collection->id;
-//        $notification->deep_link = $deepLink;
-//        $notification->save();
-
+        $deepLink = 'EXPOSVRE://gallerycomment/' . $this->collection->id;
         return ApnMessage::create()
             ->badge(1)
             ->title('New comment from ' . $this->user->profile->firsName . ' ' . $this->user->profile->firsName . '.')
             ->body($this->comment)
             ->custom('deepLink', $deepLink);
+    }
+
+    public function toFirebase($notifiable, $token)
+    {
+        $deepLink = 'EXPOSVRE://gallerycomment/' . $this->collection->id;
+
+        return CloudMessage::new()
+            ->withTarget('token', $token)
+            ->withNotification([
+                'title' => 'New comment from ' . $this->user->profile->firsName . ' ' . $this->user->profile->firsName . '.',
+                'body' => $this->comment,
+            ])
+            ->withData([
+                'deepLink' => $deepLink,
+            ]);
     }
 }
