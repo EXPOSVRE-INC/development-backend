@@ -3,8 +3,8 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
+use App\Notifications\Channels\FirebaseChannel;
+use Kreait\Firebase\Messaging\CloudMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
@@ -16,7 +16,7 @@ class SaleNotification extends Notification
 
     private $requestor;
     private $post;
-//    private $request;
+    //    private $request;
     /**
      * Create a new notification instance.
      *
@@ -27,7 +27,7 @@ class SaleNotification extends Notification
     {
         $this->post = $post;
         $this->requestor = $buyer;
-//        $this->request = $request;
+        //        $this->request = $request;
     }
 
     /**
@@ -39,30 +39,15 @@ class SaleNotification extends Notification
     public function via($notifiable)
     {
         return [
-//            'database',
-            ApnChannel::class
+            FirebaseChannel::class,
+            ApnChannel::class,
         ];
     }
 
 
     public function toApn($notifiable)
     {
-//        $notification = new \App\Models\Notification();
         $deepLink = 'EXPOSVRE://sale/' . $this->post->id;
-//        $notification->deep_link = $deepLink;
-//        $notification->title = $this->requestor->profile->firstName . ' ' . $this->requestor->profile->lastName . ' buy your post';
-//        $notification->description = 'buy your post';
-//        $notification->type = 'sale';
-//        $notification->user_id = $this->post->owner_id;
-//        $notification->sender_id = $this->requestor->id;
-//        $notification->post_id = $this->post->id;
-//        $notification->save();
-
-//        $deepLink = 'EXPOSVRE://sale/' . $this->post->id;
-//        $notification->deep_link = $deepLink;
-//        $notification->save();
-
-
         return ApnMessage::create()
             ->badge(1)
             ->title('New sale')
@@ -72,7 +57,7 @@ class SaleNotification extends Notification
 
     public function toDatabase($notifiable)
     {
-//        dump($this->requestor->profile);
+        //        dump($this->requestor->profile);
         $notification = new \App\Models\Notification();
         $notification->title = $this->requestor->profile->firstName . ' ' . $this->requestor->profile->lastName . ' is interested in item';
         $notification->description = 'interested in item';
@@ -83,11 +68,25 @@ class SaleNotification extends Notification
         $notification->deep_link = '';
         $notification->save();
 
-        $deepLink = 'EXPOSVRE://request/' . $this->post->id . '/' .$this->request->id;
+        $deepLink = 'EXPOSVRE://request/' . $this->post->id . '/' . $this->request->id;
         $notification->deep_link = $deepLink;
         $notification->save();
 
 
         return $notification;
+    }
+
+    public function toFirebase($notifiable, $token)
+    {
+        $deepLink = 'EXPOSVRE://sale/' . $this->post->id;
+        return CloudMessage::new()
+            ->withTarget('token', $token)
+            ->withNotification([
+                'title' => 'New sale',
+                'body' => $this->requestor->profile->firstName . ' ' . $this->requestor->profile->lastName . ' is interested in item'
+            ])
+            ->withData([
+                'deepLink' => $deepLink,
+            ]);
     }
 }

@@ -264,6 +264,8 @@ Route::group([
             // 🔹 POST ROUTES (specific endpoints)
             Route::post('/feed', 'UserController@feed');
             Route::post('/set-push-token', 'UserController@setToken');
+            Route::post('/set-device-token', 'UserController@setDeviceToken');
+            Route::delete('/device-token', 'UserController@destroy');
             Route::post('/avatar-upload', 'UserController@avatarUpload');
             Route::post('/tag/assign', 'UserController@assignTag');
             Route::post('/tag/remove', 'UserController@removeTag');

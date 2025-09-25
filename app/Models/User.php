@@ -60,10 +60,7 @@ class User extends Authenticatable implements JWTSubject, HasMedia
         'email_verified_at' => 'datetime',
     ];
 
-    public function routeNotificationForApn()
-    {
-        return $this->pushToken;
-    }
+
 
     protected function getDefaultGuardName(): string
     {
@@ -349,5 +346,29 @@ class User extends Authenticatable implements JWTSubject, HasMedia
     public function favoritePosts()
     {
         return $this->morphedByMany(Post::class, 'favoriteable', 'favorites', 'user_id');
+    }
+
+
+    public function deviceTokens()
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
+    public function routeNotificationForApn()
+    {
+        return $this->deviceTokens()
+            ->where('platform', 'ios')
+            ->where('is_active', true)
+            ->pluck('token')
+            ->toArray();
+    }
+
+    public function routeNotificationForFcm()
+    {
+        return $this->deviceTokens()
+            ->where('platform', 'android')
+            ->where('is_active', true)
+            ->pluck('token')
+            ->toArray();
     }
 }

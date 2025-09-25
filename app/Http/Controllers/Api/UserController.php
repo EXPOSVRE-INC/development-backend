@@ -20,6 +20,7 @@ use App\Models\Conversation;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Block;
+use App\Models\DeviceToken;
 use App\Models\InterestsUserAssigment;
 use App\Models\UserSettings;
 use App\Models\UserShippingAddress;
@@ -32,6 +33,7 @@ use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
 use function Aws\filter;
 use Illuminate\Support\Facades\DB;
+
 
 class UserController extends Controller
 {
@@ -502,6 +504,40 @@ class UserController extends Controller
         return response()->json(['data' => $user]);
     }
 
+    public function setDeviceToken(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'platform' => 'required|in:ios,android',
+        ]);
+
+        $user = auth('api')->user();
+
+        $device = DeviceToken::updateOrCreate(
+            ['token' => $request->token],
+            [
+                'user_id' => $user->id,
+                'platform' => $request->platform,
+                'is_active' => true,
+                'last_used_at' => now(),
+            ]
+        );
+
+        return response()->json(['data' => $device], 200);
+    }
+
+    public function destroy(Request $request)
+    {
+        $request->validate(['token' => 'required|string']);
+
+        $user =  auth('api')->user();
+
+        DeviceToken::where('user_id', $user->id)
+            ->where('token', $request->token)
+            ->delete();
+
+        return response()->json(['status' => 'deleted']);
+    }
     public function test()
     {
         $user = auth('api')->user();
@@ -514,7 +550,6 @@ class UserController extends Controller
 
         return response()->json(['data' => 'Notification sent successfully']);
     }
-
 
     public function getNotificationsList(Request $request)
     {

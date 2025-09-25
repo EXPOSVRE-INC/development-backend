@@ -3,11 +3,11 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
+use Kreait\Firebase\Messaging\CloudMessage;
+use App\Notifications\Channels\FirebaseChannel;
 
 class TestNotificationWithDeepLink extends Notification
 {
@@ -31,9 +31,12 @@ class TestNotificationWithDeepLink extends Notification
      */
     public function via($notifiable)
     {
-        return [ApnChannel::class];
-    }
+        return [
+            FirebaseChannel::class,
+            ApnChannel::class,
 
+        ];
+    }
 
     public function toApn($notifiable)
     {
@@ -41,6 +44,18 @@ class TestNotificationWithDeepLink extends Notification
             ->badge(1)
             ->title('Test notification')
             ->body('With deepLink')
-            ->custom('deepLink', 'EXPOSVRE://post/'. 2353);
+            ->custom('deepLink', 'EXPOSVRE://post/' . 2353);
+    }
+
+
+    public function toFirebase($notifiable, $token)
+    {
+        return CloudMessage::new()
+            ->withTarget('token', $token)
+            ->withNotification([
+                'title' => 'Test notification',
+                'body' => 'With deepLink',
+            ])
+            ->withData(['deepLink' => 'EXPOSVRE://post/2353']);
     }
 }

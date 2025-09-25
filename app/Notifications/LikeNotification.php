@@ -3,12 +3,13 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
+use App\Notifications\Channels\FirebaseChannel;
+use Kreait\Firebase\Messaging\CloudMessage;
 
 class LikeNotification extends Notification
 {
@@ -31,30 +32,16 @@ class LikeNotification extends Notification
     public function via($notifiable)
     {
         return [
-            //            'database',
-            //            'mail',
-            ApnChannel::class
+            FirebaseChannel::class,
+            ApnChannel::class,
         ];
     }
 
 
     public function toApn($notifiable)
     {
-        //        dump($this);
+
         $deepLink = 'EXPOSVRE://postlike/' . $this->post->id;
-        //
-        //        $notification = new \App\Models\Notification();
-        //        $notification->title = 'liked your post';
-        //        $notification->description = 'like on your post';
-        //        $notification->type = 'like';
-        //        $notification->user_id = $this->post->owner_id;
-        //        $notification->sender_id = $this->user->id;
-        //        $notification->post_id = $this->post->id;
-        //        $notification->deep_link = $deepLink;
-        //        $notification->save();
-
-        //        dump($notification);
-
         $apnMessage = ApnMessage::create()
             ->badge(1)
             ->title('New like from ' . $this->user->username . '.')
@@ -63,6 +50,19 @@ class LikeNotification extends Notification
         return $apnMessage;
     }
 
+    public function toFirebase($notifiable, $token)
+    {
+        $deepLink = 'EXPOSVRE://postlike/' . $this->post->id;
+
+        return CloudMessage::new()
+            ->withTarget('token', $token)
+            ->withNotification([
+                'title' => 'New like from ' . $this->user->username,
+            ])
+            ->withData([
+                'deepLink' => $deepLink,
+            ]);
+    }
     public function routeNotificationForApn($notifiable)
     {
         dump($notifiable->token);

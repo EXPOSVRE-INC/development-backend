@@ -3,8 +3,8 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
+use App\Notifications\Channels\FirebaseChannel;
+use Kreait\Firebase\Messaging\CloudMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
@@ -39,8 +39,8 @@ class PriceRequestNotification extends Notification
     public function via($notifiable)
     {
         return [
-            //            'database',
-            ApnChannel::class
+            FirebaseChannel::class,
+            ApnChannel::class,
         ];
     }
 
@@ -73,5 +73,18 @@ class PriceRequestNotification extends Notification
 
 
         return $notification;
+    }
+
+    public function toFirebase($notifiable, $token)
+    {
+        return CloudMessage::new()
+            ->withTarget('token', $token)
+            ->withNotification([
+                'title' => 'Price request',
+                'body' => $this->requestor->profile->firstName . ' ' . $this->requestor->profile->lastName . ' is interested in item'
+            ])
+            ->withData([
+                'deepLink' => 'EXPOSVRE://notifications',
+            ]);
     }
 }

@@ -6,6 +6,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
+use App\Notifications\Channels\FirebaseChannel;
+use Kreait\Firebase\Messaging\CloudMessage;
 
 class PriceOfferNotification  extends Notification
 {
@@ -37,8 +39,8 @@ class PriceOfferNotification  extends Notification
     public function via($notifiable)
     {
         return [
-            //            'database',
-            ApnChannel::class
+            FirebaseChannel::class,
+            ApnChannel::class,
         ];
     }
 
@@ -71,5 +73,18 @@ class PriceOfferNotification  extends Notification
 
 
         return $notification;
+    }
+
+    public function toFirebase($notifiable, $token)
+    {
+        return CloudMessage::new()
+            ->withTarget('token', $token)
+            ->withNotification([
+                'title' => 'Offered Price request',
+                'body' => $this->requestor->profile->firstName . ' ' . $this->requestor->profile->lastName . ' offered $' . $this->requestor->offered_price
+            ])
+            ->withData([
+                'deepLink' => 'EXPOSVRE://notifications',
+            ]);
     }
 }

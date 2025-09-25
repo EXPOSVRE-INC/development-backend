@@ -37,6 +37,16 @@ class PostResource extends JsonResource
         ])
             ->latest()
             ->first();
+
+        $fixedPrice = (float) $this->fixed_price;
+        $shippingPrice = (float) $this->shippingPrice;
+
+        $tax = $this->isFree ? 0 : round($fixedPrice * 0.0825, 2);
+        $transactionFees = $this->isFree ? 0 : round($fixedPrice * 0.059, 2);
+
+        $totalPrice = $this->isFree
+            ? $shippingPrice
+            : round($fixedPrice + $shippingPrice + $tax + $transactionFees, 2);
         $data = [
             'id' => $this->id,
             'title' => $this->title,
@@ -58,14 +68,9 @@ class PostResource extends JsonResource
             'time_sale_to_date' => $this->time_sale_to_date
                 ? Carbon::createFromFormat('Y-m-d H:i:s', $this->time_sale_to_date)->timestamp
                 : Carbon::now()->timestamp,
-            'fixed_price' => (int) $this->fixed_price,
-            'totalPrice' => $this->isFree
-                ? (int) $this->shippingPrice
-                : (int) ($this->fixed_price +
-                    $this->shippingPrice +
-                    ($this->fixed_price) * 0.059 +
-                    ($this->fixed_price) * 0.0825),
-            'tax' => $this->isFree ? 0 : ($this->fixed_price) * 0.0825,
+            'fixed_price' => $fixedPrice,
+            'totalPrice' => $totalPrice,
+            'tax' => $tax,
             'royalties_percentage' => (int) $this->royalties_percentage,
             'allow_to_comment' => (bool) $this->allow_to_comment,
             'allow_views' => (bool) $this->allow_views,
@@ -96,8 +101,8 @@ class PostResource extends JsonResource
             $priceRequest != null ? $priceRequest->status : 'none',
             'offeredPrice' => $priceRequest != null ? $priceRequest->offered_price : 0,
             'shippingIncluded' => (bool) $this->isFree,
-            'shippingPrice' => (int) $this->shippingPrice,
-            'transactionFees' => ((int) $this->fixed_price) * 0.059,
+            'shippingPrice' => $shippingPrice,
+            'transactionFees' => $transactionFees,
             'ad' => (bool) $this->ad,
             'publish_date' => $this->publish_date,
             'files' => ImageResource::collection($this->getMedia('files')),

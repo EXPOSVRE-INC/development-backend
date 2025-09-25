@@ -3,12 +3,11 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Log;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
+use App\Notifications\Channels\FirebaseChannel;
+use Kreait\Firebase\Messaging\CloudMessage;
 
 class NewCommentForUser extends Notification
 {
@@ -22,26 +21,29 @@ class NewCommentForUser extends Notification
     private $user;
     private $comment;
     private $comentedUser;
+    private $post;
 
-    public function __construct($userWhoComment, $comment, $comentedUser)
+
+    public function __construct($userWhoComment, $comment, $comentedUser, $post)
     {
         $this->user = $userWhoComment;
         $this->comment = $comment;
         $this->comentedUser = $comentedUser;
+        $this->post = $post;
     }
 
     public function via($notifiable)
     {
         return [
-//            'database',
-            ApnChannel::class
+            FirebaseChannel::class,
+            ApnChannel::class,
         ];
     }
 
 
     public function toApn($notifiable)
     {
-        $deepLink = 'EXPOSVRE://postcomment/'. $this->post->id;
+        $deepLink = 'EXPOSVRE://postcomment/' . $this->post->id;
 
         $notification = new \App\Models\Notification();
         $notification->title = 'New Comment';
@@ -57,14 +59,14 @@ class NewCommentForUser extends Notification
             ->badge(1)
             ->title('New comment from ' . $this->user->username . '.')
             ->body($this->comment)
-            ->custom('deepLink', 'EXPOSVRE://user/'. $this->comentedUser->id);
+            ->custom('deepLink', 'EXPOSVRE://user/' . $this->comentedUser->id);
 
         return $apnMessage;
     }
 
     public function toDatabase($notifiable)
     {
-        $deepLink = 'EXPOSVRE://postcomment/'. $this->post->id;
+        $deepLink = 'EXPOSVRE://postcomment/' . $this->post->id;
 
         $notification = new \App\Models\Notification();
         $notification->title = 'New Comment';
@@ -77,5 +79,20 @@ class NewCommentForUser extends Notification
         $notification->save();
 
         return $notification;
+    }
+
+    public function toFirebase($notifiable, $token)
+    {
+        $deepLink = 'EXPOSVRE://postcomment/' . $this->post->id;
+
+        return CloudMessage::new()
+            ->withTarget('token', $token)
+            ->withNotification([
+                'title' => 'New comment from ' . $this->user->username . '.',
+                'body' => $this->comment,
+            ])
+            ->withData([
+                'deepLink' => $deepLink,
+            ]);
     }
 }
