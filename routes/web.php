@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\GenreController;
 use App\Http\Controllers\Admin\MoodController;
 use App\Http\Controllers\Admin\CommentReportController;
 use App\Http\Controllers\Admin\ArtistController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -27,9 +28,12 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/password/reset/{token}', function () {
+    return view('desktop-reset');
+});
 Route::get('/link/post/{id}', function ($id) {
-//    return redirect()->to('EXPOSVRE://post/'.$id);
-//    return redirect()->to('https://apps.apple.com/us/app/exposvre/id1630178424');
+    //    return redirect()->to('EXPOSVRE://post/'.$id);
+    //    return redirect()->to('https://apps.apple.com/us/app/exposvre/id1630178424');
     return view('universal-link-page');
 });
 
@@ -44,7 +48,7 @@ Route::group([
     'prefix' => 'admin',
     'middleware' => ['web', 'admin'],
 ], function ($router) {
-  
+
     Route::get('dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
     Route::get('reports', [UserReportController::class, 'userReports'])->name('reports');
@@ -77,9 +81,8 @@ Route::group([
     ], function ($router) {
         Route::get('flagged', [\App\Http\Controllers\Admin\AccountController::class, 'flagged'])->name('accounts-flagged');
         Route::get('warnings', [\App\Http\Controllers\Admin\AccountController::class, 'warnings'])->name('accounts-warnings');
-//        Route::get('suspend', [\App\Http\Controllers\Admin\AccountController::class, 'scheduled'])->name('accounts-suspend');
+        //        Route::get('suspend', [\App\Http\Controllers\Admin\AccountController::class, 'scheduled'])->name('accounts-suspend');
         Route::get('banned', [\App\Http\Controllers\Admin\AccountController::class, 'banned'])->name('accounts-banned');
-
     });
     Route::group([
         'prefix' => 'articles',
@@ -128,7 +131,6 @@ Route::group([
         Route::get('edit/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'editForm'])->name('category-edit');
         Route::post('edit/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'edit'])->name('category-edit-post');
         Route::get('delete/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'delete'])->name('category-delete');
-
     });
 
     Route::group([
@@ -140,7 +142,6 @@ Route::group([
         Route::get('edit/{id}', [SongController::class, 'editSongForm'])->name('song-edit-form');
         Route::post('edit/{id}', [SongController::class, 'edit'])->name('song-edit');
         Route::get('delete/{id}', [SongController::class, 'delete'])->name('song-delete');
-
     });
 
     Route::group([
@@ -192,7 +193,7 @@ Route::group([
     });
 });
 
-Route::get('/home', function() {
+Route::get('/home', function () {
     return view('adminlte::dashboard');
 })->middleware('auth');
 

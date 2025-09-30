@@ -882,43 +882,42 @@ class UserController extends Controller
 
         $user = auth('api')->user();
 
-        $baseQuery = Post::where('post_for_sale', 1)
+        $blockedOwnerIds = $user->blocks()->pluck('blocking_id')
+            ->merge($user->blockedBy()->pluck('user_id'))
+            ->unique()
+            ->toArray();
+
+        $subscribedOwnerIds = $user->subscriptions()->pluck('id')->toArray();
+
+        $marketQuery = Post::where('post_for_sale', 1)
             ->where(function ($query) {
-                $query->where('status', '!=', 'archive')
-                    ->orWhereNull('status')
-                    ->orWhere('status', '');
+                $query->whereNull('status')
+                    ->orWhere('status', '')
+                    ->orWhere('status', '!=', 'archive');
             })
-            ->whereDoesntHave('reports')
-            ->with(['owner'])
-            ->orderBy('created_at', 'desc');
+            ->whereNotIn('owner_id', $blockedOwnerIds)
+            ->whereIn('owner_id', array_merge([$user->id], $subscribedOwnerIds)) // Only self + followed users
+            ->whereDoesntHave('reports');
 
-        $allPosts = $baseQuery->get();
-        $filteredPosts = $allPosts->filter(function ($post) use ($user) {
-            if ($post->reports->isNotEmpty()) {
-                return false;
-            }
+        $total = $marketQuery->count();
 
-            if ($user->isBlocking($post->owner) || $user->isBlockedBy($post->owner)) {
-                return false;
-            }
-
-            return true;
-        });
-
-        $total = $filteredPosts->count();
-
-        $paginatedPosts = $filteredPosts->slice($offset, $limit)->values();
+        $posts = $marketQuery->with(['owner'])
+            ->orderBy('created_at', 'desc')
+            ->skip($offset)
+            ->take($limit)
+            ->get();
 
         return response()->json([
-            'data' => PostResource::collection($paginatedPosts),
+            'data' => PostResource::collection($posts),
             'meta' => [
                 'total' => $total,
                 'page' => $page,
                 'limit' => $limit,
-                'count' => $paginatedPosts->count(),
+                'count' => $posts->count(),
             ],
         ]);
     }
+
 
     public function deleteAvatar(Request $request)
     {

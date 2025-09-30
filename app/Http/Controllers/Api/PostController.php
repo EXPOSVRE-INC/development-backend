@@ -756,10 +756,22 @@ class PostController extends Controller
     public function updatePost(Request $request, $id)
     {
         $user = auth('api')->user();
-        $post = Post::where(['id' => $id])->first();
+        $post = Post::find($id); // simpler than where()->first()
 
+        if (!$post) {
+            return response()->json([
+                'error' => 'Post not found.',
+                'status' => 404,
+            ], 404);
+        }
 
-        $title = trim($post->title);
+        $title = trim($post->title ?? '');
+
+        if (empty($title)) {
+            return response()->json([
+                'error' => 'Title cannot be empty or whitespace.'
+            ], 400);
+        }
 
         if (empty($title)) {
             return response()->json(['error' => 'Title cannot be empty or whitespace.'], 400);
