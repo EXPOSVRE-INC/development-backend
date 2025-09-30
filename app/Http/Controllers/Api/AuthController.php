@@ -595,11 +595,23 @@ class AuthController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
+        $userAgent = $request->header('User-Agent');
+
+        if (stripos($userAgent, 'android') !== false) {
+            $platform = 'Android';
+        } elseif (stripos($userAgent, 'iphone') !== false || stripos($userAgent, 'ipad') !== false) {
+            $platform = 'iOS';
+        } else {
+            $platform = 'Other';
+        }
+
         $token = Password::createToken($user);
 
-        Mail::to($user->email)->send(new ResetPassword($user, $token));
+        Mail::to($user->email)->send(new ResetPassword($user, $token, $platform));
 
-        return response()->json(['data' => 'Reset link sent']);
+        return response()->json([
+            'data' => 'Reset link sent',
+        ]);
     }
 
     public function resetPassword($token, Request $request)
