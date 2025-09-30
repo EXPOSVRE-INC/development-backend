@@ -48,7 +48,7 @@ class MessageNewNotification extends Notification
 
         return ApnMessage::create()
             ->badge(1)
-            ->title('You have new message from, ' . $this->sender->profile->firsName . ' ' . $this->sender->profile->firsName . '.')
+            ->title('You have new message from, ' . $this->sender->profile->firstName . ' ' . $this->sender->profile->lastName . '.')
             ->body($this->message)
             ->custom('deepLink', $deepLink);
     }
@@ -60,7 +60,7 @@ class MessageNewNotification extends Notification
         return CloudMessage::new()
             ->withTarget('token', $token)
             ->withNotification([
-                'title' => 'You have new message from,' . $this->sender->profile->firsName . ' ' . $this->sender->profile->firsName . '.',
+                'title' => 'You have new message from,' . $this->sender->profile->firstName . ' ' . $this->sender->profile->lastName . '.',
                 'body'  => $this->message,
             ])
             ->withData([
