@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\CreatePostRequest;
 use App\Http\Requests\SearchPostRequest;
 use App\Http\Resources\CollectionListResource;
 use App\Http\Resources\CollectionResource;
@@ -33,6 +32,7 @@ use Imagick;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Jobs\ProcessVideoJob;
+use App\Http\Requests\CreatePostRequest;
 
 class PostController extends Controller
 {
@@ -401,18 +401,7 @@ class PostController extends Controller
 
     public function createPost(CreatePostRequest $request)
     {
-        $title = trim($request->get('title'));
-
-        if (empty($title)) {
-            return response()->json(['error' => 'Title cannot be empty or whitespace.'], 400);
-        }
-        if (!$request->has('files') || empty($request->get('files'))) {
-            return response()->json([
-                'error' => "Can't create post",
-                'message' => "Post not created! At least one file attachment is required.",
-                'status' => 422
-            ], 422);
-        }
+        $data = $request->validated();
 
         if ($request->get('id') == 0) {
 
@@ -1636,16 +1625,35 @@ class PostController extends Controller
 
     public function getPostsByInterest($id)
     {
-        $totalCount = Post::whereHas('interestAssignments', function ($query) use ($id) {
-            $query->where('interest_id', $id);
-        })->count();
+        $user = auth('api')->user();
 
-        $latestPost = Post::whereHas('interestAssignments', function ($query) use ($id) {
+        $posts = Post::whereHas('interestAssignments', function ($query) use ($id) {
             $query->where('interest_id', $id);
         })
-            ->with('interests')
-            ->latest()
-            ->first();
+            ->with('owner', 'reports', 'interests')
+            ->get();
+
+        $validatedPosts = $posts->filter(function ($post) use ($user) {
+            if ($post->reports->count() > 0) return false;
+            if ($post->status === 'archive') return false;
+
+            if ($post->publish_date === null) {
+                if (
+                    $user->isBlocking($post->owner) ||
+                    $user->isBlockedBy($post->owner) ||
+                    in_array($post->owner->status, ['flagged', 'warning', 'deleted'])
+                ) {
+                    return false;
+                }
+                return true;
+            }
+
+            return false;
+        })->values();
+
+        $totalCount = $validatedPosts->count();
+
+        $latestPost = $validatedPosts->sortByDesc('created_at')->first();
 
         return response()->json([
             'latest' => $latestPost ? new PostResource($latestPost) : null,
@@ -1656,40 +1664,37 @@ class PostController extends Controller
     public function mostViewedByInterest(Request $request, $interestId)
     {
         $user = auth('api')->user();
-        $now = Carbon::now();
-        $sevenDaysAgo = $now->copy()->subDays(7);
-
         $page = max((int) $request->input('page', 1), 1);
         $limit = (int) $request->input('limit', 10);
 
-        // Step 1: Get posts by interest
         $posts = Post::whereHas('interestAssignments', function ($query) use ($interestId) {
             $query->where('interest_id', $interestId);
         })
-            ->where('updated_at', '>=', $sevenDaysAgo)
-            ->where('views_by_last_day', '>', 0)
-            ->orderBy('views_by_last_day', 'DESC')
+            ->where('views_count', '>=', 0)
+            ->orderBy('views_count', 'DESC')
             ->get();
 
-        // Step 2: Filter posts
-        $filteredPosts = $posts->filter(function ($post) {
-            return $post->reports->count() == 0;
-        })->filter(function ($post) use ($now, $user) {
+        $filteredPosts = $posts->filter(function ($post) use ($user) {
+            if ($post->reports->count() > 0) return false;
+
             if ($post->status === 'archive') return false;
 
-            if ($post->publish_date === null || $post->publish_date <= $now) {
+            if ($post->publish_date === null) {
                 if (
-                    $user->isBlocking($post->owner) || $user->isBlockedBy($post->owner) ||
+                    $user->isBlocking($post->owner) ||
+                    $user->isBlockedBy($post->owner) ||
                     in_array($post->owner->status, ['flagged', 'warning', 'deleted'])
                 ) {
                     return false;
                 }
                 return true;
             }
-            return false;
-        });
 
-        $postTotal = $filteredPosts->count();
+            return false;
+        })->values();
+
+        $sortedPosts = $filteredPosts->sortByDesc('views_count')->values();
+        $postTotal = $sortedPosts->count();
         $paginatedPosts = $filteredPosts->forPage($page, $limit);
         $formattedPosts = $paginatedPosts->map(fn($post) => new PostResource($post))->values();
 
@@ -1702,16 +1707,14 @@ class PostController extends Controller
                 'limit' => $limit,
                 'posts_total' => $postTotal,
                 'posts_count' => $formattedPosts->count(),
-
             ]
         ]);
     }
 
+
     public function mostLikedByInterest(Request $request, $interestId)
     {
         $user = auth('api')->user();
-        $now = Carbon::now();
-        $sevenDaysAgo = $now->copy()->subDays(7); // Define once and use consistently
 
         $page = max((int) $request->input('page', 1), 1);
         $limit = (int) $request->input('limit', 10);
@@ -1719,21 +1722,15 @@ class PostController extends Controller
         $posts = Post::whereHas('interestAssignments', function ($query) use ($interestId) {
             $query->where('interest_id', $interestId);
         })
-            ->withCount([
-                'likers' => function ($query) use ($sevenDaysAgo) {
-                    $query->where('likes.created_at', '>=', $sevenDaysAgo);
-                },
-            ])
-            ->having('likers_count', '>', 0) // 💥 this is the critical fix
+            ->withCount('likers')
             ->orderBy('likers_count', 'DESC')
             ->get();
-
         $filteredPosts = $posts->filter(function ($post) {
             return $post->reports->count() === 0;
-        })->filter(function ($post) use ($now, $user) {
+        })->filter(function ($post) use ($user) {
             if ($post->status === 'archive') return false;
 
-            if ($post->publish_date === null || $post->publish_date <= $now) {
+            if ($post->publish_date === null) {
                 if (
                     $user->isBlocking($post->owner) || $user->isBlockedBy($post->owner) ||
                     in_array($post->owner->status, ['flagged', 'warning', 'deleted'])
@@ -1744,8 +1741,8 @@ class PostController extends Controller
             }
             return false;
         });
-
-        $postTotal = $filteredPosts->count();
+        $sortedPosts = $filteredPosts->sortByDesc('likers_count')->values();
+        $postTotal = $sortedPosts->count();
         $paginatedPosts = $filteredPosts->forPage($page, $limit);
         $formattedPosts = $paginatedPosts->map(fn($post) => new PostResource($post))->values();
 
