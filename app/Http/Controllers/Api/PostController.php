@@ -1490,6 +1490,7 @@ class PostController extends Controller
         $page = max((int) $request->input('page', 1), 1);
         $limit = (int) $request->input('limit', 10);
 
+        // Fetch most liked posts (same logic as mostCrowned)
         $posts = Post::has('likers')
             ->withCount([
                 'likers' => function ($query) {
@@ -1499,32 +1500,34 @@ class PostController extends Controller
             ->orderBy('likers_count', 'DESC')
             ->get();
 
+        // Apply same filters as mostCrowned
         $filteredPosts = $posts->filter(function ($post) {
             return $post->reports->count() == 0;
         })->filter(function ($post) use ($now, $user) {
-            if ($post->status == 'archive') {
+            if ($post->status === 'archive') {
                 return false;
             }
 
-            if ($post->publish_date == null || $post->publish_date <= $now) {
-                if ($user->isBlocking($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
+            if ($post->publish_date === null || $post->publish_date <= $now) {
+                if (
+                    $user->isBlocking($post->owner) ||
+                    $user->isBlockedBy($post->owner) ||
+                    in_array($post->owner->status, ['flagged', 'warning', 'deleted'])
+                ) {
                     return false;
                 }
-                if ($user->isBlockedBy($post->owner) || $post->owner->status == 'flagged' || $post->owner->status == 'warning' || $post->owner->status == 'deleted') {
-                    return false;
-                } else {
-                    return true;
-                }
-            } else {
-                return false;
+                return true;
             }
 
-            return true;
+            return false;
         });
 
+        // Pagination for posts
         $postTotal = $filteredPosts->count();
         $paginatedPosts = $filteredPosts->forPage($page, $limit);
         $formattedPosts = $paginatedPosts->map(fn($post) => new PostResource($post))->values();
+
+        // Fetch most liked songs (same as mostCrowned)
         $songs = Song::has('likers')
             ->where('status', 'active')
             ->withCount([
@@ -1535,10 +1538,12 @@ class PostController extends Controller
             ->orderBy('likers_count', 'DESC')
             ->get();
 
+        // Pagination for songs
         $songTotal = $songs->count();
         $paginatedSongs = $songs->forPage($page, $limit);
         $formattedSongs = $paginatedSongs->map(fn($song) => new SongResource($song))->values();
 
+        // Return response identical to mostCrowned + meta for pagination
         return response()->json([
             'data' => [
                 'posts' => $formattedPosts,
@@ -1551,9 +1556,10 @@ class PostController extends Controller
                 'posts_count' => $formattedPosts->count(),
                 'songs_total' => $songTotal,
                 'songs_count' => $formattedSongs->count(),
-            ]
+            ],
         ]);
     }
+
 
     public function mostPostViewed(Request $request)
     {
