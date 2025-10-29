@@ -1486,64 +1486,90 @@ class PostController extends Controller
     {
         $user = auth('api')->user();
         $now = Carbon::now();
+        $thresholdDate = $now->copy()->subDays(14);
 
         $page = max((int) $request->input('page', 1), 1);
         $limit = (int) $request->input('limit', 10);
 
-        // Fetch most liked posts (same logic as mostCrowned)
-        $posts = Post::has('likers')
+        $posts = Post::with([
+            'owner',
+            'reports',
+        ])
             ->withCount([
-                'likers' => function ($query) {
-                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
+                'likers as recent_likes_count' => function ($query) {
+                    $query->where('likes.created_at', '>=', now()->subDays(14));
                 },
             ])
-            ->orderBy('likers_count', 'DESC')
+            ->orderByDesc('recent_likes_count')
+            ->orderByDesc('created_at')
             ->get();
+        $filteredPosts = $posts->filter(function ($post) use ($user, $now) {
+            if ($post->reports && $post->reports->count() > 0) {
+                return false;
+            }
 
-        // Apply same filters as mostCrowned
-        $filteredPosts = $posts->filter(function ($post) {
-            return $post->reports->count() == 0;
-        })->filter(function ($post) use ($now, $user) {
             if ($post->status === 'archive') {
                 return false;
             }
 
-            if ($post->publish_date === null || $post->publish_date <= $now) {
-                if (
-                    $user->isBlocking($post->owner) ||
-                    $user->isBlockedBy($post->owner) ||
-                    in_array($post->owner->status, ['flagged', 'warning', 'deleted'])
-                ) {
-                    return false;
-                }
-                return true;
+            if (!is_null($post->publish_date) && $post->publish_date > $now) {
+                return false;
             }
 
-            return false;
+            if (!$post->owner) {
+                return false;
+            }
+
+            if (
+                $user->isBlocking($post->owner) ||
+                $user->isBlockedBy($post->owner) ||
+                in_array($post->owner->status, ['flagged', 'warning', 'deleted'])
+            ) {
+                return false;
+            }
+
+            return true;
         });
 
-        // Pagination for posts
-        $postTotal = $filteredPosts->count();
-        $paginatedPosts = $filteredPosts->forPage($page, $limit);
+        $sortedPosts = $filteredPosts->sort(function ($a, $b) use ($thresholdDate) {
+            $aRecent = $a->created_at >= $thresholdDate;
+            $bRecent = $b->created_at >= $thresholdDate;
+
+            if ($aRecent && $bRecent) {
+                if ($a->recent_likes_count == $b->recent_likes_count) {
+                    return $b->created_at <=> $a->created_at;
+                }
+                return $b->recent_likes_count <=> $a->recent_likes_count;
+            } elseif ($aRecent && !$bRecent) {
+                return -1;
+            } elseif (!$aRecent && $bRecent) {
+                return 1;
+            } else {
+                if ($a->created_at == $b->created_at) {
+                    return $b->recent_likes_count <=> $a->recent_likes_count;
+                }
+                return $b->created_at <=> $a->created_at;
+            }
+        });
+
+        $postTotal = $sortedPosts->count();
+        $paginatedPosts = $sortedPosts->forPage($page, $limit);
         $formattedPosts = $paginatedPosts->map(fn($post) => new PostResource($post))->values();
 
-        // Fetch most liked songs (same as mostCrowned)
         $songs = Song::has('likers')
             ->where('status', 'active')
             ->withCount([
-                'likers' => function ($query) {
-                    $query->where('likes.created_at', '>=', Carbon::now()->subDays(7));
+                'likers as recent_likes_count' => function ($query) use ($thresholdDate) {
+                    $query->where('likes.created_at', '>=', $thresholdDate);
                 },
             ])
-            ->orderBy('likers_count', 'DESC')
+            ->orderByDesc('recent_likes_count')
             ->get();
 
-        // Pagination for songs
         $songTotal = $songs->count();
         $paginatedSongs = $songs->forPage($page, $limit);
         $formattedSongs = $paginatedSongs->map(fn($song) => new SongResource($song))->values();
 
-        // Return response identical to mostCrowned + meta for pagination
         return response()->json([
             'data' => [
                 'posts' => $formattedPosts,
@@ -1559,6 +1585,7 @@ class PostController extends Controller
             ],
         ]);
     }
+
 
 
     public function mostPostViewed(Request $request)
