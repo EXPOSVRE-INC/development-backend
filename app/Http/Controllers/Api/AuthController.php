@@ -25,6 +25,8 @@ use App\Mail\EmailVerificationOTP;
 use Stripe\Customer;
 use Stripe\SetupIntent;
 use Stripe\EphemeralKey;
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 class AuthController extends Controller
 {
@@ -583,6 +585,7 @@ class AuthController extends Controller
         return response()->json(['data' => new UserResource($user)]);
     }
 
+
     public function sendRecoveryPassword(Request $request)
     {
         if (!$request->has('email')) {
@@ -595,8 +598,8 @@ class AuthController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
+        // Detect platform
         $userAgent = $request->header('User-Agent');
-
         if (stripos($userAgent, 'android') !== false) {
             $platform = 'Android';
         } elseif (stripos($userAgent, 'iphone') !== false || stripos($userAgent, 'ipad') !== false) {
@@ -607,12 +610,25 @@ class AuthController extends Controller
 
         $token = Password::createToken($user);
 
-        Mail::to($user->email)->send(new ResetPassword($user, $token, $platform));
+        try {
+            Mail::to($user->email)->send(new ResetPassword($user, $token, $platform));
 
-        return response()->json([
-            'data' => 'Reset link sent',
-        ]);
+            return response()->json([
+                'data' => 'Reset link sent successfully.'
+            ]);
+        } catch (Exception $e) {
+            Log::error('Password recovery email failed', [
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to send reset email. Please contact support or try again later.',
+                'details' => config('app.debug') ? $e->getMessage() : null, // Show error details only in debug mode
+            ], 500);
+        }
     }
+
 
     public function resetPassword($token, Request $request)
     {

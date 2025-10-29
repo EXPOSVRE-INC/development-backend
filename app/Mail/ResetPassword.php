@@ -33,12 +33,13 @@ class ResetPassword extends Mailable
      *
      * @return $this
      */
-    public function build($platform)
+    public function build()
     {
         $address = env('MAIL_FROM_ADDRESS');
         $subject = 'Reset Password Notification';
         $name = 'EXPOSVRE';
-        if ($platform == 'other') {
+
+        if (strtolower($this->platform) == 'other') {
             $resetLink = url("/password/reset/{$this->token}?email={$this->user->email}");
         } else {
             $resetLink = url("/api/v.1.0/mobile/auth/reset-password/{$this->token}?email={$this->user->email}");
