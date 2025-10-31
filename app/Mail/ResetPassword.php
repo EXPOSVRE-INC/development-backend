@@ -18,14 +18,14 @@ class ResetPassword extends Mailable
      */
     public $user;
     public $token;
-    public $platform;
+    // public $platform;
 
 
-    public function __construct($user, $token, $platform)
+    public function __construct($user, $token)
     {
         $this->user = $user;
         $this->token = $token;
-        $this->platform = $platform;
+        // $this->platform = $platform;
     }
 
     /**
@@ -39,11 +39,11 @@ class ResetPassword extends Mailable
         $subject = 'Reset Password Notification';
         $name = 'EXPOSVRE';
 
-        if (strtolower($this->platform) == 'other') {
-            $resetLink = url("/password/reset/{$this->token}?email={$this->user->email}");
-        } else {
-            $resetLink = url("/api/v.1.0/mobile/auth/reset-password/{$this->token}?email={$this->user->email}");
-        }
+        // if (strtolower($this->platform) == 'other') {
+        //     $resetLink = url("/password/reset/{$this->token}?email={$this->user->email}");
+        // } else {
+        $resetLink = url("/api/v.1.0/mobile/auth/reset-password/{$this->token}?email={$this->user->email}");
+        // }
 
         return $this->view('emails.reset')
             ->from($address, $name)

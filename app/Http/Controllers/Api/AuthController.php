@@ -599,19 +599,16 @@ class AuthController extends Controller
         }
 
         // Detect platform
-        $userAgent = $request->header('User-Agent');
-        if (stripos($userAgent, 'android') !== false) {
-            $platform = 'Android';
-        } elseif (stripos($userAgent, 'iphone') !== false || stripos($userAgent, 'ipad') !== false) {
-            $platform = 'iOS';
-        } else {
-            $platform = 'Other';
-        }
+        // if (str_contains($request->path(), 'api') || $request->is('api/*')) {
+        //     $platform = 'Android';
+        // } else {
+        //     $platform = 'Other';
+        // }
 
         $token = Password::createToken($user);
 
         try {
-            Mail::to($user->email)->send(new ResetPassword($user, $token, $platform));
+            Mail::to($user->email)->send(new ResetPassword($user, $token));
 
             return response()->json([
                 'data' => 'Reset link sent successfully.'
