@@ -112,94 +112,70 @@ class PostResource extends JsonResource
                 ? LiveExperienceResource::collection($this->intervals)
                 : [],
 
-            //                'creator' => ($this->parent) ? UserResource::make($this->parent->owner) : UserResource::make($this->owner),
         ];
-        //        dd($this->getMedia('files'));
 
-
-
+        $files = $this->getMedia('files');
         $headerVideoMedia = $this->getFirstMedia('header_video');
-        if ($headerVideoMedia) {
-            $data['header_video'] = $this->getFirstMediaUrl('header_video');
-            // Get thumbnail URL and path
-            $thumbUrl = $headerVideoMedia->getUrl('original'); // or 'header_small'
-            $thumbPath = $headerVideoMedia->getPath('original');
+        $thumbMedia = null;
 
-            if ($thumbPath && file_exists($thumbPath)) {
-                try {
-                    $image = new Imagick($thumbPath);
-                    $data['image'] = $thumbUrl;
-                    $data['image_width'] = $image->getImageWidth();
-                    $data['image_height'] = $image->getImageHeight();
-                } catch (\Exception $e) {
-                    $data['image'] = $thumbUrl;
-                    $data['image_width'] = 0;
-                    $data['image_height'] = 0;
-                }
+        // Determine which media is used as thumb
+        if (count($files) === 1) {
+            $thumbMedia = $files[0];
+            $data['thumb'] = $thumbMedia->getUrl('original');
+        } elseif (count($files) > 1 && (bool)$this->ad === false) {
+            $thumbMedia = $files[count($files) - 1]; // 👈 use last image as thumb
+            $data['thumb'] = $thumbMedia->getUrl('original');
+        } elseif (count($files) > 1 && (bool)$this->ad === true) {
+            if ($headerVideoMedia) {
+                $data['thumb'] = $headerVideoMedia->getUrl('original');
             } else {
-                // Thumbnail path does not exist
-                $data['image'] = $thumbUrl;
-                $data['image_width'] = 0;
-                $data['image_height'] = 0;
+                $thumbMedia = $files[count($files) - 1];
+                $data['thumb'] = $thumbMedia->getUrl('original');
             }
         } else {
-            // Fallback: use first media from files collection
-            $files = $this->getMedia('files');
-            if (count($files) > 0) {
-                $data['image'] = $files[0]->getUrl('original');
+            if ($headerVideoMedia) {
+                $data['thumb'] = $headerVideoMedia->getUrl('original');
+            } else {
+                $thumbMedia = $this->getFirstMedia('thumb');
+                $data['thumb'] = $thumbMedia ? $thumbMedia->getUrl('original') : null;
+            }
+        }
 
-                $mediaPath = $files[0]->getPath('original');
-                if (!empty($mediaPath) && file_exists($mediaPath)) {
-                    if (str_contains($files[0]->mime_type, 'image')) {
-                        try {
-                            $image = new Imagick($mediaPath);
-                            $data['image_width'] = $image->getImageWidth();
-                            $data['image_height'] = $image->getImageHeight();
-                        } catch (\Exception $e) {
-                            $data['image_width'] = 0;
-                            $data['image_height'] = 0;
-                        }
-                    } elseif (str_contains($files[0]->mime_type, 'video')) {
-                        try {
-                            $ffmpeg = FFMpeg::create();
-                            $video = $ffmpeg->open($mediaPath);
-                            $dimension = $video->getStreams()->videos()->first()->getDimensions();
-                            $data['image_width'] = $dimension->getWidth();
-                            $data['image_height'] = $dimension->getHeight();
-                        } catch (\Exception $e) {
-                            $data['image_width'] = 0;
-                            $data['image_height'] = 0;
-                        }
+        // Now assign image, width, height based on thumbMedia
+        if ($thumbMedia) {
+            $thumbPath = $thumbMedia->getPath('original');
+            $data['image'] = $thumbMedia->getUrl('original');
+
+            if (!empty($thumbPath) && file_exists($thumbPath)) {
+                try {
+                    if (str_contains($thumbMedia->mime_type, 'image')) {
+                        $image = new Imagick($thumbPath);
+                        $data['image_width'] = $image->getImageWidth();
+                        $data['image_height'] = $image->getImageHeight();
+                    } elseif (str_contains($thumbMedia->mime_type, 'video')) {
+                        $ffmpeg = \FFMpeg\FFMpeg::create();
+                        $video = $ffmpeg->open($thumbPath);
+                        $dimension = $video->getStreams()->videos()->first()->getDimensions();
+                        $data['image_width'] = $dimension->getWidth();
+                        $data['image_height'] = $dimension->getHeight();
                     } else {
                         $data['image_width'] = 0;
                         $data['image_height'] = 0;
                     }
-                } else {
+                } catch (\Exception $e) {
                     $data['image_width'] = 0;
                     $data['image_height'] = 0;
                 }
             } else {
-                $data['image'] = null;
                 $data['image_width'] = 0;
                 $data['image_height'] = 0;
             }
-        }
-        $files = $this->getMedia('files');
-
-        if (count($files) === 1) {
-            $data['thumb'] = $files[0]->getUrl('original');
-        } elseif (count($files) > 1 && (bool)$this->ad === false) {
-            $data['thumb'] = $files[0]->getUrl();
-        } elseif (count($files) > 1 && (bool)$this->ad === true) {
-            $data['thumb'] = $headerVideoMedia
-                ? $headerVideoMedia->getUrl('original')
-                : $this->getFirstMediaUrl('thumb');
         } else {
-            $data['thumb'] = $headerVideoMedia
-                ? $headerVideoMedia->getUrl('original')
-                : $this->getFirstMediaUrl('thumb');
+            // Fallback
+            $data['image'] = null;
+            $data['image_width'] = 0;
+            $data['image_height'] = 0;
         }
-
         // Handle video media if 'ad' is set to 1
         if ($this->ad == 1) {
             $data['video'] = $this->getFirstMediaUrl('video');
