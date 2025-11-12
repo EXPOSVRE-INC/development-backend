@@ -14,6 +14,10 @@
                     {
                         "/": "/link/*",
                         "comment": "Matches any URL whose path starts with /link/"
+                    },
+                    {
+                        "/": "/api/v.1.0/mobile/auth/reset-password/*",
+                        "comment": "Matches reset password URLs"
                     }
                 ]
             }
