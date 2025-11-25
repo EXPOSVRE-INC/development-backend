@@ -114,24 +114,12 @@ class CheckMqttComments extends Command
 
                 $comments = $user->comments;
                 dump('USER');
-                //                $commentsSearch = $comments->filter(function ($item) use ($message) {
-                //                    return $item->comment == $message->message && $item->user_id == $message->userId;
-                //                });
-
-                //                dump(count($commentsSearch));
-
-                //                if (count($commentsSearch) == 0) {
                 dump($message->message);
                 dump($user->id);
                 $userWhoComment = User::where(['id' => $message->userId])->first();
                 $user->commentAs($userWhoComment, $message->message);
-                $user->notify(new NewCommentForUser($userWhoComment, $message->message, $user));
+                $user->notify(new NewCommentForUser($userWhoComment, $message->message, $user, null));
             }
-            //            }
-            //            $test = $post->owner->notify(new NewMessageNotification());
-            //            dump($test);
-            //            echo $message; // for testing
-            //            echo sprintf("Received message on topic [%s]: %s\n", $topic, $message);
         }, 0);
 
         $mqtt->loop(true);

@@ -24,7 +24,7 @@ class NewCommentForUser extends Notification
     private $post;
 
 
-    public function __construct($userWhoComment, $comment, $comentedUser, $post)
+    public function __construct($userWhoComment, $comment, $comentedUser, $post = null)
     {
         $this->user = $userWhoComment;
         $this->comment = $comment;
