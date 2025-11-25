@@ -2,11 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Notification;
 use App\Models\Post;
 use App\Models\PostCollection;
 use App\Models\Song;
 use App\Models\User;
-use App\Models\Comment;
+use App\Notifications\NewCommentForCollection;
+use App\Notifications\NewCommentForPost;
+use App\Notifications\NewCommentForUser;
 use AWS\CRT\Log;
 use Illuminate\Console\Command;
 use PhpMqtt\Client\Facades\MQTT;
@@ -46,100 +49,80 @@ class CheckMqttComments extends Command
     {
         $mqtt = MQTT::connection();
 
-        $mqtt->subscribe('comments/#', function ($topic, $payload) {
-            $message = json_decode($payload);
-            if (!$message || !isset($message->type, $message->userId)) {
-                return;
-            }
+        $mqtt->subscribe('comments/#', function ($topic, $message) {
+            $message = json_decode($message);
 
-            $type = $message->type;
-            $user = User::find($message->userId);
-            if (!$user) return;
-
-            // Handle Comments for Posts
             if (str_contains($topic, 'posts')) {
-                $post = Post::find($message->forPostId ?? null);
-                if (!$post) return;
+                $post = Post::where(['id' => $message->forPostId])->first();
+                $comments = $post->comments;
+                $user = User::where(['id' => $message->userId])->first();
+                $post->commentAs($user, $message->message);
 
-                if ($type === 'new') {
-                    $comment = $post->commentAs($user, $message->message);
+                if ($user->id !== $post->owner_id) {
+                    $deepLink = 'EXPOSVRE://postcomment/' . $post->id;
 
-                    if ($user->id !== $post->owner_id) {
-                        $deepLink = 'EXPOSVRE://postcomment/' . $post->id;
+                    $notification = new \App\Models\Notification();
+                    $notification->title = 'commented on your post';
+                    $notification->description = 'commented on your post';
+                    $notification->type = 'postcomment';
+                    $notification->user_id = $post->owner_id;
+                    $notification->sender_id = $user->id;
+                    $notification->post_id = $post->id;
+                    $notification->deep_link = $deepLink;
+                    $notification->save();
 
-                        \App\Models\Notification::create([
-                            'title' => 'commented on your post',
-                            'description' => 'commented on your post',
-                            'type' => 'postcomment',
-                            'user_id' => $post->owner_id,
-                            'sender_id' => $user->id,
-                            'post_id' => $post->id,
-                            'deep_link' => $deepLink,
-                        ]);
-
-                        $post->owner->notify(new \App\Notifications\NewCommentForPost($user, $message->message, $post));
-                    }
-
-                    // Mentions: @username
-                    preg_match_all('/@(\w+)/', $message->message, $matches);
-                    foreach ($matches[1] as $username) {
-                        $mentioned = User::where('name', $username)->first();
-                        if ($mentioned && $mentioned->id !== $user->id) {
-                            $mentioned->notify(new \App\Notifications\UserMentioned($user, $comment, $post));
-                        }
-                    }
-                } elseif ($type === 'edit') {
-                    $comment = Comment::find($message->commentId ?? null);
-                    if ($comment && $comment->user_id === $user->id) {
-                        $comment->comment = $message->message;
-                        $comment->edited_at = now();
-                        $comment->save();
-                    }
-                } elseif ($type === 'delete') {
-                    $comment = Comment::find($message->commentId ?? null);
-                    if ($comment) {
-                        $isOwner = $comment->user_id === $user->id;
-                        $isPostOwner = optional($comment->commentable)->user_id === $user->id;
-                        if ($isOwner || $isPostOwner) {
-                            $comment->delete();
-                        }
-                    }
+                    $notification = $post->owner->notify(new NewCommentForPost($user, $message->message, $post));
                 }
-
-                // Handle Comments for Songs
-            } elseif (str_contains($topic, 'songs')) {
-                $song = Song::find($message->forSongId ?? null);
+            } else if (str_contains($topic, 'songs')) {
+                $song = Song::where(['id' => $message->forSongId])->first();
+                $comments = $song->comments;
+                $user = User::where(['id' => $message->userId])->first();
                 $song->commentAs($user, $message->message);
+            } else if (str_contains($topic, 'galleries')) {
+                $collection = PostCollection::where(['id' => $message->forGalleryId])->first();
 
-                // Handle Comments for Galleries (Post Collections)
-            } elseif (str_contains($topic, 'galleries')) {
-                $collection = PostCollection::find($message->forGalleryId ?? null);
+                $comments = $collection->comments;
+                dump('COLLECTION');
+                //                $commentsSearch = $comments->filter(function ($item) use ($message) {
+                //                    return $item->comment == $message->message && $item->user_id == $message->userId;
+                //                });
+
+                //                dump(count($commentsSearch));
+
+                //                if (count($commentsSearch) == 0) {
+                //                    dump($message->message);
+                //                    dump($collection->id);
+                $user = User::where(['id' => $message->userId])->first();
                 $collection->commentAs($user, $message->message);
 
                 $deepLink = 'EXPOSVRE://gallerycomment/' . $collection->id;
 
-                \App\Models\Notification::create([
-                    'title' => 'commented on your collection',
-                    'description' => 'commented on your collection',
-                    'type' => 'collectioncomment',
-                    'user_id' => $collection->user_id,
-                    'sender_id' => $user->id,
-                    'post_id' => $collection->id,
-                    'deep_link' => $deepLink,
-                ]);
+                $notification = new \App\Models\Notification();
+                $notification->title = 'commented on your collection';
+                $notification->description = 'commented on your collection';
+                $notification->type = 'collectioncomment';
+                $notification->user_id = $collection->user_id;
+                $notification->sender_id = $user->id;
+                $notification->post_id = $collection->id;
+                $notification->deep_link = $deepLink;
+                $notification->save();
 
-                $collection->user->notify(new \App\Notifications\NewCommentForCollection($user, $message->message, $collection));
+                $collection->user->notify(new NewCommentForCollection($user, $message->message, $collection));
+                //                }
+            } else if (str_contains($topic, 'profiles')) {
+                $user = User::where(['id' => $message->forProfileId])->first();
 
-                // Handle Comments for Profiles
-            } elseif (str_contains($topic, 'profiles')) {
-                $profileUser = User::find($message->forProfileId ?? null);
-                $profileUser->commentAs($user, $message->message);
-                $profileUser->notify(new \App\Notifications\NewCommentForUser($user, $message->message, $profileUser));
+                $comments = $user->comments;
+                dump('USER');
+                dump($message->message);
+                dump($user->id);
+                $userWhoComment = User::where(['id' => $message->userId])->first();
+                $user->commentAs($userWhoComment, $message->message);
+                $user->notify(new NewCommentForUser($userWhoComment, $message->message, $user, null));
             }
         }, 0);
 
         $mqtt->loop(true);
-
 
         $mqtt->disconnect();
     }
