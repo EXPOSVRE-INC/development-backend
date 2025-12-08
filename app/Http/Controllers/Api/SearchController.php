@@ -24,22 +24,27 @@ class SearchController extends Controller
         $currentUser = auth('api')->user();
 
         if ($type == 'posts') {
-            $blockedUserIds = Block::where('user_id', $currentUser->id)
-                ->pluck('blocking_id')
-                ->toArray();
 
-            $blockedByUserIds = Block::where('blocking_id', $currentUser->id)
-                ->pluck('user_id')
-                ->toArray();
-
+            $blockedUserIds = Block::where('user_id', $currentUser->id)->pluck('blocking_id')->toArray();
+            $blockedByUserIds = Block::where('blocking_id', $currentUser->id)->pluck('user_id')->toArray();
             $excludedUserIds = array_unique(array_merge($blockedUserIds, $blockedByUserIds));
 
             $searchTerm = $query;
 
-            $postsQuery = Post::where(function ($query) use ($searchTerm) {
-                $query->where('title', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('description', 'LIKE', '%' . $searchTerm . '%');
-            })->whereNotIn('owner_id', $excludedUserIds)
+            $postsQuery = Post::whereNotIn('owner_id', $excludedUserIds)
+                ->where(function ($q) use ($searchTerm) {
+
+                    $q->where('title', 'LIKE', '%' . $searchTerm . '%')
+                        ->orWhere('description', 'LIKE', '%' . $searchTerm . '%')
+
+                        ->orWhereHas('owner', function ($owner) use ($searchTerm) {
+                            $owner->where('username', 'LIKE', '%' . $searchTerm . '%')
+                                ->orWhereHas('profile', function ($profile) use ($searchTerm) {
+                                    $profile->where('firstName', 'LIKE', '%' . $searchTerm . '%')
+                                        ->orWhere('lastName', 'LIKE', '%' . $searchTerm . '%');
+                                });
+                        });
+                })
                 ->where(function ($query) {
                     $query->where('status', '!=', 'archive')
                         ->orWhereNull('status');
@@ -69,24 +74,22 @@ class SearchController extends Controller
             }
 
             if ($request->get('interests') && $request->get('interests') != '') {
-                $interests = array_filter($request->get('interests'), function ($value) {
-                    return !is_null($value) && $value !== '';
-                });
+                $interests = array_filter($request->get('interests'), fn($v) => !is_null($v) && $v !== '');
                 if (count($interests) > 0) {
-                    $postsQuery->whereHas('interests', function ($query) use ($interests) {
-                        $query->whereIn('slug', $interests);
-                    });
+                    $postsQuery->whereHas(
+                        'interests',
+                        fn($query) =>
+                        $query->whereIn('slug', $interests)
+                    );
                 }
             }
 
-            $minPrice = $request->input('min_price');
-            if (!is_null($minPrice) && $minPrice !== '') {
-                $postsQuery->where('fixed_price', '>=', $minPrice);
+            if ($request->filled('min_price')) {
+                $postsQuery->where('fixed_price', '>=', $request->min_price);
             }
 
-            $maxPrice = $request->input('max_price');
-            if (!is_null($maxPrice) && $maxPrice !== '') {
-                $postsQuery->where('fixed_price', '<=', $maxPrice);
+            if ($request->filled('max_price')) {
+                $postsQuery->where('fixed_price', '<=', $request->max_price);
             }
 
             $posts = $postsQuery->limit(100)->get();
@@ -152,15 +155,27 @@ class SearchController extends Controller
         $currentUser = auth('api')->user();
 
         if ($type == 'posts') {
+
             $blockedUserIds = Block::where('user_id', $currentUser->id)->pluck('blocking_id')->toArray();
             $blockedByUserIds = Block::where('blocking_id', $currentUser->id)->pluck('user_id')->toArray();
             $excludedUserIds = array_unique(array_merge($blockedUserIds, $blockedByUserIds));
+
             $searchTerm = $query;
 
-            $postsQuery = Post::where(function ($query) use ($searchTerm) {
-                $query->where('title', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('description', 'LIKE', '%' . $searchTerm . '%');
-            })->whereNotIn('owner_id', $excludedUserIds)
+            $postsQuery = Post::whereNotIn('owner_id', $excludedUserIds)
+                ->where(function ($q) use ($searchTerm) {
+
+                    $q->where('title', 'LIKE', '%' . $searchTerm . '%')
+                        ->orWhere('description', 'LIKE', '%' . $searchTerm . '%')
+
+                        ->orWhereHas('owner', function ($owner) use ($searchTerm) {
+                            $owner->where('username', 'LIKE', '%' . $searchTerm . '%')
+                                ->orWhereHas('profile', function ($profile) use ($searchTerm) {
+                                    $profile->where('firstName', 'LIKE', '%' . $searchTerm . '%')
+                                        ->orWhere('lastName', 'LIKE', '%' . $searchTerm . '%');
+                                });
+                        });
+                })
                 ->where(function ($query) {
                     $query->where('status', '!=', 'archive')
                         ->orWhereNull('status');
@@ -190,20 +205,22 @@ class SearchController extends Controller
             }
 
             if ($request->get('interests') && $request->get('interests') != '') {
-                $interests = array_filter($request->get('interests'), fn($value) => !is_null($value) && $value !== '');
+                $interests = array_filter($request->get('interests'), fn($v) => !is_null($v) && $v !== '');
                 if (count($interests) > 0) {
-                    $postsQuery->whereHas('interests', fn($query) => $query->whereIn('slug', $interests));
+                    $postsQuery->whereHas(
+                        'interests',
+                        fn($query) =>
+                        $query->whereIn('slug', $interests)
+                    );
                 }
             }
 
-            $minPrice = $request->input('min_price');
-            if (!is_null($minPrice) && $minPrice !== '') {
-                $postsQuery->where('fixed_price', '>=', $minPrice);
+            if ($request->filled('min_price')) {
+                $postsQuery->where('fixed_price', '>=', $request->min_price);
             }
 
-            $maxPrice = $request->input('max_price');
-            if (!is_null($maxPrice) && $maxPrice !== '') {
-                $postsQuery->where('fixed_price', '<=', $maxPrice);
+            if ($request->filled('max_price')) {
+                $postsQuery->where('fixed_price', '<=', $request->max_price);
             }
 
             $posts = $postsQuery->skip($offset)->take($limit)->get();
