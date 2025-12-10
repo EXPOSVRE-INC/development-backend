@@ -108,14 +108,23 @@ class SearchController extends Controller
                 ->toArray();
 
 
-            $searchTerm = $query; // Store the search term in a separate variable
+            $searchTerm = trim($query);
+            $parts = preg_split('/\s+/', $searchTerm);
+            $firstPart = $parts[0] ?? null;
+            $lastPart  = $parts[1] ?? null;
 
-            $peopleQuery = User::where(function ($q) use ($searchTerm) {
+            $peopleQuery = User::where(function ($q) use ($searchTerm, $firstPart, $lastPart) {
                 $q->where('username', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhereHas('profile', function ($profile) use ($searchTerm) {
-                        return $profile
-                            ->where('firstName', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhereHas('profile', function ($profile) use ($searchTerm, $firstPart, $lastPart) {
+                        $profile->where('firstName', 'LIKE', '%' . $searchTerm . '%')
                             ->orWhere('lastName', 'LIKE', '%' . $searchTerm . '%');
+
+                        if ($firstPart && $lastPart) {
+                            $profile->orWhere(function ($q2) use ($firstPart, $lastPart) {
+                                $q2->where('firstName', 'LIKE', '%' . $firstPart . '%')
+                                    ->where('lastName',  'LIKE', '%' . $lastPart  . '%');
+                            });
+                        }
                     });
             });
 
@@ -171,8 +180,19 @@ class SearchController extends Controller
                         ->orWhereHas('owner', function ($owner) use ($searchTerm) {
                             $owner->where('username', 'LIKE', '%' . $searchTerm . '%')
                                 ->orWhereHas('profile', function ($profile) use ($searchTerm) {
+                                    $parts = preg_split('/\s+/', trim($searchTerm));
+                                    $first = $parts[0] ?? null;
+                                    $last  = $parts[1] ?? null;
+
                                     $profile->where('firstName', 'LIKE', '%' . $searchTerm . '%')
                                         ->orWhere('lastName', 'LIKE', '%' . $searchTerm . '%');
+
+                                    if ($first && $last) {
+                                        $profile->orWhere(function ($q2) use ($first, $last) {
+                                            $q2->where('firstName', 'LIKE', '%' . $first . '%')
+                                                ->where('lastName',  'LIKE', '%' . $last  . '%');
+                                        });
+                                    }
                                 });
                         });
                 })
@@ -236,16 +256,25 @@ class SearchController extends Controller
         } elseif ($type == 'people') {
             $blockedUserIds = Block::where('user_id', $currentUser->id)->pluck('blocking_id')->toArray();
             $blockedByUserIds = Block::where('blocking_id', $currentUser->id)->pluck('user_id')->toArray();
-            $searchTerm = $query;
+            $searchTerm = trim($query);
+            $parts = preg_split('/\s+/', $searchTerm);
+            $firstPart = $parts[0] ?? null;
+            $lastPart  = $parts[1] ?? null;
 
-            $peopleQuery = User::where(function ($q) use ($searchTerm) {
+            $peopleQuery = User::where(function ($q) use ($searchTerm, $firstPart, $lastPart) {
                 $q->where('username', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhereHas('profile', function ($profile) use ($searchTerm) {
-                        return $profile->where('firstName', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhereHas('profile', function ($profile) use ($searchTerm, $firstPart, $lastPart) {
+                        $profile->where('firstName', 'LIKE', '%' . $searchTerm . '%')
                             ->orWhere('lastName', 'LIKE', '%' . $searchTerm . '%');
+
+                        if ($firstPart && $lastPart) {
+                            $profile->orWhere(function ($q2) use ($firstPart, $lastPart) {
+                                $q2->where('firstName', 'LIKE', '%' . $firstPart . '%')
+                                    ->where('lastName',  'LIKE', '%' . $lastPart  . '%');
+                            });
+                        }
                     });
             });
-
             if (!empty($blockedByUserIds)) {
                 $peopleQuery->whereNotIn('id', $blockedByUserIds);
             }
