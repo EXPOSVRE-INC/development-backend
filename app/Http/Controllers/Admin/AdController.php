@@ -32,11 +32,17 @@ class AdController extends Controller
     public function published()
     {
         $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
-        $posts = Post::where(['owner_id' => 1])
-            ->where(['status' => null])
-            ->where('publish_date', '<', $now)->where(['ad' => 1])
-            //            ->orderBy('id', 'DESC')
-            ->orderBy('order_priority', 'ASC')
+
+        $posts = Post::where('owner_id', 1)
+            ->whereDoesntHave('reports')
+            ->where(function ($query) {
+                $query->where('status', '!=', 'archive')
+                    ->orWhereNull('status')
+                    ->orWhere('status', '');
+            })
+            ->where('publish_date', '<', $now)
+            ->where('ad', 1)
+            ->orderByRaw("COALESCE(publish_date, created_at) DESC")
             ->get();
 
         return view('admin.ads.index', [
