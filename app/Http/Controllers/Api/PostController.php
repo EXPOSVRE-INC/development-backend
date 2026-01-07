@@ -1460,7 +1460,11 @@ class PostController extends Controller
 
     public function getArchivedPosts()
     {
-        $posts = Post::where('is_archived', true)->latest()->get();
+        $user = auth('api')->user();
+        $posts = Post::where('is_archived', true)
+            ->where('owner_id', $user->id)
+            ->latest()
+            ->get();
 
         if ($posts->isEmpty()) {
             return response()->json(['data' => []], 404);
