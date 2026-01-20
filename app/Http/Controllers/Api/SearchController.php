@@ -45,6 +45,7 @@ class SearchController extends Controller
                                 });
                         });
                 })
+                ->where('is_archived', false)
                 ->where(function ($query) {
                     $query->where('status', '!=', 'archive')
                         ->orWhereNull('status');
@@ -196,6 +197,7 @@ class SearchController extends Controller
                                 });
                         });
                 })
+                ->where('is_archived', false)
                 ->where(function ($query) {
                     $query->where('status', '!=', 'archive')
                         ->orWhereNull('status');
