@@ -1319,6 +1319,7 @@ class PostController extends Controller
     {
         $user = auth('api')->user();
         if ($post->owner_id == $user->id) {
+            $post->status = 'archive';
             $post->is_archived = true;
             $post->save();
 
@@ -1333,6 +1334,7 @@ class PostController extends Controller
         $user = auth('api')->user();
         if ($post->owner_id == $user->id) {
             $post->is_archived = false;
+            $post->status = null;
             $post->save();
 
             return response()->json('Ok');
@@ -1414,14 +1416,18 @@ class PostController extends Controller
                             mkdir(dirname($outputPath), 0777, true);
                         }
 
-                        $command = "ffmpeg -i " . escapeshellarg($inputPath) .
-                            " -vcodec libx264 -acodec aac -strict -2 " . escapeshellarg($outputPath) . " 2>&1";
+                        $command = sprintf(
+                            'ffmpeg -i %s -vf "scale=1280:-2" -b:v 1000k -preset fast -c:v libx264 -profile:v main -pix_fmt yuv420p -movflags +faststart -c:a aac -b:a 128k %s 2>&1',
+                            escapeshellarg($inputPath),
+                            escapeshellarg($outputPath)
+                        );
+
                         exec($command, $output, $returnCode);
 
                         if ($returnCode !== 0) {
                             return response()->json([
                                 'success' => false,
-                                'message' => 'Video conversion failed',
+                                'message' => 'Video compression failed',
                                 'error_output' => $output
                             ], 500);
                         }

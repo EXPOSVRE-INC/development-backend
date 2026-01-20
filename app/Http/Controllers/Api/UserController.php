@@ -239,6 +239,7 @@ class UserController extends Controller
 
         // 2. User's own posts
         $userPosts = $user->posts()
+            ->where('is_archived', false)
             ->where(function ($query) {
                 $query->whereNull('status')
                     ->orWhere('status', '!=', 'archive');
@@ -995,6 +996,7 @@ class UserController extends Controller
             $marketPosts = Post::with(['owner'])
                 ->where('post_for_sale', 1)
                 ->where('owner_id', $id)
+                ->where('is_archived', false)
                 ->where(function ($query) {
                     $query->whereNull('status')
                         ->orWhere('status', '!=', 'archive');
@@ -1028,6 +1030,7 @@ class UserController extends Controller
 
         $ownPostsQuery = Post::with(['owner'])
             ->where('owner_id', $id)
+            ->where('is_archived', false)
             ->where(function ($query) {
                 $query->whereNull('status')
                     ->orWhere('status', '!=', 'archive');
