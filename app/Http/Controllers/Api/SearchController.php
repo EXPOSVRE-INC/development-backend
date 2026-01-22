@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SearchRequest;
 use App\Http\Resources\InterestsCategoryResource;
 use App\Http\Resources\PostResource;
+use App\Http\Resources\PostWithoutAdResource;
 use App\Http\Resources\TagsResource;
 use App\Http\Resources\UserInfoResource;
 use App\Models\InterestsCategory;
@@ -96,7 +97,7 @@ class SearchController extends Controller
             $posts = $postsQuery->limit(100)->get();
 
             return response()->json([
-                'data' => PostResource::collection($posts),
+                'data' => PostWithoutAdResource::collection($posts),
             ]);
         } elseif ($type == 'people') {
             $blockedUserIds = Block::where('user_id', $currentUser->id)
@@ -228,7 +229,7 @@ class SearchController extends Controller
             $posts = $postsQuery->skip($offset)->take($limit)->get();
 
             return response()->json([
-                'data' => PostResource::collection($posts),
+                'data' => PostWithoutAdResource::collection($posts),
                 'meta' => [
                     'page' => $page,
                     'limit' => $limit,
