@@ -9,6 +9,7 @@ use App\Http\Resources\CollectionResource;
 use App\Http\Resources\CommentResource;
 use App\Http\Resources\PostImagePreviewResource;
 use App\Http\Resources\PostResource;
+use App\Http\Resources\PostWithoutAdResource;
 use App\Http\Resources\SongResource;
 use App\Http\Service\SearchPostService;
 use App\Models\InterestsCategory;
@@ -1203,7 +1204,7 @@ class PostController extends Controller
             ->get();
 
         $formattedPosts = $filteredPosts->map(function ($post) {
-            return new PostResource($post);
+            return new PostWithoutAdResource($post);
         })->values();
 
         $formattedSongs = $songs->map(function ($song) {
@@ -1260,7 +1261,7 @@ class PostController extends Controller
             ->get();
 
         $formattedPosts = $filteredPosts->map(function ($post) {
-            return new PostResource($post);
+            return new PostWithoutAdResource($post);
         })->values();
 
         $formattedSongs = $songs->map(function ($song) {
@@ -1476,7 +1477,7 @@ class PostController extends Controller
             return response()->json(['data' => []], 404);
         }
 
-        return response()->json(['data' => PostResource::collection($posts)], 200);
+        return response()->json(['data' => PostWithoutAdResource::collection($posts)], 200);
     }
 
     public function getSavedPosts()
@@ -1489,7 +1490,7 @@ class PostController extends Controller
             return response()->json(['data' => []], 404);
         }
 
-        return response()->json(['data' => PostResource::collection($favoritedPosts)], 200);
+        return response()->json(['data' => PostWithoutAdResource::collection($favoritedPosts)], 200);
     }
 
     public function mostliked(Request $request)
@@ -1564,7 +1565,7 @@ class PostController extends Controller
 
         $postTotal = $sortedPosts->count();
         $paginatedPosts = $sortedPosts->forPage($page, $limit);
-        $formattedPosts = $paginatedPosts->map(fn($post) => new PostResource($post))->values();
+        $formattedPosts = $paginatedPosts->map(fn($post) => new PostWithoutAdResource($post))->values();
 
         $songs = Song::has('likers')
             ->where('status', 'active')
@@ -1787,7 +1788,7 @@ class PostController extends Controller
         $sortedPosts = $filteredPosts->sortByDesc('likers_count')->values();
         $postTotal = $sortedPosts->count();
         $paginatedPosts = $filteredPosts->forPage($page, $limit);
-        $formattedPosts = $paginatedPosts->map(fn($post) => new PostResource($post))->values();
+        $formattedPosts = $paginatedPosts->map(fn($post) => new PostWithoutAdResource($post))->values();
 
         return response()->json([
             'data' => [

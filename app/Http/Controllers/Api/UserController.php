@@ -8,6 +8,7 @@ use App\Http\Requests\FeedRequest;
 use App\Http\Resources\InterestsResource;
 use App\Http\Resources\NotificationResource;
 use App\Http\Resources\PostResource;
+use App\Http\Resources\PostWithoutAdResource;
 use App\Http\Resources\TagsSimpleResource;
 use App\Http\Resources\UserInfoResource;
 use App\Http\Resources\UserMilestoneResource;
@@ -909,7 +910,7 @@ class UserController extends Controller
             ->get();
 
         return response()->json([
-            'data' => PostResource::collection($posts),
+            'data' => PostWithoutAdResource::collection($posts),
             'meta' => [
                 'total' => $total,
                 'page' => $page,
@@ -1017,7 +1018,7 @@ class UserController extends Controller
             });
 
             return response()->json([
-                'data' => PostResource::collection($paginated),
+                'data' => PostWithoutAdResource::collection($paginated),
                 'meta' => [
                     'page' => $page,
                     'limit' => $limit,
@@ -1042,7 +1043,7 @@ class UserController extends Controller
         $paginated = $ownPostsQuery->skip($offset)->take($limit)->get();
 
         return response()->json([
-            'data' => PostResource::collection($paginated),
+            'data' => PostWithoutAdResource::collection($paginated),
             'meta' => [
                 'page' => $page,
                 'limit' => $limit,
