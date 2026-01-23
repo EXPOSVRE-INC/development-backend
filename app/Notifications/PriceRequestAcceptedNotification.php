@@ -39,6 +39,7 @@ class PriceRequestAcceptedNotification extends Notification
     public function via($notifiable)
     {
         return [
+            'database',
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -56,23 +57,22 @@ class PriceRequestAcceptedNotification extends Notification
 
     public function toDatabase($notifiable)
     {
-        $deepLink = 'EXPOSVRE://post/' . $this->post->id;
-        $notification = new \App\Models\Notification();
-        $notification->title = 'Hello, the price of this is ' . number_format($this->post->fixed_price, 2) . '$';
-        $notification->description = $this->request->id;
-        $notification->type = 'priceResponded';
-        $notification->user_id = $this->requestor->id;
-        $notification->sender_id = $this->post->owner_id;
-        $notification->post_id = $this->post->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
+        $priceToShow = $this->request->offered_price
+            ?? $this->request->post->fixed_price;
 
+        $priceLabel = $this->request->offered_price
+            ? 'Hello, your offer was accepted'
+            : 'Hello, the price of this is';
 
-        $deepLink = 'EXPOSVRE://post/' . $this->post->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
-        return $notification;
+        return [
+            'title' => "{$priceLabel}: $" . number_format($priceToShow, 2),
+            'description' => (string) $this->request->id,
+            'type' => 'priceRespondedApprove',
+            'user_id' => $this->requestor->id,
+            'sender_id' => $this->post->owner_id,
+            'post_id' => $this->post->id,
+            'deep_link' => 'EXPOSVRE://post/' . $this->post->id,
+        ];
     }
 
     public function toFirebase($notifiable, $token)

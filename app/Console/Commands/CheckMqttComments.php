@@ -93,24 +93,55 @@ class CheckMqttComments extends Command
                 $user = User::where(['id' => $message->userId])->first();
                 $song->commentAs($user, $message->message);
             } else if (str_contains($topic, 'galleries')) {
-                $collection = PostCollection::where(['id' => $message->forGalleryId])->first();
-                $user = User::where(['id' => $message->userId])->first();
+
+                if (
+                    empty($message->forGalleryId) ||
+                    empty($message->userId) ||
+                    empty($message->message)
+                ) {
+                    return;
+                }
+
+                $collection = PostCollection::find($message->forGalleryId);
+                $user = User::find($message->userId);
+
+                if (!$collection || !$user) {
+                    return;
+                }
+
+                // Prevent duplicate comments
+                $alreadyCommented = $collection->comments()
+                    ->where('user_id', $user->id)
+                    ->where('comment', $message->message)
+                    ->where('created_at', '>=', now()->subSeconds(5))
+                    ->exists();
+
+                if ($alreadyCommented) {
+                    return;
+                }
+
                 $collection->commentAs($user, $message->message);
 
-                $deepLink = 'EXPOSVRE://gallerycomment/' . $collection->id;
+                // Do not notify self
+                if ($collection->user_id === $user->id) {
+                    return;
+                }
 
-                $notification = new \App\Models\Notification();
-                $notification->title = 'commented on your collection';
-                $notification->description = 'commented on your collection';
-                $notification->type = 'collectioncomment';
-                $notification->user_id = $collection->user_id;
-                $notification->sender_id = $user->id;
-                $notification->post_id = $collection->id;
-                $notification->deep_link = $deepLink;
-                $notification->save();
+                // Prevent duplicate notifications
+                $alreadyNotified = Notification::where([
+                    'type' => 'collectioncomment',
+                    'user_id' => $collection->user_id,
+                    'sender_id' => $user->id,
+                    'post_id' => $collection->id,
+                ])->exists();
 
-                $collection->user->notify(new NewCommentForCollection($user, $message->message, $collection));
-                //                }
+                if ($alreadyNotified) {
+                    return;
+                }
+
+                $collection->user->notify(
+                    new NewCommentForCollection($user, $message->message, $collection)
+                );
             } else if (str_contains($topic, 'profiles')) {
                 $user = User::where(['id' => $message->forProfileId])->first();
 

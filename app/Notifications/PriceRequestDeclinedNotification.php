@@ -39,6 +39,7 @@ class PriceRequestDeclinedNotification extends Notification
     public function via($notifiable)
     {
         return [
+            'database',
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -56,23 +57,15 @@ class PriceRequestDeclinedNotification extends Notification
 
     public function toDatabase($notifiable)
     {
-        $deepLink = 'EXPOSVRE://post/' . $this->post->id;
-        $notification = new \App\Models\Notification();
-        $notification->title = 'Price request declined';
-        $notification->description = $this->request->id;
-        $notification->type = 'priceResponded';
-        $notification->user_id = $this->requestor->id;
-        $notification->sender_id = $this->post->owner_id;
-        $notification->post_id = $this->post->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
-
-        $deepLink = 'EXPOSVRE://post/' . $this->post->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
-        return $notification;
+        return [
+            'title' => 'Price request declined',
+            'description' => (string) $this->request->id,
+            'type' => 'priceRespondedDecline',
+            'user_id' => $this->requestor->id,
+            'sender_id' => $this->post->owner_id,
+            'post_id' => $this->post->id,
+            'deep_link' => 'EXPOSVRE://post/' . $this->post->id,
+        ];
     }
 
     public function toFirebase($notifiable, $token)
