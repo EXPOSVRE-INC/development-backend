@@ -10,6 +10,7 @@ use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
 use App\Notifications\Channels\FirebaseChannel;
 use Kreait\Firebase\Messaging\CloudMessage;
+use App\Notifications\Channels\CustomDatabaseChannel;
 
 class LikeNotification extends Notification
 {
@@ -32,7 +33,7 @@ class LikeNotification extends Notification
     public function via($notifiable)
     {
         return [
-            'database',
+            CustomDatabaseChannel::class,
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -76,11 +77,11 @@ class LikeNotification extends Notification
     public function toDatabase($notifiable)
     {
         return [
-            'title' => 'loved your post',
-            'description' => 'USER loved your post',
             'type' => 'like',
-            'user_id' => $this->post->owner_id,
+            'user_id' => $notifiable->id,  // ← Fixed: receiver of notification
             'sender_id' => $this->user->id,
+            'title' => 'loved your post',
+            'description' => $this->user->username . ' loved your post',
             'post_id' => $this->post->id,
             'deep_link' => 'EXPOSVRE://postlike/' . $this->post->id,
         ];

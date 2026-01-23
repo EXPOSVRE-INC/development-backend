@@ -8,6 +8,7 @@ use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
 use App\Notifications\Channels\FirebaseChannel;
 use Kreait\Firebase\Messaging\CloudMessage;
+use App\Notifications\Channels\CustomDatabaseChannel;
 
 class PriceRequestAcceptedNotification extends Notification
 {
@@ -39,7 +40,7 @@ class PriceRequestAcceptedNotification extends Notification
     public function via($notifiable)
     {
         return [
-            'database',
+            CustomDatabaseChannel::class,
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -68,7 +69,7 @@ class PriceRequestAcceptedNotification extends Notification
             'title' => "{$priceLabel}: $" . number_format($priceToShow, 2),
             'description' => (string) $this->request->id,
             'type' => 'priceRespondedApprove',
-            'user_id' => $this->requestor->id,
+            'user_id' => $notifiable->id,
             'sender_id' => $this->post->owner_id,
             'post_id' => $this->post->id,
             'deep_link' => 'EXPOSVRE://post/' . $this->post->id,

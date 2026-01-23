@@ -9,6 +9,7 @@ use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
 use App\Notifications\Channels\FirebaseChannel;
 use Kreait\Firebase\Messaging\CloudMessage;
+use App\Notifications\Channels\CustomDatabaseChannel;
 
 class NewCommentForCollection extends Notification
 {
@@ -34,7 +35,7 @@ class NewCommentForCollection extends Notification
     public function via($notifiable)
     {
         return [
-            'database',
+            CustomDatabaseChannel::class,
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -72,7 +73,7 @@ class NewCommentForCollection extends Notification
             'title' => 'commented on your collection',
             'description' => 'commented on your collection',
             'type' => 'collectioncomment',
-            'user_id' => $this->collection->user_id,
+            'user_id' => $notifiable->id,
             'sender_id' => $this->user->id,
             'post_id' => $this->collection->id,
             'deep_link' => 'EXPOSVRE://gallerycomment/' . $this->collection->id,
