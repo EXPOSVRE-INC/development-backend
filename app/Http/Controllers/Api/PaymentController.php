@@ -277,32 +277,7 @@ class PaymentController extends Controller
         $request->status = 'accepted';
         $request->save();
 
-        $deepLink = 'EXPOSVRE://post/' . $request->post->id;
-        $priceToShow = $request->offered_price ?? $request->post->fixed_price;
-        $priceLabel = $request->offered_price ? 'Hello, your offer was accepted' : 'Hello, the price of this is ';
-
-        $notification = new \App\Models\Notification();
-
-        $notification->title = "{$priceLabel}: $" . number_format($priceToShow, 2);
-        $notification->description = $request->id;
-        $notification->type = 'priceRespondedApprove';
-        $notification->user_id = $request->requestor->id;
-        $notification->sender_id = $request->post->owner_id;
-        $notification->post_id = $request->post->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
-
-        $deepLink = 'EXPOSVRE://post/' . $request->post->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
         $request->requestor->notify(new PriceRequestAcceptedNotification($request->post, auth('api')->user(), $request));
-
-        //        $priceRequests = PriceRequest::where(['post_id' => $request->porst_id, 'user_id' => $request->user_id])->get();
-        //        foreach ($priceRequests as $priceRequest) {
-        //            $priceRequest->delete();
-        //        }
 
         return response()->json(['data' => $request]);
     }
@@ -314,19 +289,7 @@ class PaymentController extends Controller
         $request->save();
         $user = auth('api')->user();
 
-        $deepLink = 'EXPOSVRE://post/' . $request->post->id;
-        $notification = new \App\Models\Notification();
-        $notification->title = 'Price request declined';
-        $notification->description = $request->id;
-        $notification->type = 'priceRespondedDecline';
-        $notification->user_id = $request->requestor->id;
-        $notification->sender_id = $request->post->owner_id;
-        $notification->post_id = $request->post->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
         $request->requestor->notify(new PriceRequestDeclinedNotification($request->post, $user, $request));
-
 
         return response()->json(['data' => $request]);
     }

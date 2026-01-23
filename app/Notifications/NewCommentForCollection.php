@@ -34,6 +34,7 @@ class NewCommentForCollection extends Notification
     public function via($notifiable)
     {
         return [
+            'database',
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -63,5 +64,18 @@ class NewCommentForCollection extends Notification
             ->withData([
                 'deepLink' => $deepLink,
             ]);
+    }
+
+    public function toDatabase($notifiable)
+    {
+        return [
+            'title' => 'commented on your collection',
+            'description' => 'commented on your collection',
+            'type' => 'collectioncomment',
+            'user_id' => $this->collection->user_id,
+            'sender_id' => $this->user->id,
+            'post_id' => $this->collection->id,
+            'deep_link' => 'EXPOSVRE://gallerycomment/' . $this->collection->id,
+        ];
     }
 }
