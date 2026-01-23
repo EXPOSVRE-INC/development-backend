@@ -54,44 +54,46 @@ class CheckMqttComments extends Command
 
             if (str_contains($topic, 'posts')) {
                 $post = Post::where(['id' => $message->forPostId])->first();
-                $comments = $post->comments;
                 $user = User::where(['id' => $message->userId])->first();
+
+                if (!$post || !$user) {
+                    return;
+                }
+
+                $alreadyCommented = $post->comments()
+                    ->where('user_id', $user->id)
+                    ->where('comment', $message->message)
+                    ->where('created_at', '>=', now()->subSeconds(5))
+                    ->exists();
+
+                if ($alreadyCommented) {
+                    return;
+                }
+
                 $post->commentAs($user, $message->message);
 
-                if ($user->id !== $post->owner_id) {
-                    $deepLink = 'EXPOSVRE://postcomment/' . $post->id;
+                if ($user->id === $post->owner_id) {
+                    return;
+                }
 
-                    $notification = new \App\Models\Notification();
-                    $notification->title = 'commented on your post';
-                    $notification->description = 'commented on your post';
-                    $notification->type = 'postcomment';
-                    $notification->user_id = $post->owner_id;
-                    $notification->sender_id = $user->id;
-                    $notification->post_id = $post->id;
-                    $notification->deep_link = $deepLink;
-                    $notification->save();
+                $alreadyNotified = Notification::where([
+                    'type' => 'postcomment',
+                    'sender_id' => $user->id,
+                    'post_id' => $post->id,
+                ])->where('created_at', '>=', now()->subSeconds(5))
+                    ->exists();
 
-                    $notification = $post->owner->notify(new NewCommentForPost($user, $message->message, $post));
+                if (!$alreadyNotified) {
+                    $post->owner->notify(
+                        new NewCommentForPost($user, $message->message, $post)
+                    );
                 }
             } else if (str_contains($topic, 'songs')) {
                 $song = Song::where(['id' => $message->forSongId])->first();
-                $comments = $song->comments;
                 $user = User::where(['id' => $message->userId])->first();
                 $song->commentAs($user, $message->message);
             } else if (str_contains($topic, 'galleries')) {
                 $collection = PostCollection::where(['id' => $message->forGalleryId])->first();
-
-                $comments = $collection->comments;
-                dump('COLLECTION');
-                //                $commentsSearch = $comments->filter(function ($item) use ($message) {
-                //                    return $item->comment == $message->message && $item->user_id == $message->userId;
-                //                });
-
-                //                dump(count($commentsSearch));
-
-                //                if (count($commentsSearch) == 0) {
-                //                    dump($message->message);
-                //                    dump($collection->id);
                 $user = User::where(['id' => $message->userId])->first();
                 $collection->commentAs($user, $message->message);
 

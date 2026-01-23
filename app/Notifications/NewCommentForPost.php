@@ -34,6 +34,7 @@ class NewCommentForPost extends Notification
     public function via($notifiable)
     {
         return [
+            'database',
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -76,37 +77,19 @@ class NewCommentForPost extends Notification
 
     public function toDatabase($notifiable)
     {
-        $deepLink = 'EXPOSVRE://postcomment/' . $this->post->id;
-
-        $notification = new \App\Models\Notification();
-        $notification->title = 'commented on your post';
-        $notification->description = 'commented on your post';
-        $notification->type = 'postcomment';
-        $notification->user_id = $this->post->owner_id;
-        $notification->sender_id = $this->user->id;
-        $notification->post_id = $this->post->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
-
-        return $notification;
+        return [
+            'title' => 'commented on your post',
+            'description' => 'commented on your post',
+            'type' => 'postcomment',
+            'user_id' => $this->post->owner_id,
+            'sender_id' => $this->user->id,
+            'post_id' => $this->post->id,
+            'deep_link' => 'EXPOSVRE://postcomment/' . $this->post->id,
+        ];
     }
 
     public function toMail($notifiable)
     {
-        dump($this);
-        $deepLink = 'EXPOSVRE://postcomment/' . $this->post->id;
-
-        $notification = new \App\Models\Notification();
-        $notification->title = 'commented on your post';
-        $notification->description = 'commented on your post';
-        $notification->type = 'postcomment';
-        $notification->user_id = $this->post->owner_id;
-        $notification->sender_id = $this->user->id;
-        $notification->post_id = $this->post->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
         return (new MailMessage);
     }
 }
