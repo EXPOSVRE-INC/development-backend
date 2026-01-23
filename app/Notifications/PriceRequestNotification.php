@@ -8,6 +8,7 @@ use Kreait\Firebase\Messaging\CloudMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
+use App\Notifications\Channels\CustomDatabaseChannel;
 
 class PriceRequestNotification extends Notification
 {
@@ -39,7 +40,7 @@ class PriceRequestNotification extends Notification
     public function via($notifiable)
     {
         return [
-            'database',
+            CustomDatabaseChannel::class,
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -61,7 +62,7 @@ class PriceRequestNotification extends Notification
             'title' => $this->requestor->profile->firstName . ' ' . $this->requestor->profile->lastName . ' is interested in item',
             'description' => 'interested in item',
             'type' => 'priceRequest',
-            'user_id' => $this->post->owner_id,
+            'user_id' => $notifiable->id,
             'sender_id' => $this->requestor->id,
             'post_id' => $this->post->id,
             'deep_link' => 'EXPOSVRE://request/' . $this->post->id . '/' . $this->request->id,

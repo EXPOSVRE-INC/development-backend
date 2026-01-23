@@ -8,6 +8,7 @@ use NotificationChannels\Apn\ApnChannel;
 use NotificationChannels\Apn\ApnMessage;
 use App\Notifications\Channels\FirebaseChannel;
 use Kreait\Firebase\Messaging\CloudMessage;
+use App\Notifications\Channels\CustomDatabaseChannel;
 
 class NewSubscription extends Notification
 {
@@ -36,7 +37,7 @@ class NewSubscription extends Notification
     public function via($notifiable)
     {
         return [
-            'database',
+            CustomDatabaseChannel::class,
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -59,7 +60,7 @@ class NewSubscription extends Notification
             'title' => 'started following you',
             'description' => 'started following you',
             'type' => 'subscription',
-            'user_id' => $this->user->id,
+            'user_id' => $notifiable->id,
             'sender_id' => $this->subscriber->id,
             'deep_link' => 'EXPOSVRE://user/' . $this->subscriber->id,
         ];
