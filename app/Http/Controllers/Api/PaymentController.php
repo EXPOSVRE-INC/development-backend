@@ -228,20 +228,6 @@ class PaymentController extends Controller
 
         $user = auth('api')->user();
 
-        $notification = new \App\Models\Notification();
-        $notification->title = $user->profile->firstName . ' ' . $user->profile->lastName . ' is interested in item';
-        $notification->description = 'interested in item';
-        $notification->type = 'priceRequest';
-        $notification->user_id = $post->owner_id;
-        $notification->sender_id = $user->id;
-        $notification->post_id = $post->id;
-        $notification->deep_link = '';
-        $notification->save();
-
-        $deepLink = 'EXPOSVRE://request/' . $post->id . '/' . $request->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
         $post->owner->notify(new PriceRequestNotification($post, $user, $request));
 
         return response()->json(['data' => $request]);

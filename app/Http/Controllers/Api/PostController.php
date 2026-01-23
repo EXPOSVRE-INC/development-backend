@@ -1091,18 +1091,6 @@ class PostController extends Controller
         }
 
         if ($user->id !== $post->owner_id) {
-            $deepLink = 'EXPOSVRE://postlike/' . $post->id;
-
-            $notification = new \App\Models\Notification();
-            $notification->title = 'loved your post';
-            $notification->description = 'like on your post';
-            $notification->type = 'like';
-            $notification->user_id = $post->owner_id;
-            $notification->sender_id = $user->id;
-            $notification->post_id = $post->id;
-            $notification->deep_link = $deepLink;
-            $notification->save();
-
             $post->owner->notify(new LikeNotification($user, $post));
         }
         $user->like($post);

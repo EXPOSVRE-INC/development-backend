@@ -32,6 +32,7 @@ class LikeNotification extends Notification
     public function via($notifiable)
     {
         return [
+            'database',
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -74,21 +75,15 @@ class LikeNotification extends Notification
 
     public function toDatabase($notifiable)
     {
-        dump($this);
-        $deepLink = 'EXPOSVRE://postlike/' . $this->post->id;
-
-        $notification = new \App\Models\Notification();
-        $notification->title = 'loved your post';
-        $notification->description = 'USER loved your post';
-        $notification->type = 'like';
-        $notification->user_id = $this->post->owner_id;
-        $notification->sender_id = $this->user->id;
-        $notification->post_id = $this->post->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
-
-        return $notification;
+        return [
+            'title' => 'loved your post',
+            'description' => 'USER loved your post',
+            'type' => 'like',
+            'user_id' => $this->post->owner_id,
+            'sender_id' => $this->user->id,
+            'post_id' => $this->post->id,
+            'deep_link' => 'EXPOSVRE://postlike/' . $this->post->id,
+        ];
     }
     public function toMail($notifiable)
     {

@@ -39,6 +39,7 @@ class PriceRequestNotification extends Notification
     public function via($notifiable)
     {
         return [
+            'database',
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -56,23 +57,15 @@ class PriceRequestNotification extends Notification
 
     public function toDatabase($notifiable)
     {
-        //        dump($this->requestor->profile);
-        $notification = new \App\Models\Notification();
-        $notification->title = $this->requestor->profile->firstName . ' ' . $this->requestor->profile->lastName . ' is interested in item';
-        $notification->description = 'interested in item';
-        $notification->type = 'priceRequest';
-        $notification->user_id = $this->post->owner_id;
-        $notification->sender_id = $this->requestor->id;
-        $notification->post_id = $this->post->id;
-        $notification->deep_link = '';
-        $notification->save();
-
-        $deepLink = 'EXPOSVRE://request/' . $this->post->id . '/' . $this->request->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
-
-        return $notification;
+        return [
+            'title' => $this->requestor->profile->firstName . ' ' . $this->requestor->profile->lastName . ' is interested in item',
+            'description' => 'interested in item',
+            'type' => 'priceRequest',
+            'user_id' => $this->post->owner_id,
+            'sender_id' => $this->requestor->id,
+            'post_id' => $this->post->id,
+            'deep_link' => 'EXPOSVRE://request/' . $this->post->id . '/' . $this->request->id,
+        ];
     }
 
     public function toFirebase($notifiable, $token)

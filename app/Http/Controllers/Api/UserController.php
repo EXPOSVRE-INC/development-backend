@@ -365,17 +365,6 @@ class UserController extends Controller
         $subscriber = auth('api')->user();
         $subscriber->subscribe($user);
 
-        $deepLink = 'EXPOSVRE://user/' . $subscriber->id;
-        $notification = new \App\Models\Notification();
-        $notification->title = 'started following you';
-        $notification->description = 'started following you';
-        $notification->type = 'subscription';
-        $notification->user_id = $user->id;
-        $notification->sender_id = $subscriber->id;
-        //        $notification->post_id = $this->collection->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
         $user->notify(new NewSubscription($user, $subscriber));
 
         $subscriber->refresh();

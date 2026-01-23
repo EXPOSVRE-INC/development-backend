@@ -36,6 +36,7 @@ class NewSubscription extends Notification
     public function via($notifiable)
     {
         return [
+            'database',
             FirebaseChannel::class,
             ApnChannel::class,
         ];
@@ -54,31 +55,14 @@ class NewSubscription extends Notification
 
     public function toDatabase($notifiable)
     {
-        $deepLink = 'EXPOSVRE://user/' . $this->subscriber->username;
-        $notification = new \App\Models\Notification();
-        $notification->title = 'started following you';
-        $notification->description = 'started following you';
-        $notification->type = 'subscription';
-        $notification->user_id = $this->user->id;
-        $notification->sender_id = $this->subscriber->id;
-        //        $notification->post_id = $this->collection->id;
-        $notification->deep_link = $deepLink;
-        $notification->save();
-
         return [
             'title' => 'started following you',
             'description' => 'started following you',
             'type' => 'subscription',
             'user_id' => $this->user->id,
             'sender_id' => $this->subscriber->id,
-            //        $notification->post_id = $this->collection->id;
-            'deep_link' => $deepLink
+            'deep_link' => 'EXPOSVRE://user/' . $this->subscriber->id,
         ];
-    }
-
-    public function databaseType(object $notifiable): string
-    {
-        return 'invoice-paid';
     }
 
     public function toFirebase($notifiable, $token)
