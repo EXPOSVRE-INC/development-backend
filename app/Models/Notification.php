@@ -17,7 +17,8 @@ class Notification extends Model
         'sender_id',
         'post_id',
         'receiverAction',
-        'deep_link'
+        'deep_link',
+        'read_at'
     ];
 
     public function sender()

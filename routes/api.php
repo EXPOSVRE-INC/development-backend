@@ -237,7 +237,8 @@ Route::group([
         ], function ($router) {
             Route::get('/', 'UserController@getNotificationsList');
             Route::get('/marketplace', 'UserController@getMarketNotificationsList');
-
+            Route::get('/unread-status', 'UserController@unreadStatus');
+            Route::post('/mark-as-read', 'UserController@markAllAsRead');
             Route::post('action', 'UserController@notificationAction');
         });
 
