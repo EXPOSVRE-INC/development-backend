@@ -578,6 +578,38 @@ class UserController extends Controller
         return response()->json(['data' => []], 404);
     }
 
+    public function markAllAsRead()
+    {
+        $userId = auth()->user()->id;
+
+        DB::table('notifications')
+            ->where('user_id', $userId)
+            ->whereNull('read_at')
+            ->update([
+                'read_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'All notifications marked as read',
+        ]);
+    }
+
+    public function unreadStatus(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $unreadCount = DB::table('notifications')
+            ->where('user_id', $userId)
+            ->whereNull('read_at')
+            ->count();
+
+        return response()->json([
+            'show_pink_icon' => $unreadCount > 0,
+            'unread_count'   => $unreadCount,
+        ]);
+    }
     public function getMarketNotificationsList(Request $request)
     {
         $user = auth()->user();
