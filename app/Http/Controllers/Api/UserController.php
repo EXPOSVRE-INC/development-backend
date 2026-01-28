@@ -869,6 +869,7 @@ class UserController extends Controller
 
         $baseQuery = Post::where('owner_id', 1)
             ->whereDoesntHave('reports')
+            ->where('is_archived', 0)
             ->where(function ($query) {
                 $query->where('status', '!=', 'archive')
                     ->orWhereNull('status')
@@ -880,10 +881,11 @@ class UserController extends Controller
         $total = (clone $baseQuery)->count();
 
         $posts = $baseQuery
-            ->orderByRaw("COALESCE(publish_date, created_at) DESC")
+            ->orderBy('order_priority', 'ASC')
             ->offset($offset)
             ->limit($limit)
             ->get();
+
 
         return response()->json([
             'data' => PostResource::collection($posts),

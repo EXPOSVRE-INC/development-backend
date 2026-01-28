@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\PostResource;
-use App\Http\Resources\TagsResource;
+use Illuminate\Support\Facades\DB;
 use App\Models\InterestsCategory;
 use App\Models\Post;
 use App\Models\Tag;
@@ -42,7 +41,7 @@ class AdController extends Controller
             })
             ->where('publish_date', '<', $now)
             ->where('ad', 1)
-            ->orderByRaw("COALESCE(publish_date, created_at) DESC")
+            ->orderBy('order_priority', 'ASC')
             ->get();
 
         return view('admin.ads.index', [
@@ -76,29 +75,33 @@ class AdController extends Controller
 
     public function highestPriority($id)
     {
+        DB::transaction(function () use ($id) {
 
-        $now = Carbon::now()->setTimezone('US/Eastern')->toDateTimeString();
+            $post = Post::findOrFail($id);
 
-        $posts = Post::where('link', '<>', 'NULL')
-            ->where(['owner_id' => 1])
-            ->where(['status' => null])
-            ->where('publish_date', '<', $now)->where(['ad' => 1])
-            ->orderBy('order_priority', 'ASC')
-            ->get();
-        //        dd($posts);
-        $key = 2;
-
-        foreach ($posts as $post) {
-            if ($post->id != $id) {
-                $post->order_priority = $key;
-                $post->save();
-                $key++;
+            if (
+                !$post->isArticle ||
+                $post->is_archived ||
+                is_null($post->publish_date)
+            ) {
+                return;
             }
-        }
 
-        $post = Post::where(['id' => $id])->first();
-        $post->order_priority = 1;
-        $post->save();
+            $oldPriority = $post->order_priority;
+
+            if ($oldPriority === 1) {
+                return;
+            }
+
+            Post::where('ad', 1)
+                ->whereNotNull('publish_date')
+                ->where('is_archived', 0)
+                ->where('order_priority', '<', $oldPriority)
+                ->increment('order_priority');
+
+            $post->order_priority = 1;
+            $post->save();
+        });
 
         return redirect()->route('ads-published');
     }
@@ -106,18 +109,35 @@ class AdController extends Controller
     public function moveToArchive($id)
     {
         $post = Post::where(['id' => $id])->first();
-        $post->status = 'archive';
-        $post->is_archived = 1;
-        $post->save();
+        DB::transaction(function () use ($post) {
+
+            $oldPriority = $post->order_priority;
+            $post->update([
+                'status' => 'archive',
+                'is_archived' => true,
+                'order_priority' => null,
+            ]);
+
+            if ($oldPriority) {
+                Post::where('ad', 1)
+                    ->whereNotNull('publish_date')
+                    ->where('is_archived', 0)
+                    ->where('order_priority', '>', $oldPriority)
+                    ->decrement('order_priority');
+            }
+        });
         return redirect()->route('ads-archive');
     }
 
     public function moveFromArchive($id)
     {
         $post = Post::where(['id' => $id])->first();
-        $post->status = null;
-        $post->is_archived = 0;
-        $post->save();
+
+        $post->update([
+            'is_archived' => false,
+            'status' => null,
+            'order_priority' => null,
+        ]);
         return redirect()->route('ads-published');
     }
 
@@ -152,78 +172,130 @@ class AdController extends Controller
         }
 
 
-        $post = Post::where(['id' => $id])->first();
+        DB::transaction(function () use ($id, $request) {
 
-        $input = $request->all();
+            $post = Post::findOrFail($id);
 
-        //        dd($input);
+            $oldPriority   = $post->order_priority;
+            $wasPublished  = !is_null($post->publish_date);
 
-        $post->update($input);
+            $input = $request->except('order_priority');
 
-        if ($request->has('interest') && $request->get('interest') != null) {
-            $post->assignInterest($request->get('interest'));
-        }
+            $post->update($input);
 
-        if ($request->has('file')) {
-            $media = $post->getMedia('files');
-            foreach ($media as $file) {
-                if ($file != null) {
-                    $file->delete();
+            $isPublished = !is_null($post->publish_date);
+
+            if (!$wasPublished && $isPublished && $post->ad && !$post->is_archived) {
+
+                $newPriority = $request->get('order_priority');
+
+                if ($newPriority) {
+                    Post::where('isArticle', 1)
+                        ->whereNotNull('publish_date')
+                        ->where('is_archived', 0)
+                        ->where('order_priority', '>=', $newPriority)
+                        ->increment('order_priority');
+
+                    $post->order_priority = $newPriority;
+                } else {
+                    Post::where('isArticle', 1)
+                        ->whereNotNull('publish_date')
+                        ->where('is_archived', 0)
+                        ->increment('order_priority');
+
+                    $post->order_priority = 1;
+                }
+
+                $post->save();
+            }
+
+            if ($wasPublished && $isPublished && !$post->is_archived) {
+
+                $newPriority = $request->get('order_priority');
+
+                if ($newPriority && $newPriority != $oldPriority) {
+
+                    if ($newPriority < $oldPriority) {
+                        // Move UP
+                        Post::where('ad', 1)
+                            ->whereNotNull('publish_date')
+                            ->where('is_archived', 0)
+                            ->whereBetween('order_priority', [$newPriority, $oldPriority - 1])
+                            ->increment('order_priority');
+                    } else {
+                        // Move DOWN
+                        Post::where('ad', 1)
+                            ->whereNotNull('publish_date')
+                            ->where('is_archived', 0)
+                            ->whereBetween('order_priority', [$oldPriority + 1, $newPriority])
+                            ->decrement('order_priority');
+                    }
+
+                    $post->order_priority = $newPriority;
+                    $post->save();
                 }
             }
-            //            dd($request->file('file'));
-            //            foreach ($request->get('file[]') as $file) {
-            $post->addMultipleMediaFromRequest(['file'])
-                ->each(function ($fileAdder) {
-                    $fileAdder->toMediaCollection('files');
-                });
-            //                    ->toMediaCollection('files');
-            //            }
-        }
-
-        $headerType = $request->get('header_type');
-
-        if ($request->get('remove_header_video')) {
-            $post->clearMediaCollection('header_video');
-        }
-
-        if ($request->get('remove_thumb')) {
-            $post->clearMediaCollection('thumb');
-        }
-
-        if ($headerType === 'video') {
-            $post->clearMediaCollection('thumb');
-
-            if ($request->hasFile('header_video')) {
-                $post->clearMediaCollection('header_video'); // optional: only if not already cleared
-                $post->addMediaFromRequest('header_video')->toMediaCollection('header_video');
+            if ($request->has('interest') && $request->get('interest') != null) {
+                $post->assignInterest($request->get('interest'));
             }
-        }
 
-        if ($headerType === 'image') {
-            $post->clearMediaCollection('header_video');
-
-            if ($request->hasFile('thumbnail')) {
-                $post->clearMediaCollection('thumb'); // optional
-                $post->addMediaFromRequest('thumbnail')->toMediaCollection('thumb');
+            if ($request->has('file')) {
+                $media = $post->getMedia('files');
+                foreach ($media as $file) {
+                    if ($file != null) {
+                        $file->delete();
+                    }
+                }
+                $post->addMultipleMediaFromRequest(['file'])
+                    ->each(function ($fileAdder) {
+                        $fileAdder->toMediaCollection('files');
+                    });
             }
-        }
 
-        if ($request->has('video_thumbnail')) {
-            $media = $post->getFirstMedia('video_thumbnail');
-            if ($media != null) {
-                $media->delete();
-            }
-            $post->addMediaFromRequest('video_thumbnail')->toMediaCollection('video_thumb');
-        }
+            $headerType = $request->get('header_type');
 
-        if ($request->has('video')) {
-            $media = $post->getFirstMedia('video');
-            if ($media != null) {
-                $media->delete();
+            if ($request->get('remove_header_video')) {
+                $post->clearMediaCollection('header_video');
             }
-            $post->addMediaFromRequest('video')->toMediaCollection('video');
-        }
+
+            if ($request->get('remove_thumb')) {
+                $post->clearMediaCollection('thumb');
+            }
+
+            if ($headerType === 'video') {
+                $post->clearMediaCollection('thumb');
+
+                if ($request->hasFile('header_video')) {
+                    $post->clearMediaCollection('header_video'); // optional: only if not already cleared
+                    $post->addMediaFromRequest('header_video')->toMediaCollection('header_video');
+                }
+            }
+
+            if ($headerType === 'image') {
+                $post->clearMediaCollection('header_video');
+
+                if ($request->hasFile('thumbnail')) {
+                    $post->clearMediaCollection('thumb'); // optional
+                    $post->addMediaFromRequest('thumbnail')->toMediaCollection('thumb');
+                }
+            }
+
+            if ($request->has('video_thumbnail')) {
+                $media = $post->getFirstMedia('video_thumbnail');
+                if ($media != null) {
+                    $media->delete();
+                }
+                $post->addMediaFromRequest('video_thumbnail')->toMediaCollection('video_thumb');
+            }
+
+            if ($request->has('video')) {
+                $media = $post->getFirstMedia('video');
+                if ($media != null) {
+                    $media->delete();
+                }
+                $post->addMediaFromRequest('video')->toMediaCollection('video');
+            }
+        });
 
         return redirect()->route('ads-published');
     }
@@ -239,44 +311,73 @@ class AdController extends Controller
             return back()->withErrors(['Only one of header image or video can be uploaded.']);
         }
 
-        $request->merge([
-            'link' => ($request->get('link') != null) ? $request->get('link') : '',
-            'ad' => 1,
-            'allow_views' => 1,
-            'allow_to_comment' => 1,
-            'shippingIncluded' => 0,
-            'publish_date' => Carbon::createFromFormat('d/m/Y H:i', $request->get('publish_date')),
-            'owner_id' => 1
-        ]);
-        $input = $request->all();
+        DB::transaction(function () use ($request) {
 
-        $post = Post::create($input);
+            $request->merge([
+                'link' => $request->get('link') ?? '',
+                'ad' => 1,
+                'allow_views' => 1,
+                'allow_to_comment' => 1,
+                'shippingIncluded' => 0,
+                'publish_date' => Carbon::createFromFormat('d/m/Y H:i', $request->get('publish_date')),
+                'owner_id' => 1
+            ]);
 
-        if ($request->has('interests') && $request->get('interests') != null) {
-            foreach ($request->get('interests') as $interest) {
-                $post->assignInterest($interest);
+            $input = $request->except('order_priority');
+
+            $post = Post::create($input);
+
+            if ($post->ad && $post->publish_date && !$post->is_archived) {
+                $newPriority = $request->get('order_priority');
+
+                if ($newPriority) {
+                    // Shift posts at and below new priority
+                    Post::where('ad', 1)
+                        ->whereNotNull('publish_date')
+                        ->where('is_archived', 0)
+                        ->where('order_priority', '>=', $newPriority)
+                        ->increment('order_priority');
+
+                    $post->order_priority = $newPriority;
+                } else {
+                    // Default → move to top
+                    Post::where('ad', 1)
+                        ->whereNotNull('publish_date')
+                        ->where('is_archived', 0)
+                        ->increment('order_priority');
+
+                    $post->order_priority = 1;
+                }
+
+                $post->save();
             }
-        }
 
-        if ($request->hasFile('file')) {
-            $post->addMultipleMediaFromRequest(['file'])
-                ->each(function ($fileAdder) {
-                    $fileAdder->toMediaCollection('files');
-                });
-        }
-        if ($request->hasFile('thumbnail')) {
-            $post->addMediaFromRequest('thumbnail')->toMediaCollection('thumb');
-        } elseif ($request->hasFile('header_video')) {
-            $post->addMediaFromRequest('header_video')->toMediaCollection('header_video');
-        }
+            if ($request->has('interests')) {
+                foreach ($request->get('interests') as $interest) {
+                    $post->assignInterest($interest);
+                }
+            }
 
-        if ($request->hasFile('video')) {
-            $post->addMediaFromRequest('video')->toMediaCollection('video');
-        }
+            if ($request->hasFile('file')) {
+                $post->addMultipleMediaFromRequest(['file'])
+                    ->each(function ($fileAdder) {
+                        $fileAdder->toMediaCollection('files');
+                    });
+            }
+            if ($request->hasFile('thumbnail')) {
+                $post->addMediaFromRequest('thumbnail')->toMediaCollection('thumb');
+            } elseif ($request->hasFile('header_video')) {
+                $post->addMediaFromRequest('header_video')->toMediaCollection('header_video');
+            }
 
-        if ($request->hasFile('video_thumbnail')) {
-            $post->addMediaFromRequest('video_thumbnail')->toMediaCollection('video_thumb');
-        }
+            if ($request->hasFile('video')) {
+                $post->addMediaFromRequest('video')->toMediaCollection('video');
+            }
+
+            if ($request->hasFile('video_thumbnail')) {
+                $post->addMediaFromRequest('video_thumbnail')->toMediaCollection('video_thumb');
+            }
+        });
 
         return redirect()->route('ads-scheduled');
     }
