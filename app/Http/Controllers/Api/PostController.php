@@ -1394,42 +1394,47 @@ class PostController extends Controller
 
                     $uploadedMedia[] = $media;
                 } elseif (str_starts_with($mimeType, 'video/')) {
-                    $needsConversion = !in_array($extension, $allowedVideoExtensions);
+                    // $needsConversion = !in_array($extension, $allowedVideoExtensions);
 
-                    if ($needsConversion) {
-                        $inputPath = $file->getRealPath();
-                        $convertedFileName = pathinfo($originalName, PATHINFO_FILENAME) . '-' . uniqid() . '.mp4';
-                        $outputPath = storage_path('app/temp/' . $convertedFileName);
+                    // if ($needsConversion) {
+                    $inputPath = $file->getRealPath();
+                    $convertedFileName = pathinfo($originalName, PATHINFO_FILENAME) . '-' . uniqid() . '.mp4';
+                    $outputPath = storage_path('app/temp/' . $convertedFileName);
 
-                        if (!file_exists(dirname($outputPath))) {
-                            mkdir(dirname($outputPath), 0777, true);
-                        }
-
-                        $command = sprintf(
-                            'ffmpeg -i %s -vf "scale=1280:-2" -b:v 1000k -preset fast -c:v libx264 -profile:v main -pix_fmt yuv420p -movflags +faststart -c:a aac -b:a 128k %s 2>&1',
-                            escapeshellarg($inputPath),
-                            escapeshellarg($outputPath)
-                        );
-
-                        exec($command, $output, $returnCode);
-
-                        if ($returnCode !== 0) {
-                            return response()->json([
-                                'success' => false,
-                                'message' => 'Video compression failed',
-                                'error_output' => $output
-                            ], 500);
-                        }
-
-                        $file = new UploadedFile($outputPath, $convertedFileName, 'video/mp4', null, true);
+                    if (!file_exists(dirname($outputPath))) {
+                        mkdir(dirname($outputPath), 0777, true);
                     }
 
-                    $media = $user->addMedia($file->getRealPath())
-                        ->usingFileName($originalName)
-                        ->toMediaCollection('temp');
+                    $command = sprintf(
+                        'ffmpeg -y -i %s ' .
+                            '-vf "scale=-2:min(1080\,ih)" ' .
+                            '-c:v libx264 -profile:v main -pix_fmt yuv420p ' .
+                            '-crf 23 -preset fast ' .
+                            '-movflags +faststart ' .
+                            '-c:a aac -b:a 128k %s 2>&1',
+                        escapeshellarg($inputPath),
+                        escapeshellarg($outputPath)
+                    );
 
-                    $uploadedMedia[] = $media;
+                    exec($command, $output, $returnCode);
+
+                    if ($returnCode !== 0) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Video compression failed',
+                            'error_output' => $output
+                        ], 500);
+                    }
+
+                    $file = new UploadedFile($outputPath, $convertedFileName, 'video/mp4', null, true);
                 }
+
+                $media = $user->addMedia($file->getRealPath())
+                    ->usingFileName($originalName)
+                    ->toMediaCollection('temp');
+
+                $uploadedMedia[] = $media;
+                // }
             } catch (\Exception $e) {
                 continue;
             }
