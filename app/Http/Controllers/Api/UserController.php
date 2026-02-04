@@ -881,11 +881,10 @@ class UserController extends Controller
         $total = (clone $baseQuery)->count();
 
         $posts = $baseQuery
-            ->orderBy('order_priority', 'ASC')
+            ->orderByRaw("COALESCE(publish_date, created_at) DESC")
             ->offset($offset)
             ->limit($limit)
             ->get();
-
 
         return response()->json([
             'data' => PostResource::collection($posts),
