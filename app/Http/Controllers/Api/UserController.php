@@ -869,7 +869,6 @@ class UserController extends Controller
 
         $baseQuery = Post::where('owner_id', 1)
             ->whereDoesntHave('reports')
-            ->where('is_archived', 0)
             ->where(function ($query) {
                 $query->where('status', '!=', 'archive')
                     ->orWhereNull('status')
